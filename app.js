@@ -1,6 +1,30 @@
 /* ==========================================================================
-   UNIQUE EXPRESSIONS - CLIENT-READY PIXEL-PERFECT MOBILE APP LOGIC
+   UNIQUE EXPRESSIONS - WORLD-CLASS HERO BANNER & MOBILE APP LOGIC
    ========================================================================== */
+
+const HERO_SLIDES = [
+  {
+    img: "hero_lifestyle.png",
+    badge: "✨ BOUTIQUE LIFESTYLE COLLECTION",
+    title: "Discover Extraordinary Toys & Gifts",
+    sub: "Curated Educational Toys, Smart Gadgets, Artisan Handicrafts, Stationery & Bespoke Return Gift Hampers."
+  },
+  {
+    img: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=800&auto=format&fit=crop",
+    badge: "🎁 RETURN GIFT STUDIO",
+    title: "Bespoke Party & Celebration Hampers",
+    sub: "Customized gift boxes tailored for birthdays, weddings, baby showers, and school events."
+  },
+  {
+    img: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop",
+    badge: "📦 WHOLESALE & BULK ORDERS",
+    title: "Direct Wholesale GST Billing",
+    sub: "Volume-based discounts & input credit invoices (GSTIN: 37BVTPG7761F1Z1) for store owners."
+  }
+];
+
+let currentHeroIndex = 0;
+let heroTimer = null;
 
 const CATEGORIES = ["Toys", "Gadgets", "Handicrafts", "Stationery", "Return Gifts"];
 
@@ -85,9 +109,42 @@ document.addEventListener('DOMContentLoaded', () => {
   setPricingMode(pricingMode, false);
   renderAllSections();
   updateBadges();
+  startHeroCarousel();
   if (window.feather) feather.replace();
   if (window.lucide) lucide.createIcons();
 });
+
+function startHeroCarousel() {
+  if (heroTimer) clearInterval(heroTimer);
+  heroTimer = setInterval(() => {
+    currentHeroIndex = (currentHeroIndex + 1) % HERO_SLIDES.length;
+    setHeroSlide(currentHeroIndex, false);
+  }, 5000);
+}
+
+function setHeroSlide(idx, resetTimer = true) {
+  currentHeroIndex = idx;
+  const slide = HERO_SLIDES[idx];
+  const imgEl = document.getElementById('mHeroImg');
+  const badgeEl = document.querySelector('.m-hero-badge-pill');
+  const headingEl = document.getElementById('mHeroHeading');
+  const subEl = document.getElementById('mHeroSub');
+
+  if (imgEl) imgEl.src = slide.img;
+  if (badgeEl) badgeEl.innerText = slide.badge;
+  if (headingEl) headingEl.innerText = slide.title;
+  if (subEl) subEl.innerText = slide.sub;
+
+  for (let i = 0; i < 3; i++) {
+    const dot = document.getElementById(`mDot${i}`);
+    if (dot) {
+      if (i === idx) dot.classList.add('active');
+      else dot.classList.remove('active');
+    }
+  }
+
+  if (resetTimer) startHeroCarousel();
+}
 
 function getEffectivePrice(basePrice) {
   if (pricingMode === 'wholesale') {
@@ -189,7 +246,7 @@ function createMobileTileHTML(product) {
         <span class="m-discount-badge-orange">${product.discount}% OFF</span>
         <span class="m-rating-badge-gold">★ ${product.rating}</span>
         <button class="m-wishlist-heart-btn" onclick="event.stopPropagation(); toggleWishlist(${product.id})">
-          <i data-feather="heart" style="width:14px; height:14px; ${isWishlisted ? 'fill:#b55282; stroke:#b55282;' : ''}"></i>
+          <i data-feather="heart" style="width:14px; height:14px; ${isWishlisted ? 'fill:#d8448e; stroke:#d8448e;' : ''}"></i>
         </button>
       </div>
       <div class="m-tile-content-box">

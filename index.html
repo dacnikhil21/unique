@@ -13,7 +13,7 @@
 
   <div class="app-container">
 
-    <!-- HEADER WITH SAFE TOP PADDING -->
+    <!-- 1. HEADER -->
     <header class="m-app-header">
       <a href="#" class="m-header-logo-link" onclick="switchNav('home'); return false;">
         <img src="logo.png" alt="UNIQUE EXPRESSIONS">
@@ -31,7 +31,7 @@
       </div>
     </header>
 
-    <!-- STICKY SEARCH BAR (NO TEXT TRUNCATION) -->
+    <!-- 2. STICKY SEARCH BAR -->
     <div class="m-search-wrap-sticky">
       <div class="m-search-pill-input">
         <i data-feather="search" style="width:16px; color:#94a3b8;"></i>
@@ -40,7 +40,7 @@
       </div>
     </div>
 
-    <!-- SHOPPING MODE SELECTOR -->
+    <!-- 3. SHOPPING MODE SELECTOR -->
     <div class="m-mode-selector-strip">
       <div class="m-mode-pill-box">
         <button class="m-mode-btn-option active" id="btnModeRetailMob" onclick="setPricingMode('retail')">🛍️ Retail Mode</button>
@@ -48,7 +48,7 @@
       </div>
     </div>
 
-    <!-- COMPACT TRUST TICKER -->
+    <!-- 4. TRUST STRIP -->
     <div class="m-trust-strip-scroll no-scrollbar">
       <div class="m-trust-pill-chip"><i data-feather="check-circle"></i> Secure Payments</div>
       <div class="m-trust-pill-chip"><i data-feather="truck"></i> Vizag Same-Day</div>
@@ -58,7 +58,7 @@
     </div>
 
     <main>
-      <!-- QUICK CATEGORIES -->
+      <!-- 5. QUICK CATEGORIES -->
       <div class="m-section-header">
         <h3 class="m-section-title">Explore Categories</h3>
         <span class="m-section-sublink">200+ Items</span>
@@ -91,7 +91,7 @@
         </div>
       </div>
 
-      <!-- FEATURED COLLECTIONS (MOVED ABOVE HERO BANNER) -->
+      <!-- 6. FEATURED COLLECTIONS (ABOVE HERO BANNER) -->
       <div class="m-section-header">
         <h3 class="m-section-title">Featured Collections</h3>
         <span class="m-section-sublink">Swipe →</span>
@@ -121,24 +121,24 @@
         </div>
       </div>
 
-      <!-- EDITORIAL HERO BANNER CAROUSEL (PLACED AFTER FEATURED) -->
+      <!-- 7. WORLD-CLASS EDITORIAL HERO BANNER CAROUSEL (VISUAL CENTERPIECE) -->
       <div class="m-hero-banner-frame">
-        <img src="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=800&auto=format&fit=crop" id="mHeroImg" alt="Hero">
+        <img src="hero_lifestyle.png" id="mHeroImg" alt="Luxury Multi-Category Hero Showcase">
         <div class="m-hero-vignette"></div>
         <div class="m-hero-banner-body">
-          <span class="m-hero-badge-pill">BOUTIQUE COLLECTION</span>
-          <h1 class="m-hero-h1-heading">Celebrate Every Occasion</h1>
-          <p class="m-hero-sub-text">Premium Toys • Creative Gifts • Handicrafts • Stationery</p>
+          <span class="m-hero-badge-pill">✨ BOUTIQUE LIFESTYLE COLLECTION</span>
+          <h1 class="m-hero-h1-heading" id="mHeroHeading">Discover Extraordinary Toys & Gifts</h1>
+          <p class="m-hero-sub-text" id="mHeroSub">Curated Educational Toys, Smart Gadgets, Artisan Handicrafts, Stationery & Bespoke Return Gift Hampers.</p>
           <button class="m-hero-cta-button" onclick="filterCategory('Toys')">Explore Collection →</button>
         </div>
       </div>
       <div class="m-hero-dots-row">
-        <div class="m-dot-item active"></div>
-        <div class="m-dot-item"></div>
-        <div class="m-dot-item"></div>
+        <div class="m-dot-item active" id="mDot0" onclick="setHeroSlide(0)"></div>
+        <div class="m-dot-item" id="mDot1" onclick="setHeroSlide(1)"></div>
+        <div class="m-dot-item" id="mDot2" onclick="setHeroSlide(2)"></div>
       </div>
 
-      <!-- SHOP BY OCCASION -->
+      <!-- 8. SHOP BY OCCASION -->
       <div class="m-section-header">
         <h3 class="m-section-title">Shop By Occasion</h3>
       </div>
@@ -170,7 +170,7 @@
         </div>
       </div>
 
-      <!-- FLASH SALE CARD -->
+      <!-- 9. FLASH SALE CARD -->
       <div class="m-flash-sale-box">
         <div>
           <span style="font-weight:800; font-size:12px; color:#ff6b35;">⚡ FLASH SALE URGENCY</span>
@@ -179,7 +179,7 @@
         <span class="m-timer-badge" id="mFlashTimer">04 : 28 : 42</span>
       </div>
 
-      <!-- TRENDING PRODUCTS (2-COLUMN GRID) -->
+      <!-- 10. TRENDING PRODUCTS (2-COLUMN GRID) -->
       <div class="m-section-header">
         <h3 class="m-section-title" id="mCategoryHeading">🔥 Trending Collections</h3>
         <span class="m-section-sublink">Showing 16 items</span>
@@ -189,39 +189,39 @@
         <!-- Injected via app.js -->
       </div>
 
-      <!-- RECENTLY VIEWED -->
+      <!-- 11. RECENTLY VIEWED -->
       <div class="m-section-header" id="recentlyViewedHeader" style="display:none;">
         <h3 class="m-section-title">🕒 Recently Viewed</h3>
       </div>
       <div class="m-horizontal-product-rail no-scrollbar" id="recentlyViewedRail"></div>
 
-      <!-- BEST SELLERS -->
+      <!-- 12. BEST SELLERS -->
       <div class="m-section-header">
         <h3 class="m-section-title">🏆 Best Sellers</h3>
         <span class="m-section-sublink">Top Rated</span>
       </div>
       <div class="m-horizontal-product-rail no-scrollbar" id="bestSellersRail"></div>
 
-      <!-- RECOMMENDED FOR YOU -->
+      <!-- 13. RECOMMENDED FOR YOU -->
       <div class="m-section-header">
         <h3 class="m-section-title">✨ Recommended For You</h3>
       </div>
       <div class="m-horizontal-product-rail no-scrollbar" id="recommendedRail"></div>
 
-      <!-- NEW ARRIVALS -->
+      <!-- 14. NEW ARRIVALS -->
       <div class="m-section-header">
         <h3 class="m-section-title">🆕 New Arrivals</h3>
       </div>
       <div class="m-horizontal-product-rail no-scrollbar" id="newArrivalsRail"></div>
 
-      <!-- WHOLESALE COLLECTION & B2B PORTAL -->
+      <!-- 15. WHOLESALE COLLECTION & B2B PORTAL -->
       <div class="m-wholesale-b2b-card">
         <h3 class="m-wholesale-h3">📦 Wholesale Partner Portal</h3>
         <p class="m-wholesale-desc">Official GST Billing (GSTIN: <strong>37BVTPG7761F1Z1</strong>). Low minimum order thresholds for schools, store owners & event planners.</p>
         <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="openWhatsAppChat('Wholesale Bulk Enquiry for UNIQUE EXPRESSIONS')">WhatsApp Bulk Order →</button>
       </div>
 
-      <!-- WHY UNIQUE EXPRESSIONS -->
+      <!-- 16. WHY UNIQUE EXPRESSIONS -->
       <div class="m-section-header">
         <h3 class="m-section-title">Why Unique Expressions</h3>
       </div>
@@ -244,7 +244,7 @@
         </div>
       </div>
 
-      <!-- CUSTOMER LOVE -->
+      <!-- 17. CUSTOMER LOVE -->
       <div class="m-section-header">
         <h3 class="m-section-title">Customer Love</h3>
       </div>
@@ -261,7 +261,7 @@
         </div>
       </div>
 
-      <!-- INSTAGRAM GALLERY -->
+      <!-- 18. INSTAGRAM GALLERY -->
       <div class="m-section-header">
         <h3 class="m-section-title">Follow @UniqueExpressions</h3>
       </div>
@@ -272,7 +272,7 @@
         <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=400&auto=format&fit=crop" alt="Insta 4">
       </div>
 
-      <!-- VIP NEWSLETTER GLASS CARD -->
+      <!-- 19. VIP NEWSLETTER GLASS CARD -->
       <div class="m-newsletter-glass-card">
         <h3 style="font-size:18px; font-weight:800; color:#fff; margin-bottom:6px;">Join UNIQUE VIP Club</h3>
         <p style="font-size:11px; color:#94a3b8; margin-bottom:14px;">Receive exclusive festive catalogs, new return gift alerts & wholesale discounts.</p>
@@ -280,7 +280,7 @@
         <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="alert('Subscribed to VIP updates!')">Join VIP Club</button>
       </div>
 
-      <!-- COMPLETE MOBILE FOOTER -->
+      <!-- 20. COMPLETE MOBILE FOOTER -->
       <footer class="m-app-footer">
         <img src="logo.png" class="m-footer-brand-logo" alt="Logo Footer">
         <p class="m-footer-text-p">
@@ -313,7 +313,7 @@
       </footer>
     </main>
 
-    <!-- FIXED CURVED BOTTOM NAVIGATION BAR & DYNAMIC FAB -->
+    <!-- 21. FIXED CURVED BOTTOM NAV & FLOATING FAB -->
     <div class="m-floating-cart-fab" id="mFloatingCartFab" onclick="openCartDrawer()">
       <i data-feather="shopping-bag"></i>
       <span>Cart</span>

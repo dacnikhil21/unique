@@ -1,20 +1,17 @@
 /* ==========================================================================
-   UNIQUE EXPRESSIONS - PURE BRAND-COLORED THEME (NO DARK-MODE FOUNDATION)
-   Primary Canvas: Rich Brand Violet-Purple #321F5C (Non-Black, Warm & Vibrant)
-   Category & Product Cards: Crisp White #FFFFFF & Elevated Brand Purple #3D2570
-   Action Buttons: Soft Berry-Magenta #D8448E | Accents: Royal Blue #2343B2
+   UNIQUE EXPRESSIONS - WORLD-CLASS HERO BANNER & BRAND THEME SYSTEM
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Pure Brand Violet-Purple Base Palette */
+  /* Approved Brand Color Palette */
   --m-bg-canvas: #321f5c;
   --m-bg-surface: #2b1a50;
   --m-bg-card: #3d2570;
   --m-bg-search: #402773;
 
-  /* Bright Card & Container Surfaces */
+  /* Card Surfaces */
   --m-card-white: #ffffff;
   --m-card-white-text: #1d1238;
 
@@ -24,7 +21,7 @@
   --brand-magenta-light: rgba(216, 68, 142, 0.22);
   --brand-blue: #2343b2;
 
-  /* Friendly High-Contrast Typography */
+  /* Typography */
   --m-text-primary: #ffffff;
   --m-text-secondary: #d6ccf5;
   --m-border-subtle: rgba(216, 68, 142, 0.28);
@@ -71,17 +68,12 @@ html, body {
   padding-bottom: 96px;
 }
 
-/* 1. Header (Brand Purple Base) */
+/* Header */
 .m-app-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(43, 26, 80, 0.96);
-  backdrop-filter: blur(20px);
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(43, 26, 80, 0.96); backdrop-filter: blur(20px);
   padding: 14px 16px 10px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between;
   border-bottom: 1px solid var(--m-border-subtle);
 }
 
@@ -89,66 +81,48 @@ html, body {
 .m-header-actions { display: flex; align-items: center; gap: 8px; }
 
 .m-icon-btn-circle {
-  position: relative;
-  width: 38px; height: 38px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid var(--m-border-subtle);
-  color: #ffffff;
-  display: flex; align-items: center; justify-content: center;
+  position: relative; width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12); border: 1px solid var(--m-border-subtle);
+  color: #ffffff; display: flex; align-items: center; justify-content: center;
   transition: all 0.2s;
 }
 
-.m-icon-btn-circle:active {
-  background: var(--brand-magenta);
-  transform: scale(0.94);
-}
+.m-icon-btn-circle:active { background: var(--brand-magenta); transform: scale(0.94); }
 
 .m-badge-count-dot {
   position: absolute; top: 2px; right: 2px;
-  background: var(--brand-magenta);
-  color: #ffffff; font-size: 9px; font-weight: 800;
-  width: 16px; height: 16px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
+  background: var(--brand-magenta); color: #ffffff;
+  font-size: 9px; font-weight: 800; width: 16px; height: 16px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
   border: 2px solid var(--m-bg-canvas);
 }
 
-/* 2. Sticky Search Bar */
+/* Sticky Search Bar */
 .m-search-wrap-sticky {
-  position: sticky;
-  top: 63px;
-  z-index: 95;
-  background: rgba(43, 26, 80, 0.96);
-  backdrop-filter: blur(20px);
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--m-border-subtle);
+  position: sticky; top: 63px; z-index: 95;
+  background: rgba(43, 26, 80, 0.96); backdrop-filter: blur(20px);
+  padding: 10px 16px; border-bottom: 1px solid var(--m-border-subtle);
 }
 
 .m-search-pill-input {
-  background: var(--m-bg-search);
-  border: 1px solid var(--m-border-subtle);
-  border-radius: 99px;
-  padding: 9px 16px;
-  display: flex; align-items: center; gap: 10px;
+  background: var(--m-bg-search); border: 1px solid var(--m-border-subtle);
+  border-radius: 99px; padding: 9px 16px; display: flex; align-items: center; gap: 10px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);
 }
 
 .m-search-input {
-  flex: 1; background: none; border: none;
-  color: #ffffff; font-size: 13px; font-weight: 500; outline: none; min-width: 0;
+  flex: 1; background: none; border: none; color: #ffffff;
+  font-size: 13px; font-weight: 500; outline: none; min-width: 0;
 }
 
 .m-search-input::placeholder { color: var(--m-text-secondary); }
 
-/* 3. Shopping Mode Selector */
+/* Shopping Mode Selector */
 .m-mode-selector-strip { padding: 12px 16px 8px 16px; }
 
 .m-mode-pill-box {
-  display: flex;
-  background: var(--m-bg-surface);
-  border: 1px solid var(--m-border-subtle);
-  padding: 3px;
-  border-radius: 99px;
+  display: flex; background: var(--m-bg-surface); border: 1px solid var(--m-border-subtle);
+  padding: 3px; border-radius: 99px;
 }
 
 .m-mode-btn-option {
@@ -159,29 +133,23 @@ html, body {
 
 .m-mode-btn-option.active {
   background: linear-gradient(135deg, var(--brand-magenta) 0%, var(--brand-magenta-dark) 100%);
-  color: #ffffff;
-  box-shadow: 0 4px 14px var(--shadow-m-glow);
+  color: #ffffff; box-shadow: 0 4px 14px var(--shadow-m-glow);
 }
 
-/* 4. Trust Strip */
-.m-trust-strip-scroll {
-  display: flex; gap: 8px; overflow-x: auto; padding: 4px 16px 14px 16px;
-}
+/* Trust Strip */
+.m-trust-strip-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 4px 16px 14px 16px; }
 
 .m-trust-pill-chip {
   flex: 0 0 auto; display: flex; align-items: center; gap: 5px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--m-border-subtle);
-  padding: 5px 11px; border-radius: 99px;
-  font-size: 10px; font-weight: 600; color: #f1ecff;
+  background: rgba(255, 255, 255, 0.08); border: 1px solid var(--m-border-subtle);
+  padding: 5px 11px; border-radius: 99px; font-size: 10px; font-weight: 600; color: #f1ecff;
 }
 
 .m-trust-pill-chip i { color: var(--func-green); width: 13px; height: 13px; }
 
-/* 5. Quick Categories Rail (Crisp Pure White Cards - Reference Match) */
+/* Quick Categories Rail (Crisp White Card Tiles) */
 .m-section-header {
-  padding: 14px 16px 10px 16px;
-  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 10px 16px; display: flex; align-items: center; justify-content: space-between;
 }
 
 .m-section-title { font-size: 15px; font-weight: 800; color: #ffffff; }
@@ -191,34 +159,25 @@ html, body {
 
 .m-cat-pill-thumb {
   flex: 0 0 96px; position: relative; height: 116px;
-  border-radius: 20px; overflow: hidden;
-  background: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  transition: all 0.25s;
-  display: flex; flex-direction: column;
+  border-radius: 20px; overflow: hidden; background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.9); box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  transition: all 0.25s; display: flex; flex-direction: column;
 }
 
 .m-cat-pill-thumb.active-cat {
-  border: 2px solid var(--brand-magenta);
-  box-shadow: 0 0 16px var(--shadow-m-glow);
+  border: 2px solid var(--brand-magenta); box-shadow: 0 0 16px var(--shadow-m-glow);
 }
 
 .m-cat-pill-thumb img { width: 100%; height: 74px; object-fit: cover; }
-
-.m-cat-overlay-text {
-  padding: 6px 4px; text-align: center; background: #ffffff; margin-top: auto;
-}
-
+.m-cat-overlay-text { padding: 6px 4px; text-align: center; background: #ffffff; margin-top: auto; }
 .m-cat-name-label { font-size: 11px; font-weight: 700; color: #1d1238; }
 
-/* 6. Featured Collections */
+/* Featured Collections */
 .m-featured-cards-scroll { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px 22px 16px; }
 
 .m-featured-bundle-card {
   flex: 0 0 240px; position: relative; height: 150px;
-  border-radius: 22px; overflow: hidden;
-  box-shadow: var(--shadow-m-card); border: 1px solid var(--m-border-subtle);
+  border-radius: 22px; overflow: hidden; box-shadow: var(--shadow-m-card); border: 1px solid var(--m-border-subtle);
 }
 
 .m-featured-bundle-card img { width: 100%; height: 100%; object-fit: cover; }
@@ -232,33 +191,87 @@ html, body {
 .m-featured-tag { font-size: 9px; font-weight: 800; color: var(--func-gold); text-transform: uppercase; }
 .m-featured-title { font-size: 16px; font-weight: 800; color: #ffffff; margin: 2px 0 0 0; line-height: 1.2; }
 
-/* 7. Hero Banner Carousel (Royal Blue to Berry Magenta Gradient) */
+/* ==========================================================================
+   WORLD-CLASS PREMIUM HERO BANNER CAROUSEL (SHOWCASE CENTERPIECE)
+   ========================================================================== */
 .m-hero-banner-frame {
-  position: relative; height: 240px; margin: 0 16px 20px 16px;
-  border-radius: 24px; overflow: hidden; box-shadow: var(--shadow-m-card);
+  position: relative;
+  height: 270px;
+  margin: 0 16px 20px 16px;
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: 0 14px 35px rgba(23, 13, 44, 0.55), 0 0 25px rgba(216, 68, 142, 0.35);
+  border: 1px solid rgba(216, 68, 142, 0.35);
 }
 
-.m-hero-banner-frame img { width: 100%; height: 100%; object-fit: cover; }
-.m-hero-vignette { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(35, 67, 178, 0.82) 0%, rgba(95, 35, 140, 0.82) 50%, rgba(216, 68, 142, 0.88) 100%); }
+.m-hero-banner-frame img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s var(--transition-smooth);
+}
 
-.m-hero-banner-body { position: absolute; bottom: 0; left: 0; right: 0; padding: 18px; }
-.m-hero-badge-pill { background: var(--brand-magenta); color: #fff; font-size: 9px; font-weight: 800; padding: 3px 10px; border-radius: 99px; }
-.m-hero-h1-heading { font-size: 19px; font-weight: 800; color: #fff; margin: 6px 0 4px 0; line-height: 1.2; }
-.m-hero-sub-text { font-size: 11px; color: #f1edff; margin-bottom: 10px; }
+.m-hero-vignette {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(35, 67, 178, 0.88) 0%, rgba(61, 37, 112, 0.82) 45%, rgba(216, 68, 142, 0.88) 100%);
+}
+
+.m-hero-banner-body {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px;
+}
+
+.m-hero-badge-pill {
+  background: var(--brand-magenta);
+  color: #ffffff;
+  font-size: 9px; font-weight: 800;
+  padding: 4px 12px; border-radius: 99px;
+  letter-spacing: 0.05em;
+  display: inline-block; margin-bottom: 6px;
+  box-shadow: 0 2px 8px rgba(216, 68, 142, 0.4);
+}
+
+.m-hero-h1-heading {
+  font-size: 22px; font-weight: 800;
+  color: #ffffff; line-height: 1.2;
+  margin: 0 0 6px 0;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.m-hero-sub-text {
+  font-size: 11px; color: #f1edff;
+  line-height: 1.4; margin-bottom: 14px;
+  max-width: 92%;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
 
 .m-hero-cta-button {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 8px;
   background: linear-gradient(135deg, var(--brand-magenta) 0%, var(--brand-magenta-dark) 100%);
-  color: #ffffff; font-size: 11px; font-weight: 700;
-  padding: 8px 16px; border-radius: 99px; border: none;
-  box-shadow: 0 4px 14px var(--shadow-m-glow);
+  color: #ffffff; font-size: 12px; font-weight: 800;
+  padding: 10px 22px; border-radius: 99px; border: none;
+  box-shadow: 0 6px 18px rgba(216, 68, 142, 0.5);
+  cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.m-hero-dots-row { display: flex; justify-content: center; gap: 6px; margin-top: -10px; margin-bottom: 20px; }
-.m-dot-item { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.3); }
-.m-dot-item.active { width: 16px; border-radius: 99px; background: var(--brand-magenta); }
+.m-hero-cta-button:active {
+  transform: scale(0.96);
+}
 
-/* 8. Shop by Occasion */
+.m-hero-dots-row {
+  display: flex; justify-content: center; gap: 6px;
+  margin-top: -10px; margin-bottom: 20px;
+}
+
+.m-dot-item {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(255,255,255,0.35); transition: all 0.3s;
+}
+
+.m-dot-item.active {
+  width: 20px; border-radius: 99px; background: var(--brand-magenta);
+}
+
+/* Shop by Occasion */
 .m-occasion-scroll-row { display: flex; gap: 10px; overflow-x: auto; padding: 0 16px 20px 16px; }
 
 .m-occasion-chip-card {
@@ -269,7 +282,7 @@ html, body {
 .m-occasion-emoji { font-size: 26px; margin-bottom: 4px; }
 .m-occasion-label { font-size: 11px; font-weight: 700; color: #ffffff; }
 
-/* 9. Flash Sale Card */
+/* Flash Sale Card */
 .m-flash-sale-box {
   background: linear-gradient(135deg, rgba(255, 107, 53, 0.22) 0%, rgba(216, 68, 142, 0.25) 100%);
   border: 1px solid rgba(255, 107, 53, 0.45); border-radius: 22px;
@@ -283,7 +296,7 @@ html, body {
   padding: 4px 8px; border-radius: 8px;
 }
 
-/* 10. Trending Products 2-Column Grid */
+/* Trending Products 2-Column Grid */
 .m-product-grid-2col {
   display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px 20px 16px;
 }
