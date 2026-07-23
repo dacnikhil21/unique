@@ -13,7 +13,7 @@
 
   <div class="app-container">
 
-    <!-- 1. HEADER -->
+    <!-- 1. HEADER (LOGO ADJUSTED WITH SAFE LEFT INSET) -->
     <header class="m-app-header">
       <a href="#" class="m-header-logo-link" onclick="switchNav('home'); return false;">
         <img src="logo.png" alt="UNIQUE EXPRESSIONS">
@@ -91,7 +91,7 @@
         </div>
       </div>
 
-      <!-- 6. FEATURED COLLECTIONS (ABOVE HERO BANNER) -->
+      <!-- 6. FEATURED COLLECTIONS -->
       <div class="m-section-header">
         <h3 class="m-section-title">Featured Collections</h3>
         <span class="m-section-sublink">Swipe →</span>
@@ -121,7 +121,7 @@
         </div>
       </div>
 
-      <!-- 7. WORLD-CLASS EDITORIAL HERO BANNER CAROUSEL (VISUAL CENTERPIECE) -->
+      <!-- 7. WORLD-CLASS EDITORIAL HERO BANNER CAROUSEL -->
       <div class="m-hero-banner-frame">
         <img src="hero_lifestyle.png" id="mHeroImg" alt="Luxury Multi-Category Hero Showcase">
         <div class="m-hero-vignette"></div>
@@ -214,7 +214,7 @@
       </div>
       <div class="m-horizontal-product-rail no-scrollbar" id="newArrivalsRail"></div>
 
-      <!-- 15. WHOLESALE COLLECTION & B2B PORTAL -->
+      <!-- 15. WHOLESALE COLLECTION & B2B PORTAL (SOLID ROYAL BLUE BACKGROUND) -->
       <div class="m-wholesale-b2b-card">
         <h3 class="m-wholesale-h3">📦 Wholesale Partner Portal</h3>
         <p class="m-wholesale-desc">Official GST Billing (GSTIN: <strong>37BVTPG7761F1Z1</strong>). Low minimum order thresholds for schools, store owners & event planners.</p>
@@ -313,7 +313,7 @@
       </footer>
     </main>
 
-    <!-- 21. FIXED CURVED BOTTOM NAV & FLOATING FAB -->
+    <!-- 21. FIXED CURVED BOTTOM NAV & FLOATING FAB (OFFERS REPLACES SECOND SEARCH) -->
     <div class="m-floating-cart-fab" id="mFloatingCartFab" onclick="openCartDrawer()">
       <i data-feather="shopping-bag"></i>
       <span>Cart</span>
@@ -323,7 +323,7 @@
     <nav class="m-curved-bottom-nav">
       <a href="#" class="m-nav-tab-link active" onclick="switchNav('home'); return false;"><i data-feather="home"></i><span>Home</span></a>
       <a href="#" class="m-nav-tab-link" onclick="filterCategory('Toys'); return false;"><i data-feather="grid"></i><span>Categories</span></a>
-      <a href="#" class="m-nav-tab-link" onclick="document.querySelector('.m-search-input').focus(); return false;"><i data-feather="search"></i><span>Search</span></a>
+      <a href="#" class="m-nav-tab-link" onclick="filterCategory('Return Gifts'); alert('🔥 Active Coupon: UNIQUE10 applied for 10% Extra Off!'); return false;"><i data-feather="percent"></i><span>Offers</span></a>
       <a href="#" class="m-nav-tab-link" onclick="openWishlistDrawer(); return false;"><i data-feather="heart"></i><span>Wishlist</span></a>
       <a href="#" class="m-nav-tab-link" onclick="openAdminPinModal(); return false;"><i data-feather="user"></i><span>Profile</span></a>
     </nav>
