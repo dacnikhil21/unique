@@ -1,5 +1,5 @@
 /* ==========================================================================
-   UNIQUE EXPRESSIONS - SEAMLESS BORDERLESS TOP APP HEADER SYSTEM
+   UNIQUE EXPRESSIONS - CRISP WHITE OCCASION CARD SYSTEM
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -96,7 +96,7 @@ html, body {
   border: 2px solid var(--m-bg-canvas);
 }
 
-/* 2. Sticky Search Bar (Seamless Borderless Flow) */
+/* 2. Sticky Search Bar */
 .m-search-wrap-sticky {
   position: sticky; top: 57px; z-index: 95;
   background: var(--m-bg-header);
@@ -149,6 +149,7 @@ html, body {
   flex: 0 0 90px; position: relative; height: 108px;
   border-radius: 18px; overflow: hidden; background: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
   transition: all 0.25s; display: flex; flex-direction: column;
 }
 
@@ -226,16 +227,26 @@ html, body {
 .m-dot-item { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.35); transition: all 0.3s; }
 .m-dot-item.active { width: 16px; border-radius: 99px; background: var(--brand-magenta); }
 
-/* 7. Shop by Occasion */
+/* 7. Shop by Occasion (Crisp White Background Cards) */
 .m-occasion-scroll-row { display: flex; gap: 10px; overflow-x: auto; padding: 0 16px 16px 16px; }
 
 .m-occasion-chip-card {
-  flex: 0 0 98px; background: var(--m-bg-surface);
-  border: 1px solid var(--m-border-subtle); border-radius: 16px; padding: 10px 6px; text-align: center;
+  flex: 0 0 98px;
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  padding: 10px 6px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  transition: all 0.25s;
+}
+
+.m-occasion-chip-card:active {
+  transform: scale(0.96);
 }
 
 .m-occasion-emoji { font-size: 22px; margin-bottom: 3px; }
-.m-occasion-label { font-size: 10px; font-weight: 700; color: #ffffff; }
+.m-occasion-label { font-size: 10px; font-weight: 700; color: #16204e; }
 
 /* 8. Normal Flash Sale Card */
 .m-flash-sale-box {
@@ -313,7 +324,7 @@ html, body {
 .m-mini-title { font-size: 10px; font-weight: 600; color: #fff; margin: 5px 0 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .m-mini-price { font-size: 12px; font-weight: 800; color: var(--brand-magenta); }
 
-/* Normal Wholesale B2B Card */
+/* Wholesale B2B Card */
 .m-wholesale-b2b-card {
   background: #1a255a;
   border-radius: 20px; padding: 18px; margin: 0 16px 16px 16px;
@@ -343,7 +354,7 @@ html, body {
 .m-insta-grid-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 16px 16px; }
 .m-insta-grid-scroll img { flex: 0 0 100px; height: 100px; border-radius: 14px; object-fit: cover; }
 
-/* Normal Newsletter Card */
+/* Newsletter Card */
 .m-newsletter-glass-card {
   background: #1f2a63;
   border: 1px solid var(--m-border-subtle);
