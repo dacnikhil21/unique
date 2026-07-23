@@ -1,5 +1,5 @@
 /* ==========================================================================
-   UNIQUE EXPRESSIONS - CLEAN NORMAL SOLID BRAND STYLING (NO COLOR GLOW EFFECTS)
+   UNIQUE EXPRESSIONS - SEAMLESS BORDERLESS TOP APP HEADER SYSTEM
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -23,7 +23,7 @@
   /* Crisp White Borders & Contrast */
   --m-text-primary: #ffffff;
   --m-text-secondary: #c5d2f6;
-  --m-border-subtle: rgba(255, 255, 255, 0.16);
+  --m-border-subtle: rgba(255, 255, 255, 0.14);
 
   /* Functional Accents */
   --func-orange: #ff6b35;
@@ -66,13 +66,13 @@ html, body {
   padding-bottom: 84px;
 }
 
-/* 1. Header */
+/* 1. Header (Seamless Borderless) */
 .m-app-header {
   position: sticky; top: 0; z-index: 100;
   background: var(--m-bg-header);
-  padding: 14px 20px 10px 20px;
+  padding: 14px 20px 8px 20px;
   display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 1px solid var(--m-border-subtle);
+  border-bottom: none;
 }
 
 .m-header-logo-link { display: flex; align-items: center; margin-left: 4px; }
@@ -96,11 +96,12 @@ html, body {
   border: 2px solid var(--m-bg-canvas);
 }
 
-/* 2. Sticky Search Bar */
+/* 2. Sticky Search Bar (Seamless Borderless Flow) */
 .m-search-wrap-sticky {
   position: sticky; top: 57px; z-index: 95;
   background: var(--m-bg-header);
-  padding: 8px 16px; border-bottom: 1px solid var(--m-border-subtle);
+  padding: 4px 16px 10px 16px;
+  border-bottom: none;
 }
 
 .m-search-pill-input {
@@ -134,18 +135,7 @@ html, body {
   color: #ffffff;
 }
 
-/* 4. Trust Strip */
-.m-trust-strip-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 4px 16px 12px 16px; }
-
-.m-trust-pill-chip {
-  flex: 0 0 auto; display: flex; align-items: center; gap: 5px;
-  background: rgba(255, 255, 255, 0.08); border: 1px solid var(--m-border-subtle);
-  padding: 5px 11px; border-radius: 99px; font-size: 10px; font-weight: 600; color: #e2e9fc;
-}
-
-.m-trust-pill-chip i { color: var(--func-green); width: 12px; height: 12px; }
-
-/* 5. Quick Categories Rail (Normal Crisp White Cards) */
+/* 4. Quick Categories Rail (Crisp White Card Tiles) */
 .m-section-header {
   padding: 12px 16px 8px 16px; display: flex; align-items: center; justify-content: space-between;
 }
@@ -170,7 +160,7 @@ html, body {
 .m-cat-overlay-text { padding: 5px 3px; text-align: center; background: #ffffff; margin-top: auto; }
 .m-cat-name-label { font-size: 10px; font-weight: 700; color: #16204e; }
 
-/* 6. Featured Collections */
+/* 5. Featured Collections */
 .m-featured-cards-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 0 16px 18px 16px; }
 
 .m-featured-bundle-card {
@@ -189,7 +179,7 @@ html, body {
 .m-featured-tag { font-size: 8px; font-weight: 800; color: var(--func-gold); text-transform: uppercase; }
 .m-featured-title { font-size: 14px; font-weight: 800; color: #ffffff; margin: 2px 0 0 0; line-height: 1.2; }
 
-/* 7. Normal Hero Banner Carousel */
+/* 6. Normal Hero Banner Carousel */
 .m-hero-banner-frame {
   position: relative; height: 200px; margin: 0 16px 16px 16px;
   border-radius: 20px; overflow: hidden;
@@ -236,7 +226,7 @@ html, body {
 .m-dot-item { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.35); transition: all 0.3s; }
 .m-dot-item.active { width: 16px; border-radius: 99px; background: var(--brand-magenta); }
 
-/* 8. Shop by Occasion */
+/* 7. Shop by Occasion */
 .m-occasion-scroll-row { display: flex; gap: 10px; overflow-x: auto; padding: 0 16px 16px 16px; }
 
 .m-occasion-chip-card {
@@ -247,7 +237,7 @@ html, body {
 .m-occasion-emoji { font-size: 22px; margin-bottom: 3px; }
 .m-occasion-label { font-size: 10px; font-weight: 700; color: #ffffff; }
 
-/* 9. Normal Flash Sale Card */
+/* 8. Normal Flash Sale Card */
 .m-flash-sale-box {
   background: #1f2a63;
   border: 1px solid var(--m-border-subtle); border-radius: 18px;
@@ -261,7 +251,7 @@ html, body {
   padding: 3px 7px; border-radius: 6px;
 }
 
-/* 10. Trending Products 2-Column Grid */
+/* 9. Trending Products 2-Column Grid */
 .m-product-grid-2col {
   display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 16px 16px 16px;
 }
