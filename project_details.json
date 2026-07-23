@@ -1,0 +1,33 @@
+{
+  "basic_business_details": {
+    "business_name": "UNIQUE EXPRESSIONS",
+    "owner_name": "G MOUNIKA DURGA",
+    "contact_number": "8886662334",
+    "whatsapp_number": "8886662334",
+    "email_address": "uniqueexpressions@gmail.com",
+    "business_address": "UNIQUE Expressions, 2nd floor LIG 347, 2-115/9/1, near Shivalayam, Midhilapuri VUDA Colony, Madhurwada, Visakhapatnam-530041",
+    "gst_number": "37BVTPG7761F1Z1"
+  },
+  "business_overview": {
+    "target_audience": "All (Kids, Men, Women)",
+    "business_type": "Retail & Wholesale",
+    "has_physical_store": true,
+    "description": "Online based e-commerce platform of kids toys, gadgets, handicrafts, stationery, and return gifts."
+  },
+  "product_details": {
+    "initial_product_count": 200,
+    "categories": [
+      "Toys",
+      "Gadgets",
+      "Handicrafts",
+      "Stationery",
+      "Return Gifts"
+    ],
+    "images_ready": "Raw pics available",
+    "descriptions_ready": false,
+    "variations": [
+      "Weight"
+    ],
+    "pricing_type": "Discount-based"
+  }
+}
