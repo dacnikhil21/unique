@@ -1,30 +1,35 @@
 /* ==========================================================================
-   UNIQUE EXPRESSIONS - WORLD-CLASS HERO BANNER & BRAND THEME SYSTEM
+   UNIQUE EXPRESSIONS - REBALANCED COLOR HIERARCHY SYSTEM
+   Color Distribution Ratio:
+   - 60% Brand Royal Blue Foundation (#16204E)
+   - 30% Royal Purple Surfaces (#2A1E54 & #2E215D)
+   - 10% Pink/Magenta Accents (#D8448E for CTAs & Active States)
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Approved Brand Color Palette */
-  --m-bg-canvas: #321f5c;
-  --m-bg-surface: #2b1a50;
-  --m-bg-card: #3d2570;
-  --m-bg-search: #402773;
+  /* 60% Primary Brand Blue Foundation */
+  --m-bg-canvas: #16204e;
+  --m-bg-header: #141c48;
+  --m-bg-search: #1d2963;
 
-  /* Card Surfaces */
-  --m-card-white: #ffffff;
-  --m-card-white-text: #1d1238;
+  /* 30% Royal Purple Layered Surfaces */
+  --m-bg-surface: #2a1e54;
+  --m-bg-card: #2e215d;
+  --m-bg-card-alt: #251b4b;
 
-  /* Soft Berry-Magenta & Royal Blue Accents */
+  /* 10% Pink / Magenta Interactive Accents */
   --brand-magenta: #d8448e;
   --brand-magenta-dark: #a82e6d;
-  --brand-magenta-light: rgba(216, 68, 142, 0.22);
-  --brand-blue: #2343b2;
+  --brand-magenta-light: rgba(216, 68, 142, 0.2);
+  --brand-blue-accent: #2343b2;
 
-  /* Typography */
+  /* Crisp Typography & Layer Contrast */
   --m-text-primary: #ffffff;
-  --m-text-secondary: #d6ccf5;
-  --m-border-subtle: rgba(216, 68, 142, 0.28);
+  --m-text-secondary: #c5d2f6;
+  --m-border-subtle: rgba(216, 68, 142, 0.25);
+  --m-border-blue: rgba(35, 67, 178, 0.4);
 
   /* Functional Accents */
   --func-orange: #ff6b35;
@@ -34,8 +39,8 @@
   --font-serif: 'Cormorant Garamond', Georgia, serif;
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   
-  --shadow-m-card: 0 10px 28px rgba(23, 13, 44, 0.45);
-  --shadow-m-glow: 0 0 22px rgba(216, 68, 142, 0.45);
+  --shadow-m-card: 0 10px 28px rgba(10, 15, 40, 0.5);
+  --shadow-m-glow: 0 0 20px rgba(216, 68, 142, 0.4);
   --transition-smooth: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -68,13 +73,13 @@ html, body {
   padding-bottom: 96px;
 }
 
-/* Header */
+/* 1. Header (Deep Royal Blue Base - Distinct Layer) */
 .m-app-header {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(43, 26, 80, 0.96); backdrop-filter: blur(20px);
+  background: rgba(20, 28, 72, 0.96); backdrop-filter: blur(20px);
   padding: 14px 16px 10px 16px;
   display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 1px solid var(--m-border-subtle);
+  border-bottom: 1px solid var(--m-border-blue);
 }
 
 .m-header-logo-link img { height: 38px; width: auto; display: block; }
@@ -82,7 +87,7 @@ html, body {
 
 .m-icon-btn-circle {
   position: relative; width: 38px; height: 38px; border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12); border: 1px solid var(--m-border-subtle);
+  background: rgba(255, 255, 255, 0.1); border: 1px solid var(--m-border-blue);
   color: #ffffff; display: flex; align-items: center; justify-content: center;
   transition: all 0.2s;
 }
@@ -97,17 +102,17 @@ html, body {
   border: 2px solid var(--m-bg-canvas);
 }
 
-/* Sticky Search Bar */
+/* 2. Sticky Search Bar (Royal Blue Container Layer) */
 .m-search-wrap-sticky {
   position: sticky; top: 63px; z-index: 95;
-  background: rgba(43, 26, 80, 0.96); backdrop-filter: blur(20px);
-  padding: 10px 16px; border-bottom: 1px solid var(--m-border-subtle);
+  background: rgba(20, 28, 72, 0.96); backdrop-filter: blur(20px);
+  padding: 10px 16px; border-bottom: 1px solid var(--m-border-blue);
 }
 
 .m-search-pill-input {
-  background: var(--m-bg-search); border: 1px solid var(--m-border-subtle);
+  background: var(--m-bg-search); border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 99px; padding: 9px 16px; display: flex; align-items: center; gap: 10px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
 }
 
 .m-search-input {
@@ -117,7 +122,7 @@ html, body {
 
 .m-search-input::placeholder { color: var(--m-text-secondary); }
 
-/* Shopping Mode Selector */
+/* 3. Shopping Mode Selector */
 .m-mode-selector-strip { padding: 12px 16px 8px 16px; }
 
 .m-mode-pill-box {
@@ -136,18 +141,18 @@ html, body {
   color: #ffffff; box-shadow: 0 4px 14px var(--shadow-m-glow);
 }
 
-/* Trust Strip */
+/* 4. Trust Strip */
 .m-trust-strip-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 4px 16px 14px 16px; }
 
 .m-trust-pill-chip {
   flex: 0 0 auto; display: flex; align-items: center; gap: 5px;
-  background: rgba(255, 255, 255, 0.08); border: 1px solid var(--m-border-subtle);
-  padding: 5px 11px; border-radius: 99px; font-size: 10px; font-weight: 600; color: #f1ecff;
+  background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 5px 11px; border-radius: 99px; font-size: 10px; font-weight: 600; color: #e2e9fc;
 }
 
 .m-trust-pill-chip i { color: var(--func-green); width: 13px; height: 13px; }
 
-/* Quick Categories Rail (Crisp White Card Tiles) */
+/* 5. Quick Categories Rail (Crisp White Card Tiles) */
 .m-section-header {
   padding: 14px 16px 10px 16px; display: flex; align-items: center; justify-content: space-between;
 }
@@ -160,7 +165,7 @@ html, body {
 .m-cat-pill-thumb {
   flex: 0 0 96px; position: relative; height: 116px;
   border-radius: 20px; overflow: hidden; background: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.9); box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.9); box-shadow: 0 4px 16px rgba(0,0,0,0.25);
   transition: all 0.25s; display: flex; flex-direction: column;
 }
 
@@ -170,9 +175,9 @@ html, body {
 
 .m-cat-pill-thumb img { width: 100%; height: 74px; object-fit: cover; }
 .m-cat-overlay-text { padding: 6px 4px; text-align: center; background: #ffffff; margin-top: auto; }
-.m-cat-name-label { font-size: 11px; font-weight: 700; color: #1d1238; }
+.m-cat-name-label { font-size: 11px; font-weight: 700; color: #16204e; }
 
-/* Featured Collections */
+/* 6. Featured Collections */
 .m-featured-cards-scroll { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px 22px 16px; }
 
 .m-featured-bundle-card {
@@ -184,94 +189,68 @@ html, body {
 
 .m-featured-card-overlay {
   position: absolute; inset: 0;
-  background: linear-gradient(180deg, transparent 20%, rgba(43, 26, 80, 0.95) 100%);
+  background: linear-gradient(180deg, transparent 20%, rgba(20, 28, 72, 0.95) 100%);
   padding: 16px; display: flex; flex-direction: column; justify-content: flex-end;
 }
 
 .m-featured-tag { font-size: 9px; font-weight: 800; color: var(--func-gold); text-transform: uppercase; }
 .m-featured-title { font-size: 16px; font-weight: 800; color: #ffffff; margin: 2px 0 0 0; line-height: 1.2; }
 
-/* ==========================================================================
-   WORLD-CLASS PREMIUM HERO BANNER CAROUSEL (SHOWCASE CENTERPIECE)
-   ========================================================================== */
+/* 7. World-Class Hero Banner Carousel */
 .m-hero-banner-frame {
-  position: relative;
-  height: 270px;
-  margin: 0 16px 20px 16px;
-  border-radius: 26px;
-  overflow: hidden;
-  box-shadow: 0 14px 35px rgba(23, 13, 44, 0.55), 0 0 25px rgba(216, 68, 142, 0.35);
+  position: relative; height: 270px; margin: 0 16px 20px 16px;
+  border-radius: 26px; overflow: hidden;
+  box-shadow: 0 14px 35px rgba(10, 15, 40, 0.6), 0 0 25px rgba(216, 68, 142, 0.35);
   border: 1px solid rgba(216, 68, 142, 0.35);
 }
 
 .m-hero-banner-frame img {
-  width: 100%; height: 100%;
-  object-fit: cover;
+  width: 100%; height: 100%; object-fit: cover;
   transition: transform 0.6s var(--transition-smooth);
 }
 
 .m-hero-vignette {
   position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(35, 67, 178, 0.88) 0%, rgba(61, 37, 112, 0.82) 45%, rgba(216, 68, 142, 0.88) 100%);
+  background: linear-gradient(135deg, rgba(20, 28, 72, 0.88) 0%, rgba(42, 30, 84, 0.82) 45%, rgba(216, 68, 142, 0.88) 100%);
 }
 
-.m-hero-banner-body {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  padding: 20px;
-}
+.m-hero-banner-body { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; }
 
 .m-hero-badge-pill {
-  background: var(--brand-magenta);
-  color: #ffffff;
-  font-size: 9px; font-weight: 800;
-  padding: 4px 12px; border-radius: 99px;
-  letter-spacing: 0.05em;
-  display: inline-block; margin-bottom: 6px;
+  background: var(--brand-magenta); color: #ffffff;
+  font-size: 9px; font-weight: 800; padding: 4px 12px; border-radius: 99px;
+  letter-spacing: 0.05em; display: inline-block; margin-bottom: 6px;
   box-shadow: 0 2px 8px rgba(216, 68, 142, 0.4);
 }
 
 .m-hero-h1-heading {
-  font-size: 22px; font-weight: 800;
-  color: #ffffff; line-height: 1.2;
-  margin: 0 0 6px 0;
+  font-size: 22px; font-weight: 800; color: #ffffff; line-height: 1.2; margin: 0 0 6px 0;
   text-shadow: 0 2px 10px rgba(0,0,0,0.5);
 }
 
 .m-hero-sub-text {
-  font-size: 11px; color: #f1edff;
-  line-height: 1.4; margin-bottom: 14px;
-  max-width: 92%;
+  font-size: 11px; color: #e2e9fc; line-height: 1.4; margin-bottom: 14px; max-width: 92%;
   text-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
 
 .m-hero-cta-button {
   display: inline-flex; align-items: center; gap: 8px;
   background: linear-gradient(135deg, var(--brand-magenta) 0%, var(--brand-magenta-dark) 100%);
-  color: #ffffff; font-size: 12px; font-weight: 800;
-  padding: 10px 22px; border-radius: 99px; border: none;
-  box-shadow: 0 6px 18px rgba(216, 68, 142, 0.5);
-  cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+  color: #ffffff; font-size: 12px; font-weight: 800; padding: 10px 22px; border-radius: 99px; border: none;
+  box-shadow: 0 6px 18px rgba(216, 68, 142, 0.5); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.m-hero-cta-button:active {
-  transform: scale(0.96);
-}
+.m-hero-cta-button:active { transform: scale(0.96); }
 
-.m-hero-dots-row {
-  display: flex; justify-content: center; gap: 6px;
-  margin-top: -10px; margin-bottom: 20px;
-}
+.m-hero-dots-row { display: flex; justify-content: center; gap: 6px; margin-top: -10px; margin-bottom: 20px; }
 
 .m-dot-item {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: rgba(255,255,255,0.35); transition: all 0.3s;
+  width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.35); transition: all 0.3s;
 }
 
-.m-dot-item.active {
-  width: 20px; border-radius: 99px; background: var(--brand-magenta);
-}
+.m-dot-item.active { width: 20px; border-radius: 99px; background: var(--brand-magenta); }
 
-/* Shop by Occasion */
+/* 8. Shop by Occasion (Royal Purple Cards Layer) */
 .m-occasion-scroll-row { display: flex; gap: 10px; overflow-x: auto; padding: 0 16px 20px 16px; }
 
 .m-occasion-chip-card {
@@ -282,9 +261,9 @@ html, body {
 .m-occasion-emoji { font-size: 26px; margin-bottom: 4px; }
 .m-occasion-label { font-size: 11px; font-weight: 700; color: #ffffff; }
 
-/* Flash Sale Card */
+/* 9. Flash Sale Card */
 .m-flash-sale-box {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.22) 0%, rgba(216, 68, 142, 0.25) 100%);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.2) 0%, rgba(216, 68, 142, 0.25) 100%);
   border: 1px solid rgba(255, 107, 53, 0.45); border-radius: 22px;
   padding: 12px 16px; margin: 0 16px 20px 16px;
   display: flex; align-items: center; justify-content: space-between;
@@ -296,7 +275,7 @@ html, body {
   padding: 4px 8px; border-radius: 8px;
 }
 
-/* Trending Products 2-Column Grid */
+/* 10. Trending Products 2-Column Grid (Purple Surface Cards over Royal Blue Canvas) */
 .m-product-grid-2col {
   display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px 20px 16px;
 }
@@ -305,10 +284,10 @@ html, body {
   background: var(--m-bg-card);
   border: 1px solid var(--m-border-subtle); border-radius: 20px;
   overflow: hidden; display: flex; flex-direction: column; position: relative;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
 }
 
-.m-tile-img-wrapper { position: relative; width: 100%; aspect-ratio: 1 / 1; background: #261649; }
+.m-tile-img-wrapper { position: relative; width: 100%; aspect-ratio: 1 / 1; background: #1b133b; }
 .m-tile-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
 
 .m-discount-badge-orange {
@@ -319,7 +298,7 @@ html, body {
 
 .m-rating-badge-gold {
   position: absolute; bottom: 8px; left: 8px;
-  background: rgba(43, 26, 80, 0.9); backdrop-filter: blur(6px);
+  background: rgba(20, 28, 72, 0.9); backdrop-filter: blur(6px);
   color: var(--func-gold); font-size: 10px; font-weight: 700;
   padding: 2px 6px; border-radius: 6px;
 }
@@ -362,13 +341,13 @@ html, body {
 .m-mini-price { font-size: 13px; font-weight: 800; color: var(--brand-magenta); }
 
 .m-wholesale-b2b-card {
-  background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-magenta-dark) 100%);
+  background: linear-gradient(135deg, var(--m-bg-header) 0%, var(--m-bg-card) 100%);
   border-radius: 22px; padding: 20px; margin: 0 16px 20px 16px;
   border: 1px solid var(--m-border-subtle);
 }
 
 .m-wholesale-h3 { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 6px; }
-.m-wholesale-desc { font-size: 12px; color: #e8e3f8; margin-bottom: 14px; }
+.m-wholesale-desc { font-size: 12px; color: #e2e9fc; margin-bottom: 14px; }
 
 .m-guarantee-cards-row { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px 20px 16px; }
 
@@ -398,8 +377,8 @@ html, body {
 }
 
 .m-app-footer {
-  background: #231545;
-  border-top: 1px solid var(--m-border-subtle);
+  background: #0f1538;
+  border-top: 1px solid var(--m-border-blue);
   padding: 28px 20px 30px 20px; margin-top: 20px;
 }
 
@@ -408,22 +387,16 @@ html, body {
 .m-footer-section-title { font-size: 13px; font-weight: 800; color: #fff; margin: 16px 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em; }
 
 .m-footer-links-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-.m-footer-links-list a { color: #e2ddf8; font-size: 12px; text-decoration: none; }
+.m-footer-links-list a { color: #e2e9fc; font-size: 12px; text-decoration: none; }
 
 .m-footer-gst-badge { background: rgba(216, 68, 142, 0.2); color: var(--brand-magenta); font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 8px; display: inline-block; margin-top: 10px; }
 
 /* Floating Cart FAB */
 .m-floating-cart-fab {
-  position: fixed;
-  bottom: 76px; right: 16px;
-  z-index: 120;
-  background: linear-gradient(135deg, var(--brand-magenta) 0%, var(--brand-blue) 100%);
-  color: #ffffff;
-  padding: 10px 18px;
-  border-radius: 99px;
-  display: none;
-  align-items: center; gap: 8px;
-  font-weight: 800; font-size: 12px;
+  position: fixed; bottom: 76px; right: 16px; z-index: 120;
+  background: linear-gradient(135deg, var(--brand-magenta) 0%, var(--m-bg-header) 100%);
+  color: #ffffff; padding: 10px 18px; border-radius: 99px;
+  display: none; align-items: center; gap: 8px; font-weight: 800; font-size: 12px;
   box-shadow: var(--shadow-m-glow);
 }
 
@@ -432,20 +405,17 @@ html, body {
 /* Fixed Bottom Curved Nav */
 .m-curved-bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
-  max-width: 480px; margin: 0 auto;
-  height: 64px;
-  background: rgba(43, 26, 80, 0.96);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid var(--m-border-subtle);
-  z-index: 110;
-  display: flex; justify-content: space-around; align-items: center;
+  max-width: 480px; margin: 0 auto; height: 64px;
+  background: rgba(20, 28, 72, 0.96); backdrop-filter: blur(20px);
+  border-top: 1px solid var(--m-border-blue); z-index: 110;
+  display: flex; justify-space: around; align-items: center;
 }
 
-.m-nav-tab-link { display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: 600; color: #d6ccf5; gap: 2px; text-decoration: none; }
+.m-nav-tab-link { display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: 600; color: #c5d2f6; gap: 2px; text-decoration: none; }
 .m-nav-tab-link.active { color: var(--brand-magenta); }
 
 /* Drawers & Modals */
-.drawer-backdrop { position: fixed; inset: 0; background: rgba(43, 26, 80, 0.85); backdrop-filter: blur(8px); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.drawer-backdrop { position: fixed; inset: 0; background: rgba(20, 28, 72, 0.85); backdrop-filter: blur(8px); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 .drawer-backdrop.active { opacity: 1; pointer-events: auto; }
 .cart-side-drawer { position: fixed; top: 0; right: -450px; width: 100%; max-width: 440px; height: 100vh; background: #ffffff; color: #0f172a; z-index: 210; display: flex; flex-direction: column; transition: right 0.35s; }
 .drawer-backdrop.active .cart-side-drawer { right: 0; }
