@@ -1,25 +1,31 @@
 /* ==========================================================================
-   UNIQUE EXPRESSIONS - CLIENT-READY PIXEL-PERFECT MOBILE APP DESIGN SYSTEM
-   Target Viewport: 390px x 844px (Native Apple / AJIO Luxe / Nike App Vibe)
+   UNIQUE EXPRESSIONS - OFFICIAL LOGO BRAND COLOR SYSTEM
+   Extracted Directly from Logo:
+   - Primary Slate Navy: #546686 (Monogram 'U' & 'UNIQUE')
+   - Secondary Mulberry Magenta: #B55282 (Monogram 'E' & 'EXPRESSIONS')
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Logo Extracted Colors */
+  /* Exact Logo Extracted Color Palette */
   --brand-primary: #546686;
+  --brand-primary-dark: #3a475d;
+  --brand-primary-light: #6e81a5;
+
   --brand-secondary: #b55282;
   --brand-secondary-hover: #9c3f6f;
+  --brand-secondary-light: rgba(181, 82, 130, 0.18);
 
-  /* App Canvas & Cards */
-  --m-bg-canvas: #0b1120;
-  --m-bg-surface: #151f32;
-  --m-bg-card: rgba(21, 31, 50, 0.95);
+  /* Deep Slate Canvas & Surfaces Derived Directly from #546686 */
+  --m-bg-canvas: #0f1520;
+  --m-bg-surface: #182030;
+  --m-bg-card: rgba(24, 32, 48, 0.95);
   --m-text-primary: #f8fafc;
   --m-text-secondary: #94a3b8;
-  --m-border-subtle: rgba(255, 255, 255, 0.08);
+  --m-border-subtle: rgba(84, 102, 134, 0.25);
 
-  /* Functional Colors */
+  /* Functional Status Accents */
   --func-orange: #ff6b35;
   --func-green: #10b981;
   --func-gold: #f59e0b;
@@ -27,8 +33,8 @@
   --font-serif: 'Cormorant Garamond', Georgia, serif;
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   
-  --shadow-m-card: 0 12px 30px rgba(0, 0, 0, 0.45);
-  --shadow-m-glow: 0 0 20px rgba(181, 82, 130, 0.4);
+  --shadow-m-card: 0 12px 30px rgba(15, 21, 32, 0.6);
+  --shadow-m-glow: 0 0 20px rgba(181, 82, 130, 0.45);
   --transition-smooth: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -61,14 +67,12 @@ html, body {
   padding-bottom: 96px;
 }
 
-/* ==========================================================================
-   1. HEADER WITH SAFE TOP PADDING (NO TOP CLIPPING)
-   ========================================================================== */
+/* Header */
 .m-app-header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(11, 17, 32, 0.96);
+  background: rgba(15, 21, 32, 0.96);
   backdrop-filter: blur(20px);
   padding: 14px 16px 10px 16px;
   display: flex;
@@ -77,30 +81,17 @@ html, body {
   border-bottom: 1px solid var(--m-border-subtle);
 }
 
-.m-header-logo-link img {
-  height: 38px;
-  width: auto;
-  display: block;
-}
-
-.m-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.m-header-logo-link img { height: 38px; width: auto; display: block; }
+.m-header-actions { display: flex; align-items: center; gap: 8px; }
 
 .m-icon-btn-circle {
   position: relative;
-  width: 38px;
-  height: 38px;
+  width: 38px; height: 38px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(84, 102, 134, 0.15);
   border: 1px solid var(--m-border-subtle);
   color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
 }
 
 .m-icon-btn-circle:active {
@@ -109,30 +100,20 @@ html, body {
 }
 
 .m-badge-count-dot {
-  position: absolute;
-  top: 2px;
-  right: 2px;
+  position: absolute; top: 2px; right: 2px;
   background: var(--brand-secondary);
-  color: #ffffff;
-  font-size: 9px;
-  font-weight: 800;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #0b1120;
+  color: #ffffff; font-size: 9px; font-weight: 800;
+  width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--m-bg-canvas);
 }
 
-/* ==========================================================================
-   2. STICKY SEARCH BAR (NO TEXT TRUNCATION)
-   ========================================================================== */
+/* Sticky Search Bar */
 .m-search-wrap-sticky {
   position: sticky;
   top: 63px;
   z-index: 95;
-  background: rgba(11, 17, 32, 0.96);
+  background: rgba(15, 21, 32, 0.96);
   backdrop-filter: blur(20px);
   padding: 10px 16px;
   border-bottom: 1px solid var(--m-border-subtle);
@@ -143,31 +124,19 @@ html, body {
   border: 1px solid var(--m-border-subtle);
   border-radius: 99px;
   padding: 9px 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: flex; align-items: center; gap: 10px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.3);
 }
 
 .m-search-input {
-  flex: 1;
-  background: none;
-  border: none;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 500;
-  outline: none;
-  min-width: 0;
+  flex: 1; background: none; border: none;
+  color: #ffffff; font-size: 13px; font-weight: 500; outline: none; min-width: 0;
 }
 
-.m-search-input::placeholder { color: #64748b; }
+.m-search-input::placeholder { color: #94a3b8; }
 
-/* ==========================================================================
-   3. COMPACT & BALANCED MODE SELECTOR STRIP
-   ========================================================================== */
-.m-mode-selector-strip {
-  padding: 12px 16px 8px 16px;
-}
+/* Mode Selector */
+.m-mode-selector-strip { padding: 12px 16px 8px 16px; }
 
 .m-mode-pill-box {
   display: flex;
@@ -178,16 +147,9 @@ html, body {
 }
 
 .m-mode-btn-option {
-  flex: 1;
-  padding: 8px 0;
-  border: none;
-  background: none;
-  color: #94a3b8;
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: 99px;
-  text-align: center;
-  transition: all 0.25s var(--transition-smooth);
+  flex: 1; padding: 8px 0; border: none; background: none;
+  color: #94a3b8; font-size: 11px; font-weight: 700; border-radius: 99px;
+  text-align: center; transition: all 0.25s var(--transition-smooth);
 }
 
 .m-mode-btn-option.active {
@@ -196,69 +158,36 @@ html, body {
   box-shadow: 0 4px 12px rgba(181, 82, 130, 0.4);
 }
 
-/* ==========================================================================
-   4. MICRO TRUST TICKER (COMPACT & ELEGANT)
-   ========================================================================== */
+/* Trust Strip */
 .m-trust-strip-scroll {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 4px 16px 14px 16px;
+  display: flex; gap: 8px; overflow-x: auto; padding: 4px 16px 14px 16px;
 }
 
 .m-trust-pill-chip {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(255, 255, 255, 0.05);
+  flex: 0 0 auto; display: flex; align-items: center; gap: 5px;
+  background: rgba(84, 102, 134, 0.12);
   border: 1px solid var(--m-border-subtle);
-  padding: 5px 11px;
-  border-radius: 99px;
-  font-size: 10px;
-  font-weight: 600;
-  color: #cbd5e1;
+  padding: 5px 11px; border-radius: 99px;
+  font-size: 10px; font-weight: 600; color: #cbd5e1;
 }
 
 .m-trust-pill-chip i { color: var(--func-green); width: 13px; height: 13px; }
 
-/* ==========================================================================
-   5. QUICK CATEGORIES RAIL (ACTIVE GLOW RING)
-   ========================================================================== */
+/* Quick Categories Rail */
 .m-section-header {
   padding: 14px 16px 10px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between;
 }
 
-.m-section-title {
-  font-size: 15px;
-  font-weight: 800;
-  color: #ffffff;
-}
+.m-section-title { font-size: 15px; font-weight: 800; color: #ffffff; }
+.m-section-sublink { font-size: 11px; font-weight: 700; color: var(--brand-secondary); }
 
-.m-section-sublink {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--brand-secondary);
-}
-
-.m-cat-rail-scroll {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding: 0 16px 18px 16px;
-}
+.m-cat-rail-scroll { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px 18px 16px; }
 
 .m-cat-pill-thumb {
-  flex: 0 0 96px;
-  position: relative;
-  height: 106px;
-  border-radius: 20px;
-  overflow: hidden;
-  border: 1px solid var(--m-border-subtle);
-  transition: all 0.25s;
+  flex: 0 0 96px; position: relative; height: 106px;
+  border-radius: 20px; overflow: hidden;
+  border: 1px solid var(--m-border-subtle); transition: all 0.25s;
 }
 
 .m-cat-pill-thumb.active-cat {
@@ -266,86 +195,49 @@ html, body {
   box-shadow: 0 0 16px rgba(181, 82, 130, 0.5);
 }
 
-.m-cat-pill-thumb img {
-  width: 100%; height: 100%; object-fit: cover;
-}
+.m-cat-pill-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
 .m-cat-overlay-text {
   position: absolute; inset: 0;
-  background: linear-gradient(180deg, transparent 40%, rgba(11, 17, 32, 0.92) 100%);
+  background: linear-gradient(180deg, transparent 40%, rgba(15, 21, 32, 0.95) 100%);
   display: flex; flex-direction: column; justify-content: flex-end;
   padding: 8px 6px; text-align: center;
 }
 
 .m-cat-name-label { font-size: 11px; font-weight: 700; color: #ffffff; }
 
-/* ==========================================================================
-   6. FEATURED COLLECTIONS (HIGH CARD READABILITY)
-   ========================================================================== */
-.m-featured-cards-scroll {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding: 0 16px 22px 16px;
-}
+/* Featured Collections */
+.m-featured-cards-scroll { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px 22px 16px; }
 
 .m-featured-bundle-card {
-  flex: 0 0 240px;
-  position: relative;
-  height: 150px;
-  border-radius: 22px;
-  overflow: hidden;
-  box-shadow: var(--shadow-m-card);
-  border: 1px solid var(--m-border-subtle);
+  flex: 0 0 240px; position: relative; height: 150px;
+  border-radius: 22px; overflow: hidden;
+  box-shadow: var(--shadow-m-card); border: 1px solid var(--m-border-subtle);
 }
 
 .m-featured-bundle-card img { width: 100%; height: 100%; object-fit: cover; }
 
 .m-featured-card-overlay {
   position: absolute; inset: 0;
-  background: linear-gradient(180deg, transparent 20%, rgba(11, 17, 32, 0.95) 100%);
-  padding: 16px;
-  display: flex; flex-direction: column; justify-content: flex-end;
+  background: linear-gradient(180deg, transparent 20%, rgba(15, 21, 32, 0.95) 100%);
+  padding: 16px; display: flex; flex-direction: column; justify-content: flex-end;
 }
 
-.m-featured-tag {
-  font-size: 9px; font-weight: 800; color: var(--func-gold);
-  text-transform: uppercase; letter-spacing: 0.05em;
-}
+.m-featured-tag { font-size: 9px; font-weight: 800; color: var(--func-gold); text-transform: uppercase; }
+.m-featured-title { font-size: 16px; font-weight: 800; color: #ffffff; margin: 2px 0 0 0; }
 
-.m-featured-title {
-  font-size: 16px; font-weight: 800; color: #ffffff; margin: 2px 0 0 0; line-height: 1.2;
-}
-
-/* ==========================================================================
-   7. EDITORIAL HERO BANNER CAROUSEL
-   ========================================================================== */
+/* Editorial Hero Banner */
 .m-hero-banner-frame {
-  position: relative;
-  height: 240px;
-  margin: 0 16px 20px 16px;
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: var(--shadow-m-card);
+  position: relative; height: 240px; margin: 0 16px 20px 16px;
+  border-radius: 24px; overflow: hidden; box-shadow: var(--shadow-m-card);
 }
 
 .m-hero-banner-frame img { width: 100%; height: 100%; object-fit: cover; }
-.m-hero-vignette { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 20%, rgba(11, 17, 32, 0.95) 100%); }
+.m-hero-vignette { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 20%, rgba(15, 21, 32, 0.95) 100%); }
 
-.m-hero-banner-body {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  padding: 18px;
-}
-
-.m-hero-badge-pill {
-  background: var(--brand-secondary); color: #fff;
-  font-size: 9px; font-weight: 800; padding: 3px 10px; border-radius: 99px;
-}
-
-.m-hero-h1-heading {
-  font-size: 19px; font-weight: 800; color: #fff; margin: 6px 0 4px 0; line-height: 1.2;
-}
-
+.m-hero-banner-body { position: absolute; bottom: 0; left: 0; right: 0; padding: 18px; }
+.m-hero-badge-pill { background: var(--brand-secondary); color: #fff; font-size: 9px; font-weight: 800; padding: 3px 10px; border-radius: 99px; }
+.m-hero-h1-heading { font-size: 19px; font-weight: 800; color: #fff; margin: 6px 0 4px 0; }
 .m-hero-sub-text { font-size: 11px; color: #cbd5e1; margin-bottom: 10px; }
 
 .m-hero-cta-button {
@@ -355,41 +247,26 @@ html, body {
   padding: 8px 16px; border-radius: 99px; border: none;
 }
 
-.m-hero-dots-row {
-  display: flex; justify-content: center; gap: 6px; margin-top: -10px; margin-bottom: 20px;
-}
+.m-hero-dots-row { display: flex; justify-content: center; gap: 6px; margin-top: -10px; margin-bottom: 20px; }
 .m-dot-item { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.3); }
 .m-dot-item.active { width: 16px; border-radius: 99px; background: var(--brand-secondary); }
 
-/* ==========================================================================
-   8. SHOP BY OCCASION
-   ========================================================================== */
-.m-occasion-scroll-row {
-  display: flex; gap: 10px; overflow-x: auto;
-  padding: 0 16px 20px 16px;
-}
+/* Shop by Occasion */
+.m-occasion-scroll-row { display: flex; gap: 10px; overflow-x: auto; padding: 0 16px 20px 16px; }
 
 .m-occasion-chip-card {
-  flex: 0 0 105px;
-  background: var(--m-bg-surface);
-  border: 1px solid var(--m-border-subtle);
-  border-radius: 18px;
-  padding: 12px 8px;
-  text-align: center;
+  flex: 0 0 105px; background: var(--m-bg-surface);
+  border: 1px solid var(--m-border-subtle); border-radius: 18px; padding: 12px 8px; text-align: center;
 }
 
 .m-occasion-emoji { font-size: 26px; margin-bottom: 4px; }
 .m-occasion-label { font-size: 11px; font-weight: 700; color: #ffffff; }
 
-/* ==========================================================================
-   9. FLASH SALE CARD
-   ========================================================================== */
+/* Flash Sale Card */
 .m-flash-sale-box {
   background: linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(181, 82, 130, 0.15) 100%);
-  border: 1px solid rgba(255, 107, 53, 0.35);
-  border-radius: 22px;
-  padding: 12px 16px;
-  margin: 0 16px 20px 16px;
+  border: 1px solid rgba(255, 107, 53, 0.35); border-radius: 22px;
+  padding: 12px 16px; margin: 0 16px 20px 16px;
   display: flex; align-items: center; justify-content: space-between;
 }
 
@@ -399,31 +276,19 @@ html, body {
   padding: 4px 8px; border-radius: 8px;
 }
 
-/* ==========================================================================
-   10. TRENDING PRODUCTS (2-COLUMN GRID)
-   ========================================================================== */
+/* Trending Products 2-Column Grid */
 .m-product-grid-2col {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  padding: 0 16px 20px 16px;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px 20px 16px;
 }
 
 .m-product-tile-card {
   background: var(--m-bg-surface);
-  border: 1px solid var(--m-border-subtle);
-  border-radius: 20px;
-  overflow: hidden;
-  display: flex; flex-direction: column;
-  position: relative;
+  border: 1px solid var(--m-border-subtle); border-radius: 20px;
+  overflow: hidden; display: flex; flex-direction: column; position: relative;
   box-shadow: 0 4px 16px rgba(0,0,0,0.25);
 }
 
-.m-tile-img-wrapper {
-  position: relative; width: 100%; aspect-ratio: 1 / 1;
-  background: #0f172a;
-}
-
+.m-tile-img-wrapper { position: relative; width: 100%; aspect-ratio: 1 / 1; background: #0f1520; }
 .m-tile-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
 
 .m-discount-badge-orange {
@@ -434,7 +299,7 @@ html, body {
 
 .m-rating-badge-gold {
   position: absolute; bottom: 8px; left: 8px;
-  background: rgba(11, 17, 32, 0.88); backdrop-filter: blur(6px);
+  background: rgba(15, 21, 32, 0.88); backdrop-filter: blur(6px);
   color: var(--func-gold); font-size: 10px; font-weight: 700;
   padding: 2px 6px; border-radius: 6px;
 }
@@ -443,14 +308,10 @@ html, body {
   position: absolute; top: 8px; right: 8px;
   width: 28px; height: 28px; background: rgba(0,0,0,0.5);
   backdrop-filter: blur(6px); border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; color: #ffffff;
-  border: none;
+  display: flex; align-items: center; justify-content: center; color: #ffffff; border: none;
 }
 
-.m-tile-content-box {
-  padding: 12px; display: flex; flex-direction: column; flex-grow: 1;
-}
-
+.m-tile-content-box { padding: 12px; display: flex; flex-direction: column; flex-grow: 1; }
 .m-tile-cat-name { font-size: 9px; font-weight: 700; color: var(--brand-secondary); text-transform: uppercase; }
 .m-tile-title { font-size: 12px; font-weight: 600; color: #ffffff; margin: 4px 0; line-height: 1.3; height: 32px; overflow: hidden; }
 
@@ -467,20 +328,12 @@ html, body {
 
 .m-tile-add-btn:active { background: var(--brand-secondary); }
 
-/* ==========================================================================
-   HORIZONTAL RAILS & OTHER CAROUSELS
-   ========================================================================== */
-.m-horizontal-product-rail {
-  display: flex; gap: 12px; overflow-x: auto;
-  padding: 0 16px 20px 16px;
-}
+/* Horizontal Rails */
+.m-horizontal-product-rail { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px 20px 16px; }
 
 .m-mini-product-card {
-  flex: 0 0 140px;
-  background: var(--m-bg-surface);
-  border: 1px solid var(--m-border-subtle);
-  border-radius: 18px;
-  padding: 10px;
+  flex: 0 0 140px; background: var(--m-bg-surface);
+  border: 1px solid var(--m-border-subtle); border-radius: 18px; padding: 10px;
 }
 
 .m-mini-product-card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 12px; }
@@ -488,11 +341,9 @@ html, body {
 .m-mini-price { font-size: 13px; font-weight: 800; color: var(--brand-secondary); }
 
 .m-wholesale-b2b-card {
-  background: linear-gradient(135deg, var(--brand-primary) 0%, #1e293b 100%);
-  border-radius: 22px;
-  padding: 20px;
-  margin: 0 16px 20px 16px;
-  border: 1px solid rgba(255,255,255,0.1);
+  background: linear-gradient(135deg, var(--brand-primary) 0%, #182030 100%);
+  border-radius: 22px; padding: 20px; margin: 0 16px 20px 16px;
+  border: 1px solid var(--m-border-subtle);
 }
 
 .m-wholesale-h3 { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 6px; }
@@ -516,21 +367,19 @@ html, body {
 }
 
 .m-insta-grid-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 0 16px 20px 16px; }
-
 .m-insta-grid-scroll img { flex: 0 0 110px; height: 110px; border-radius: 16px; object-fit: cover; }
 
 .m-newsletter-glass-card {
-  background: rgba(255,255,255,0.05);
+  background: rgba(84, 102, 134, 0.12);
   border: 1px solid var(--m-border-subtle);
   border-radius: 24px; padding: 22px;
   margin: 0 16px 20px 16px; text-align: center;
 }
 
 .m-app-footer {
-  background: #070c18;
+  background: #090d14;
   border-top: 1px solid var(--m-border-subtle);
-  padding: 28px 20px 30px 20px;
-  margin-top: 20px;
+  padding: 28px 20px 30px 20px; margin-top: 20px;
 }
 
 .m-footer-brand-logo { height: 38px; width: auto; margin-bottom: 12px; }
@@ -540,7 +389,7 @@ html, body {
 .m-footer-links-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .m-footer-links-list a { color: #cbd5e1; font-size: 12px; text-decoration: none; }
 
-.m-footer-gst-badge { background: rgba(181, 82, 130, 0.15); color: var(--brand-secondary); font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 8px; display: inline-block; margin-top: 10px; }
+.m-footer-gst-badge { background: rgba(181, 82, 130, 0.18); color: var(--brand-secondary); font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 8px; display: inline-block; margin-top: 10px; }
 
 /* Floating Cart FAB */
 .m-floating-cart-fab {
@@ -559,12 +408,12 @@ html, body {
 
 .m-floating-cart-fab.visible-fab { display: flex !important; }
 
-/* Fixed Curved Bottom Navigation Bar */
+/* Fixed Bottom Curved Nav */
 .m-curved-bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
   max-width: 480px; margin: 0 auto;
   height: 64px;
-  background: rgba(15, 23, 42, 0.96);
+  background: rgba(15, 21, 32, 0.96);
   backdrop-filter: blur(20px);
   border-top: 1px solid var(--m-border-subtle);
   z-index: 110;
@@ -575,7 +424,7 @@ html, body {
 .m-nav-tab-link.active { color: var(--brand-secondary); }
 
 /* Drawers & Modals */
-.drawer-backdrop { position: fixed; inset: 0; background: rgba(11, 17, 32, 0.7); backdrop-filter: blur(8px); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.drawer-backdrop { position: fixed; inset: 0; background: rgba(15, 21, 32, 0.8); backdrop-filter: blur(8px); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 .drawer-backdrop.active { opacity: 1; pointer-events: auto; }
 .cart-side-drawer { position: fixed; top: 0; right: -450px; width: 100%; max-width: 440px; height: 100vh; background: #ffffff; color: #0f172a; z-index: 210; display: flex; flex-direction: column; transition: right 0.35s; }
 .drawer-backdrop.active .cart-side-drawer { right: 0; }
