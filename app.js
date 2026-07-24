@@ -98,15 +98,12 @@ if (!ALL_PRODUCTS || ALL_PRODUCTS.length === 0) {
 
 let activeCategory = 'All';
 let currentSelectedModalProduct = null;
-let pricingMode = localStorage.getItem('ue_pricing_mode') || 'retail';
-let wholesaleDiscountRate = parseInt(localStorage.getItem('ue_wholesale_disc') || '20', 10);
 
 let cart = JSON.parse(localStorage.getItem('ue_cart') || '[]');
 let wishlist = JSON.parse(localStorage.getItem('ue_wishlist') || '[]');
 let recentlyViewed = JSON.parse(localStorage.getItem('ue_recently_viewed') || '[]');
 
 document.addEventListener('DOMContentLoaded', () => {
-  setPricingMode(pricingMode, false);
   renderAllSections();
   updateBadges();
   startHeroCarousel();
@@ -130,7 +127,12 @@ function setHeroSlide(idx, resetTimer = true) {
   const headingEl = document.getElementById('mHeroHeading');
   const subEl = document.getElementById('mHeroSub');
 
-  if (imgEl) imgEl.src = slide.img;
+  if (imgEl) {
+    imgEl.classList.remove('hero-fade-anim');
+    void imgEl.offsetWidth; // force reflow for animation restart
+    imgEl.src = slide.img;
+    imgEl.classList.add('hero-fade-anim');
+  }
   if (badgeEl) badgeEl.innerText = slide.badge;
   if (headingEl) headingEl.innerText = slide.title;
   if (subEl) subEl.innerText = slide.sub;
@@ -147,28 +149,7 @@ function setHeroSlide(idx, resetTimer = true) {
 }
 
 function getEffectivePrice(basePrice) {
-  if (pricingMode === 'wholesale') {
-    return Math.round(basePrice * (1 - wholesaleDiscountRate / 100));
-  }
   return basePrice;
-}
-
-function setPricingMode(mode, refresh = true) {
-  pricingMode = mode;
-  localStorage.setItem('ue_pricing_mode', mode);
-
-  const btnRetailMob = document.getElementById('btnModeRetailMob');
-  const btnWholesaleMob = document.getElementById('btnModeWholesaleMob');
-
-  if (mode === 'wholesale') {
-    if (btnRetailMob) btnRetailMob.classList.remove('active');
-    if (btnWholesaleMob) btnWholesaleMob.classList.add('active');
-  } else {
-    if (btnWholesaleMob) btnWholesaleMob.classList.remove('active');
-    if (btnRetailMob) btnRetailMob.classList.add('active');
-  }
-
-  if (refresh) renderAllSections();
 }
 
 function renderAllSections() {
@@ -194,7 +175,7 @@ function renderMobileGrid() {
   const heading = document.getElementById('mCategoryHeading');
   if (heading) heading.innerText = activeCategory === 'All' ? '🔥 Trending Collections' : `${activeCategory} Collection`;
 
-  container.innerHTML = filtered.slice(0, 16).map(p => createMobileTileHTML(p)).join('');
+  container.innerHTML = filtered.slice(0, 16).map((p, idx) => createMobileTileHTML(p, idx)).join('');
 }
 
 function renderRecentlyViewed() {
@@ -210,42 +191,43 @@ function renderRecentlyViewed() {
 
   if (header) header.style.display = 'flex';
   const products = ALL_PRODUCTS.filter(p => recentlyViewed.includes(p.id));
-  container.innerHTML = products.slice(0, 8).map(p => createMiniProductHTML(p)).join('');
+  container.innerHTML = products.slice(0, 8).map((p, idx) => createMiniProductHTML(p, idx)).join('');
 }
 
 function renderBestSellers() {
   const container = document.getElementById('bestSellersRail');
   if (!container) return;
   const best = ALL_PRODUCTS.slice(0, 8);
-  container.innerHTML = best.map(p => createMiniProductHTML(p)).join('');
+  container.innerHTML = best.map((p, idx) => createMiniProductHTML(p, idx)).join('');
 }
 
 function renderRecommended() {
   const container = document.getElementById('recommendedRail');
   if (!container) return;
   const recs = ALL_PRODUCTS.slice(8, 16);
-  container.innerHTML = recs.map(p => createMiniProductHTML(p)).join('');
+  container.innerHTML = recs.map((p, idx) => createMiniProductHTML(p, idx)).join('');
 }
 
 function renderNewArrivals() {
   const container = document.getElementById('newArrivalsRail');
   if (!container) return;
   const arrivals = ALL_PRODUCTS.slice(16, 24);
-  container.innerHTML = arrivals.map(p => createMiniProductHTML(p)).join('');
+  container.innerHTML = arrivals.map((p, idx) => createMiniProductHTML(p, idx)).join('');
 }
 
-function createMobileTileHTML(product) {
+function createMobileTileHTML(product, index = 0) {
   const isWishlisted = wishlist.includes(product.id);
   const effectivePrice = getEffectivePrice(product.price);
   const saveAmount = product.originalPrice - effectivePrice;
+  const delaySec = (index * 0.04).toFixed(2);
 
   return `
-    <div class="m-product-tile-card" onclick="trackViewAndOpenModal(${product.id})">
+    <div class="m-product-tile-card" style="animation-delay: ${delaySec}s;" onclick="trackViewAndOpenModal(${product.id})">
       <div class="m-tile-img-wrapper">
         <img src="${product.image}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop'">
         <span class="m-discount-badge-orange">${product.discount}% OFF</span>
         <span class="m-rating-badge-gold">★ ${product.rating}</span>
-        <button class="m-wishlist-heart-btn" onclick="event.stopPropagation(); toggleWishlist(${product.id})">
+        <button class="m-wishlist-heart-btn" onclick="event.stopPropagation(); toggleWishlist(${product.id}, this)">
           <i data-feather="heart" style="width:14px; height:14px; ${isWishlisted ? 'fill:#d8448e; stroke:#d8448e;' : ''}"></i>
         </button>
       </div>
@@ -266,10 +248,11 @@ function createMobileTileHTML(product) {
   `;
 }
 
-function createMiniProductHTML(product) {
+function createMiniProductHTML(product, index = 0) {
   const effectivePrice = getEffectivePrice(product.price);
+  const delaySec = (index * 0.04).toFixed(2);
   return `
-    <div class="m-mini-product-card" onclick="trackViewAndOpenModal(${product.id})">
+    <div class="m-mini-product-card" style="animation: fadeInUp 0.4s ease backwards; animation-delay: ${delaySec}s;" onclick="trackViewAndOpenModal(${product.id})">
       <img src="${product.image}" loading="lazy">
       <div class="m-mini-title">${product.title}</div>
       <div class="m-mini-price">₹${effectivePrice}</div>
@@ -375,11 +358,17 @@ function saveCart() {
   updateBadges();
 }
 
-function toggleWishlist(productId) {
+function toggleWishlist(productId, btnEl) {
   const index = wishlist.indexOf(productId);
   if (index > -1) wishlist.splice(index, 1);
   else wishlist.push(productId);
   localStorage.setItem('ue_wishlist', JSON.stringify(wishlist));
+  
+  if (btnEl) {
+    btnEl.classList.add('heart-pop-anim');
+    setTimeout(() => btnEl.classList.remove('heart-pop-anim'), 450);
+  }
+  
   updateBadges();
   renderAllSections();
 }
