@@ -6,6 +6,7 @@
   <title>UNIQUE EXPRESSIONS | Premium Mobile Shopping App</title>
   <meta name="description" content="Discover extraordinary kids toys, educational games, smart gadgets, stationery, handicrafts, and return gift hampers in Visakhapatnam.">
   <link rel="stylesheet" href="styles.css?v=5.0">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/feather-icons"></script>
 </head>
@@ -15,17 +16,17 @@
 
     <!-- 1. HEADER (LOGO ADJUSTED WITH SAFE LEFT INSET) -->
     <header class="m-app-header">
-      <a href="#" class="m-header-logo-link" onclick="switchNav('home'); return false;">
+      <a href="#" class="m-header-logo-link" onclick="switchView('home'); return false;">
         <img src="logo.png" alt="UNIQUE EXPRESSIONS">
       </a>
       <div class="m-header-actions">
-        <button class="m-icon-btn-circle" onclick="openAdminPinModal()" title="Admin PIN"><i data-feather="shield"></i></button>
+        <button class="m-icon-btn-circle" onclick="openAdminPinModal()" title="Admin PIN"><i class="ri-shield-keyhole-line"></i></button>
         <button class="m-icon-btn-circle" onclick="openWishlistDrawer()" title="Wishlist">
-          <i data-feather="heart"></i>
+          <i class="ri-heart-3-line"></i>
           <span class="m-badge-count-dot id-wishlist-badge">0</span>
         </button>
         <button class="m-icon-btn-circle" onclick="openCartDrawer()" title="Cart">
-          <i data-feather="shopping-bag"></i>
+          <i class="ri-shopping-bag-3-line"></i>
           <span class="m-badge-count-dot id-cart-badge">0</span>
         </button>
       </div>
@@ -34,9 +35,9 @@
     <!-- 2. STICKY SEARCH BAR -->
     <div class="m-search-wrap-sticky">
       <div class="m-search-pill-input">
-        <i data-feather="search" style="width:16px; color:#94a3b8;"></i>
+        <i class="ri-search-2-line" style="font-size:16px; color:var(--brand-magenta);"></i>
         <input type="text" class="m-search-input" placeholder="Search Toys, Gifts, Gadgets..." oninput="handleSearchInput(this.value)">
-        <i data-feather="mic" style="width:15px; color:#64748b; cursor:pointer;" onclick="alert('Voice search activated! Speak now...')"></i>
+        <i class="ri-mic-2-line" style="font-size:16px; color:#64748b; cursor:pointer;" onclick="alert('Voice search activated! Speak now...')"></i>
       </div>
     </div>
 
@@ -325,11 +326,11 @@
 
 
     <nav class="m-curved-bottom-nav">
-      <a href="#" class="m-nav-tab-link active" id="nav-home" onclick="switchView('home'); return false;"><i data-feather="home"></i><span>Home</span></a>
-      <a href="#" class="m-nav-tab-link" id="nav-categories" onclick="switchView('categories'); return false;"><i data-feather="grid"></i><span>Categories</span></a>
-      <a href="#" class="m-nav-tab-link" id="nav-offers" onclick="switchView('offers'); return false;"><i data-feather="percent"></i><span>Offers</span></a>
-      <a href="#" class="m-nav-tab-link" id="nav-wishlist" onclick="switchView('wishlist'); return false;"><i data-feather="heart"></i><span>Wishlist</span></a>
-      <a href="#" class="m-nav-tab-link" id="nav-profile" onclick="switchView('profile'); return false;"><i data-feather="user"></i><span>Profile</span></a>
+      <a href="#" class="m-nav-tab-link active" id="nav-home" onclick="switchView('home'); return false;"><i class="ri-home-5-fill"></i><span>Home</span></a>
+      <a href="#" class="m-nav-tab-link" id="nav-categories" onclick="switchView('categories'); return false;"><i class="ri-dashboard-3-line"></i><span>Categories</span></a>
+      <a href="#" class="m-nav-tab-link" id="nav-offers" onclick="switchView('offers'); return false;"><i class="ri-percent-line"></i><span>Offers</span></a>
+      <a href="#" class="m-nav-tab-link" id="nav-wishlist" onclick="switchView('wishlist'); return false;"><i class="ri-heart-3-line"></i><span>Wishlist</span></a>
+      <a href="#" class="m-nav-tab-link" id="nav-profile" onclick="switchView('profile'); return false;"><i class="ri-user-3-line"></i><span>Profile</span></a>
     </nav>
   </div>
 

@@ -145,6 +145,7 @@ function switchView(viewName, params = {}) {
   document.querySelectorAll('.m-nav-tab-link').forEach(el => el.classList.remove('active'));
   const navBtn = document.getElementById(`nav-${viewName}`);
   if (navBtn) navBtn.classList.add('active');
+  updateNavIcons(viewName);
 
   const targetView = document.getElementById(`view${capitalizeFirst(viewName)}`);
   if (targetView) {
@@ -183,6 +184,26 @@ function capitalizeFirst(str) {
   if (str === 'pdp') return 'PDP';
   if (str === 'b2b') return 'B2B';
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function updateNavIcons(viewName) {
+  const iconMap = {
+    home: { active: 'ri-home-5-fill', inactive: 'ri-home-5-line' },
+    categories: { active: 'ri-dashboard-3-fill', inactive: 'ri-dashboard-3-line' },
+    offers: { active: 'ri-percent-fill', inactive: 'ri-percent-line' },
+    wishlist: { active: 'ri-heart-3-fill', inactive: 'ri-heart-3-line' },
+    profile: { active: 'ri-user-3-fill', inactive: 'ri-user-3-line' }
+  };
+
+  Object.keys(iconMap).forEach(key => {
+    const navEl = document.getElementById(`nav-${key}`);
+    if (navEl) {
+      const iTag = navEl.querySelector('i');
+      if (iTag) {
+        iTag.className = (key === viewName) ? iconMap[key].active : iconMap[key].inactive;
+      }
+    }
+  });
 }
 
 function startHeroCarousel() {
