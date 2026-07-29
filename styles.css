@@ -325,31 +325,64 @@ body {
   opacity: 0.85;
 }
 
+/* 4. Quick Categories Rail (Option 3: Soft Pastel Tinted Editorial Cards) */
 .m-cat-rail-scroll {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   overflow-x: auto;
   padding: 0 16px 16px 16px;
 }
 
 .m-cat-pill-thumb {
-  flex: 0 0 90px;
+  flex: 0 0 94px;
   position: relative;
-  height: 108px;
-  border-radius: 18px;
+  height: 122px;
+  border-radius: 20px;
   overflow: hidden;
+  padding: 5px;
   background: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
   display: flex;
   flex-direction: column;
   cursor: pointer;
 }
 
+/* Individual Pastel Color Gradients & Borders */
+#mCat-All {
+  background: linear-gradient(135deg, #fdf2f8, #fbcfe8);
+  border-color: #f472b6;
+}
+
+#mCat-Toys {
+  background: linear-gradient(135deg, #fff1f2, #ffe4e6);
+  border-color: #fda4af;
+}
+
+#mCat-Gadgets {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-color: #7dd3fc;
+}
+
+#mCat-Handicrafts {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border-color: #fcd34d;
+}
+
+#mCat-Stationery {
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border-color: #6ee7b7;
+}
+
+[id="mCat-Return Gifts"] {
+  background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+  border-color: #c4b5fd;
+}
+
 .m-cat-pill-thumb:hover {
-  transform: translateY(-4px) scale(1.04);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
 }
 
 .m-cat-pill-thumb:active {
@@ -357,50 +390,72 @@ body {
 }
 
 .m-cat-pill-thumb.active-cat {
-  border: 2px solid var(--brand-magenta);
-  box-shadow: 0 0 16px rgba(216, 68, 142, 0.55);
+  border-width: 2.5px !important;
+  border-color: var(--brand-magenta) !important;
+  box-shadow: 0 0 16px rgba(216, 43, 125, 0.45);
+  transform: scale(1.04);
 }
 
-.m-cat-pill-thumb img {
+.m-cat-img-box {
   width: 100%;
   height: 68px;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+}
+
+.m-cat-img-box img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   transition: transform 0.4s ease;
 }
 
-.m-cat-pill-thumb:hover img {
+.m-cat-pill-thumb:hover .m-cat-img-box img {
   transform: scale(1.08);
 }
 
 .m-cat-overlay-text {
-  padding: 5px 3px;
+  padding: 4px 2px 2px 2px;
   text-align: center;
-  background: #ffffff;
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .m-cat-name-label {
-  font-size: 10px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.m-cat-count-label {
+  font-size: 8.5px;
   font-weight: 700;
-  color: #16204e;
+  color: #64748b;
+  margin-top: 1px;
 }
 
 /* 5. Featured Collections */
 .m-featured-cards-scroll {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   overflow-x: auto;
   padding: 0 16px 18px 16px;
 }
 
 .m-featured-bundle-card {
-  flex: 0 0 220px;
+  flex: 0 0 240px;
   position: relative;
   height: 135px;
   border-radius: 20px;
   overflow: hidden;
   border: 1px solid var(--m-border-subtle);
   cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
 }
 
@@ -413,6 +468,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -422,12 +478,16 @@ body {
 
 .m-featured-card-overlay {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, transparent 20%, rgba(20, 28, 72, 0.95) 100%);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 20%, rgba(20, 28, 72, 0.92) 100%);
   padding: 14px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  z-index: 2;
 }
 
 .m-featured-tag {
@@ -655,38 +715,41 @@ body {
 /* ==========================================================================
    9. TRENDING PRODUCTS 2-COLUMN GRID (COMPACT PROPORTIONATE WHITE BOTTOM BOX)
    ========================================================================== */
+/* ==========================================================================
+   9. TRENDING PRODUCTS 2-COLUMN GRID (ELEGANT ROUNDED WHITE CARD DESIGN)
+   ========================================================================== */
 .m-product-grid-2col {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  padding: 0 16px 16px 16px;
+  gap: 12px;
+  padding: 0 16px 20px 16px;
 }
 
 .m-product-tile-card {
   background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 22px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
   animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   cursor: pointer;
 }
 
 .m-product-tile-card:hover {
-  transform: translateY(-5px) scale(1.015);
-  box-shadow: 0 12px 24px rgba(216, 68, 142, 0.18), 0 6px 14px rgba(0, 0, 0, 0.2);
-  border-color: rgba(216, 68, 142, 0.4);
+  transform: translateY(-5px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12);
+  border-color: rgba(216, 43, 125, 0.25);
 }
 
 .m-tile-img-wrapper {
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  background: #f8fafc;
+  background: #fafafa;
   overflow: hidden;
 }
 
@@ -698,56 +761,47 @@ body {
 }
 
 .m-product-tile-card:hover .m-tile-img-wrapper img {
-  transform: scale(1.08);
+  transform: scale(1.06);
 }
 
 .m-discount-badge-orange {
   position: absolute;
-  top: 6px;
-  left: 6px;
-  background: var(--func-orange);
+  top: 10px;
+  left: 10px;
+  background: #ff5500;
   color: #ffffff;
-  font-size: 8px;
+  font-size: 9.5px;
   font-weight: 800;
-  padding: 2px 5px;
-  border-radius: 5px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-.m-rating-badge-gold {
-  position: absolute;
-  bottom: 6px;
-  left: 6px;
-  background: rgba(15, 23, 42, 0.85);
-  color: var(--func-gold);
-  font-size: 9px;
-  font-weight: 700;
-  padding: 2px 5px;
-  border-radius: 5px;
-  backdrop-filter: blur(4px);
+  padding: 4px 10px;
+  border-radius: 20px;
+  box-shadow: 0 4px 10px rgba(255, 85, 0, 0.25);
+  letter-spacing: 0.02em;
+  z-index: 2;
 }
 
 .m-wishlist-heart-btn {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 26px;
-  height: 26px;
-  background: rgba(0, 0, 0, 0.45);
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  background: #ffffff;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: #1e293b;
   border: none;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.25s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.25s ease, box-shadow 0.25s ease;
   cursor: pointer;
   z-index: 2;
+  font-size: 16px;
 }
 
 .m-wishlist-heart-btn:hover {
-  transform: scale(1.18);
-  background: rgba(216, 68, 142, 0.85);
+  transform: scale(1.12);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 .m-wishlist-heart-btn:active,
@@ -755,78 +809,119 @@ body {
   animation: heartPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Compact Content Box Below Image */
+.m-rating-badge-gold {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 14px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  z-index: 2;
+}
+
+/* Crisp White Content Box Below Image */
 .m-tile-content-box {
-  padding: 8px 9px 8px 9px;
+  padding: 10px 11px 12px 11px;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  background: var(--brand-magenta);
+  background: #ffffff;
 }
 
 .m-tile-cat-name {
-  font-size: 8px;
-  font-weight: 700;
-  color: #ffe4e6;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #d82b7d;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
 }
 
 .m-tile-title {
-  font-size: 10.5px;
+  font-size: 12.5px;
   font-weight: 700;
-  color: #ffffff;
-  margin: 2px 0;
-  line-height: 1.25;
-  height: 26px;
+  color: #111827;
+  margin: 2px 0 4px 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
+  height: 33px;
 }
 
 .m-tile-price-row {
   margin-top: auto;
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  gap: 6px;
 }
 
 .m-tile-curr-price {
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 800;
-  color: #ffffff;
+  color: #111827;
+}
+
+.m-tile-mrp-price {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #9ca3af;
+  text-decoration: line-through;
 }
 
 .m-tile-save-green {
-  font-size: 8.5px;
-  font-weight: 800;
-  color: #a7f3d0;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #d82b7d;
+  margin-top: 1px;
+  display: block;
 }
 
 .m-tile-add-btn {
   width: 100%;
-  margin-top: 6px;
-  padding: 5px 8px;
-  background: #ffffff;
-  color: var(--brand-magenta);
-  font-size: 9.5px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: #d82b7d;
+  color: #ffffff;
+  font-size: 11.5px;
   font-weight: 800;
-  border-radius: 7px;
+  border-radius: 9999px;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 12px rgba(216, 43, 125, 0.28);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .m-tile-add-btn:hover {
-  background: #fff0f6;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: #c2185b;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(216, 43, 125, 0.38);
 }
 
 .m-tile-add-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.96);
+}
+
+.m-add-icon-sq {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
 }
 
 /* Horizontal Rails (Crisp White Mini Product Cards) */
@@ -1963,4 +2058,234 @@ body {
   background: #f1f5f9;
   font-weight: 800;
   color: #334155;
+}
+
+/* ==========================================================================
+   SPRINT 1 SHOPPING JOURNEY UX COMPONENTS
+   ========================================================================== */
+
+/* 1. Category Directory Sub-Category Grid */
+.m-subcat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.m-subcat-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.m-subcat-card:hover {
+  transform: translateY(-3px);
+  border-color: #d82b7d;
+  box-shadow: 0 8px 20px rgba(216, 43, 125, 0.15);
+}
+
+.m-subcat-icon {
+  font-size: 26px;
+  margin-bottom: 6px;
+}
+
+.m-subcat-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.m-subcat-count {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* 2. PLP Sticky Filter, Sort & View Bar */
+.m-plp-bar-sticky {
+  position: sticky;
+  top: 57px;
+  z-index: 90;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.m-plp-sort-select {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e293b;
+  outline: none;
+  cursor: pointer;
+}
+
+.m-plp-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.m-plp-filter-btn:hover {
+  background: #fff0f6;
+  border-color: #d82b7d;
+  color: #d82b7d;
+}
+
+.m-plp-view-toggle-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #334155;
+  font-size: 14px;
+}
+
+/* 1-Column Product List Card Variant */
+.m-product-list-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  padding: 10px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: transform 0.25s ease;
+}
+
+.m-product-list-card:hover {
+  transform: translateY(-2px);
+}
+
+.m-list-img-frame {
+  width: 100px;
+  height: 100px;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.m-list-img-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 3. PDP Pincode Delivery Availability Checker */
+.m-pincode-checker-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 12px;
+  margin: 14px 0;
+}
+
+.m-pincode-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* Rating Bar Progress Fills */
+.rating-bar-bg {
+  flex: 1;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.rating-bar-fill {
+  height: 100%;
+  background: #f59e0b;
+  border-radius: 99px;
+}
+
+/* 4. Cart Drawer Free Shipping Progress Bar */
+.m-free-shipping-wrap {
+  background: linear-gradient(135deg, #fff0f6, #fef2f2);
+  border: 1px solid #fbcfe8;
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.m-shipping-progress-track {
+  height: 6px;
+  background: #fce7f3;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.m-shipping-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #d82b7d, #ff5500);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+/* Gift Wrap Box */
+.m-gift-wrap-box {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 11px;
+}
+
+/* 5. Voice Search Waveform Pulse */
+@keyframes voicePulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(216, 43, 125, 0.7); }
+  70% { transform: scale(1.15); box-shadow: 0 0 0 20px rgba(216, 43, 125, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(216, 43, 125, 0); }
+}
+
+.m-voice-mic-wave {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: #d82b7d;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 20px auto;
+  animation: voicePulse 1.8s infinite ease-in-out;
 }

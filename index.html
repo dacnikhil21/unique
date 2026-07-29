@@ -52,28 +52,58 @@
 
         <div class="m-cat-rail-scroll no-scrollbar" id="mCatRailContainer">
           <div class="m-cat-pill-thumb active-cat" id="mCat-All" onclick="filterCategory('All')">
-            <img src="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop" alt="All">
-            <div class="m-cat-overlay-text"><span class="m-cat-name-label">✨ All Items</span></div>
+            <div class="m-cat-img-box">
+              <img src="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop" alt="All">
+            </div>
+            <div class="m-cat-overlay-text">
+              <span class="m-cat-name-label">✨ All Items</span>
+              <span class="m-cat-count-label">200+ SKUs</span>
+            </div>
           </div>
           <div class="m-cat-pill-thumb" id="mCat-Toys" onclick="filterCategory('Toys')">
-            <img src="https://images.unsplash.com/photo-1559454403-b8fb88521f11?q=80&w=400&auto=format&fit=crop" alt="Toys">
-            <div class="m-cat-overlay-text"><span class="m-cat-name-label">🧸 Kids Toys</span></div>
+            <div class="m-cat-img-box">
+              <img src="https://images.unsplash.com/photo-1559454403-b8fb88521f11?q=80&w=400&auto=format&fit=crop" alt="Toys">
+            </div>
+            <div class="m-cat-overlay-text">
+              <span class="m-cat-name-label">🧸 Kids Toys</span>
+              <span class="m-cat-count-label">40+ SKUs</span>
+            </div>
           </div>
           <div class="m-cat-pill-thumb" id="mCat-Gadgets" onclick="filterCategory('Gadgets')">
-            <img src="https://images.unsplash.com/photo-1545454675-3531b543be5d?q=80&w=400&auto=format&fit=crop" alt="Gadgets">
-            <div class="m-cat-overlay-text"><span class="m-cat-name-label">📱 Gadgets</span></div>
+            <div class="m-cat-img-box">
+              <img src="https://images.unsplash.com/photo-1545454675-3531b543be5d?q=80&w=400&auto=format&fit=crop" alt="Gadgets">
+            </div>
+            <div class="m-cat-overlay-text">
+              <span class="m-cat-name-label">📱 Gadgets</span>
+              <span class="m-cat-count-label">40+ SKUs</span>
+            </div>
           </div>
           <div class="m-cat-pill-thumb" id="mCat-Handicrafts" onclick="filterCategory('Handicrafts')">
-            <img src="https://images.unsplash.com/photo-1606293926075-69a00dbfde81?q=80&w=400&auto=format&fit=crop" alt="Handicrafts">
-            <div class="m-cat-overlay-text"><span class="m-cat-name-label">🎨 Handicrafts</span></div>
+            <div class="m-cat-img-box">
+              <img src="https://images.unsplash.com/photo-1606293926075-69a00dbfde81?q=80&w=400&auto=format&fit=crop" alt="Handicrafts">
+            </div>
+            <div class="m-cat-overlay-text">
+              <span class="m-cat-name-label">🎨 Crafts</span>
+              <span class="m-cat-count-label">40+ SKUs</span>
+            </div>
           </div>
           <div class="m-cat-pill-thumb" id="mCat-Stationery" onclick="filterCategory('Stationery')">
-            <img src="https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?q=80&w=400&auto=format&fit=crop" alt="Stationery">
-            <div class="m-cat-overlay-text"><span class="m-cat-name-label">✏️ Stationery</span></div>
+            <div class="m-cat-img-box">
+              <img src="https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?q=80&w=400&auto=format&fit=crop" alt="Stationery">
+            </div>
+            <div class="m-cat-overlay-text">
+              <span class="m-cat-name-label">✏️ Stationery</span>
+              <span class="m-cat-count-label">40+ SKUs</span>
+            </div>
           </div>
           <div class="m-cat-pill-thumb" id="mCat-Return Gifts" onclick="filterCategory('Return Gifts')">
-            <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=400&auto=format&fit=crop" alt="Return Gifts">
-            <div class="m-cat-overlay-text"><span class="m-cat-name-label">🎁 Return Gifts</span></div>
+            <div class="m-cat-img-box">
+              <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=400&auto=format&fit=crop" alt="Return Gifts">
+            </div>
+            <div class="m-cat-overlay-text">
+              <span class="m-cat-name-label">🎁 Party Gifts</span>
+              <span class="m-cat-count-label">40+ SKUs</span>
+            </div>
           </div>
         </div>
 
@@ -301,29 +331,33 @@
       <!-- VIEW 2: DEDICATED CATEGORIES BROWSER -->
       <div class="app-view" id="viewCategories"></div>
 
-      <!-- VIEW 3: PRODUCT DETAIL PAGE (PDP) -->
+      <!-- VIEW 3: PRODUCT LISTING PAGE (PLP) -->
+      <div class="app-view" id="viewPLP"></div>
+
+      <!-- VIEW 4: SEARCH & HISTORY VIEW -->
+      <div class="app-view" id="viewSearch"></div>
+
+      <!-- VIEW 5: PRODUCT DETAIL PAGE (PDP) -->
       <div class="app-view" id="viewPDP"></div>
 
-      <!-- VIEW 4: NATIVE CHECKOUT & ADDRESS FLOW -->
+      <!-- VIEW 6: NATIVE CHECKOUT & ADDRESS FLOW -->
       <div class="app-view" id="viewCheckout"></div>
 
-      <!-- VIEW 5: OFFERS & COUPONS ENGINE -->
+      <!-- VIEW 7: OFFERS & COUPONS ENGINE -->
       <div class="app-view" id="viewOffers"></div>
 
-      <!-- VIEW 6: WISHLIST MANAGER -->
+      <!-- VIEW 8: WISHLIST MANAGER -->
       <div class="app-view" id="viewWishlist"></div>
 
-      <!-- VIEW 7: USER PROFILE & ORDER TRACKING -->
+      <!-- VIEW 9: USER PROFILE & ORDER TRACKING -->
       <div class="app-view" id="viewProfile"></div>
 
-      <!-- VIEW 8: B2B WHOLESALE PORTAL -->
+      <!-- VIEW 10: B2B WHOLESALE PORTAL -->
       <div class="app-view" id="viewB2B"></div>
 
-      <!-- VIEW 9: FULL ADMIN DASHBOARD -->
+      <!-- VIEW 11: FULL ADMIN DASHBOARD -->
       <div class="app-view" id="viewAdmin"></div>
     </main>
-
-
 
     <nav class="m-curved-bottom-nav">
       <a href="#" class="m-nav-tab-link active" id="nav-home" onclick="switchView('home'); return false;"><i class="ri-home-5-fill"></i><span>Home</span></a>
@@ -348,6 +382,19 @@
           <span id="drawerSubtotalPrice">₹0</span>
         </div>
         <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="closeCartDrawer(); switchView('checkout');">Proceed to Checkout →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared PLP Filter Drawer Bottom Sheet -->
+  <div class="drawer-backdrop" id="filterDrawerBackdrop" onclick="closeFilterDrawer()">
+    <div class="modal-window" style="max-width:440px; margin-top:auto; border-radius:24px 24px 0 0;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+        <h3 style="font-family:var(--font-sans); font-size:18px; font-weight:800; color:#0f172a;">Filter Products</h3>
+        <button onclick="closeFilterDrawer()" style="font-size:18px; font-weight:800; background:none; border:none; cursor:pointer;">✕</button>
+      </div>
+      <div id="filterDrawerContent">
+        <!-- Injected via app.js -->
       </div>
     </div>
   </div>

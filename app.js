@@ -130,8 +130,8 @@ function switchView(viewName, params = {}) {
   const globalSearch = document.querySelector('.m-search-wrap-sticky');
   const cartFab = document.getElementById('mFloatingCartFab');
 
-  if (viewName === 'pdp' || viewName === 'checkout') {
-    if (globalHeader) globalHeader.style.display = 'none';
+  if (viewName === 'pdp' || viewName === 'checkout' || viewName === 'search' || viewName === 'plp') {
+    if (globalHeader) globalHeader.style.display = (viewName === 'plp' || viewName === 'search') ? 'none' : 'none';
     if (globalSearch) globalSearch.style.display = 'none';
     if (cartFab) cartFab.style.display = 'none';
   } else {
@@ -159,6 +159,10 @@ function switchView(viewName, params = {}) {
     renderAllSections();
   } else if (viewName === 'categories') {
     renderCategoriesView();
+  } else if (viewName === 'plp') {
+    renderPLPView(params.category || 'All');
+  } else if (viewName === 'search') {
+    renderSearchView(params.query || '');
   } else if (viewName === 'pdp') {
     if (params.productId) renderPDPView(params.productId);
   } else if (viewName === 'checkout') {
@@ -182,6 +186,7 @@ function switchView(viewName, params = {}) {
 function capitalizeFirst(str) {
   if (!str) return '';
   if (str === 'pdp') return 'PDP';
+  if (str === 'plp') return 'PLP';
   if (str === 'b2b') return 'B2B';
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
@@ -321,22 +326,24 @@ function createMobileTileHTML(product, index = 0) {
       <div class="m-tile-img-wrapper">
         <img src="${product.image}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop'">
         <span class="m-discount-badge-orange">${product.discount}% OFF</span>
-        <span class="m-rating-badge-gold">★ ${product.rating}</span>
-        <button class="m-wishlist-heart-btn" onclick="event.stopPropagation(); toggleWishlist(${product.id}, this)">
-          <i data-feather="heart" style="width:14px; height:14px; ${isWishlisted ? 'fill:#d8448e; stroke:#d8448e;' : ''}"></i>
+        <button class="m-wishlist-heart-btn" onclick="event.stopPropagation(); toggleWishlist(${product.id}, this)" title="Add to Wishlist">
+          <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="${isWishlisted ? 'color:#d82b7d;' : 'color:#1e293b;'}"></i>
         </button>
+        <div class="m-rating-badge-gold">
+          <span style="color:#f59e0b;">★</span>
+          <span>${product.rating}</span>
+        </div>
       </div>
       <div class="m-tile-content-box">
         <span class="m-tile-cat-name">${product.category}</span>
         <h4 class="m-tile-title">${product.title}</h4>
         <div class="m-tile-price-row">
-          <div>
-            <span class="m-tile-curr-price">₹${effectivePrice}</span>
-            <span class="m-tile-save-green" style="display:block;">Save ₹${saveAmount}</span>
-          </div>
+          <span class="m-tile-curr-price">₹${effectivePrice}</span>
+          <span class="m-tile-mrp-price">₹${product.originalPrice}</span>
         </div>
+        <span class="m-tile-save-green">You Save ₹${saveAmount}</span>
         <button class="m-tile-add-btn" onclick="event.stopPropagation(); quickAddToCart(${product.id})">
-          <i data-feather="shopping-bag" style="width:12px; height:12px;"></i> + Quick Add
+          <span class="m-add-icon-sq"><i class="ri-add-line"></i></span> Quick Add
         </button>
       </div>
     </div>
@@ -381,43 +388,39 @@ function renderPDPView(productId) {
   const isWishlisted = wishlist.includes(product.id);
   const cartCount = cart.reduce((acc, i) => acc + i.qty, 0);
 
+  const relatedItems = ALL_PRODUCTS.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
+
   container.innerHTML = `
     <div class="pdp-view-wrapper">
-      <!-- 1. Amazon Clean Single Top Header Bar -->
+      <!-- 1. Top Bar -->
       <div class="pdp-top-bar">
         <button class="pdp-back-icon-btn" onclick="switchView('home')">
-          <i data-feather="arrow-left" style="width:18px; height:18px;"></i>
+          <i class="ri-arrow-left-line"></i>
         </button>
         
-        <div class="pdp-search-mini-pill" onclick="switchView('home')">
-          <i data-feather="search" style="width:14px; color:#94a3b8;"></i>
+        <div class="pdp-search-mini-pill" onclick="switchView('search')">
+          <i class="ri-search-line" style="color:#94a3b8;"></i>
           <input type="text" class="pdp-search-mini-input" placeholder="Search in store..." readonly>
         </div>
 
         <div class="pdp-header-actions">
           <button class="pdp-back-icon-btn" onclick="toggleWishlist(${product.id})">
-            <i data-feather="heart" style="width:16px; height:16px; ${isWishlisted ? 'fill:#d8448e; stroke:#d8448e;' : ''}"></i>
+            <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="${isWishlisted ? 'color:#d82b7d;' : ''}"></i>
           </button>
           <button class="pdp-back-icon-btn" onclick="openCartDrawer()">
-            <i data-feather="shopping-bag" style="width:16px; height:16px;"></i>
+            <i class="ri-shopping-bag-line"></i>
             <span class="m-badge-count-dot id-cart-badge" style="top:-2px; right:-2px;">${cartCount}</span>
           </button>
         </div>
       </div>
 
-      <!-- 2. Full Width Image Frame with Single Badge & Pagination Dots -->
+      <!-- 2. Gallery Frame -->
       <div class="pdp-gallery-frame">
         <img src="${product.image}" alt="${product.title}">
         <span class="pdp-single-badge">🔥 ${product.discount}% OFF</span>
       </div>
 
-      <div class="pdp-dots-indicator">
-        <div class="pdp-dot active"></div>
-        <div class="pdp-dot"></div>
-        <div class="pdp-dot"></div>
-      </div>
-
-      <!-- 3. Amazon PDP Card using UE Brand Palette -->
+      <!-- 3. PDP Card Body -->
       <div class="pdp-card-box">
         <span class="pdp-brand-link">Brand: Unique Expressions Store > ${product.category}</span>
         <h1 class="pdp-title-text">${product.title}</h1>
@@ -428,7 +431,7 @@ function renderPDPView(productId) {
           <span class="pdp-bought-tag">🔥 200+ bought this month</span>
         </div>
 
-        <!-- Amazon Style Price Section -->
+        <!-- Price Section -->
         <div class="pdp-amazon-price-row">
           <span class="pdp-discount-tag-red">-${product.discount}%</span>
           <span class="pdp-main-price-val">₹${product.price}</span>
@@ -436,7 +439,7 @@ function renderPDPView(productId) {
         </div>
         <span class="pdp-tax-note">Inclusive of all taxes • Official GST Input Credit Invoice</span>
 
-        <!-- Style / Variant Selector -->
+        <!-- Variant Selector -->
         <span style="font-size:11px; font-weight:800; color:#334155; margin-bottom:6px; display:block;">Select Variant:</span>
         <div class="pdp-variant-chips-row">
           <div class="pdp-chip-item active" onclick="selectPdpVariant(this, 'Standard Pack')">Standard Pack</div>
@@ -444,7 +447,7 @@ function renderPDPView(productId) {
           <div class="pdp-chip-item" onclick="selectPdpVariant(this, 'Bulk Wholesale')">Bulk Wholesale</div>
         </div>
 
-        <!-- Custom Mobile Stepper Quantity Selector -->
+        <!-- Quantity Stepper -->
         <span style="font-size:11px; font-weight:800; color:#334155; margin-bottom:6px; display:block;">Quantity:</span>
         <div class="pdp-stepper-box">
           <button class="pdp-stepper-btn" onclick="updatePdpQty(-1)">-</button>
@@ -452,37 +455,112 @@ function renderPDPView(productId) {
           <button class="pdp-stepper-btn" onclick="updatePdpQty(1)">+</button>
         </div>
 
-        <!-- Amazon Style Delivery & Stock Box -->
-        <div class="pdp-amazon-delivery-box">
-          <div class="pdp-stock-green">🟢 In Stock</div>
-          <div style="font-weight:700; color:#0f172a; margin-bottom:2px;">
-            📍 FREE Express Delivery by Tomorrow
+        <!-- Pincode Delivery Availability Checker -->
+        <div class="m-pincode-checker-box">
+          <span style="font-size:11px; font-weight:800; color:#111827;">📍 Check Express Delivery ETA in Vizag:</span>
+          <div class="m-pincode-input-row">
+            <input type="text" id="pdpPincodeInput" class="form-input" value="530041" placeholder="Enter Pincode...">
+            <button class="m-hero-cta-button" style="padding:6px 14px; font-size:11px;" onclick="checkPdpPincode()">Check</button>
           </div>
-          <div style="font-size:10px; color:#64748b;">
-            Delivering to Visakhapatnam - 530041 (Dispatched from Madhurawada Store)
+          <div id="pdpPincodeResult" style="font-size:11px; font-weight:700; color:#16a34a; margin-top:6px;">
+            🟢 Express Same-Day Delivery available in Madhurawada (530041)
           </div>
         </div>
 
+        <!-- Product Overview -->
         <h4 style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:4px;">Product Overview:</h4>
-        <p style="font-size:11px; color:#475569; line-height:1.5;">
+        <p style="font-size:11px; color:#475569; line-height:1.5; margin-bottom:14px;">
           ${product.description}<br><br>
           • 100% Quality checked & durable build.<br>
           • Ideal for birthday return gifts & festive occasions.<br>
           • 7-day hassle free replacement guarantee.
         </p>
+
+        <!-- Specifications Table -->
+        <h4 style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:6px;">Product Specifications:</h4>
+        <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:10px; margin-bottom:16px; font-size:11px;">
+          <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed #e2e8f0;">
+            <span style="color:#64748b;">Category:</span> <strong style="color:#111827;">${product.category}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed #e2e8f0;">
+            <span style="color:#64748b;">Recommended Age:</span> <strong style="color:#111827;">3+ Years & Above</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed #e2e8f0;">
+            <span style="color:#64748b;">Dispatch Weight:</span> <strong style="color:#111827;">450g Standard Pack</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:4px 0;">
+            <span style="color:#64748b;">Store Origin:</span> <strong style="color:#111827;">Madhurawada, Visakhapatnam</strong>
+          </div>
+        </div>
+
+        <!-- Customer Reviews Breakdown -->
+        <h4 style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:6px;">Customer Reviews & Ratings:</h4>
+        <div style="background:#fff; border:1px solid #cbd5e1; border-radius:14px; padding:12px; margin-bottom:16px;">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+            <div style="text-align:center;">
+              <div style="font-size:26px; font-weight:800; color:#111827;">${product.rating}</div>
+              <div style="font-size:11px; color:#f59e0b; font-weight:800;">★★★★★</div>
+              <div style="font-size:9px; color:#64748b;">${product.reviewsCount} Ratings</div>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:4px; font-size:10px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span>5★</span>
+                <div class="rating-bar-bg"><div class="rating-bar-fill" style="width:85%;"></div></div>
+                <span>85%</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span>4★</span>
+                <div class="rating-bar-bg"><div class="rating-bar-fill" style="width:10%;"></div></div>
+                <span>10%</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span>3★</span>
+                <div class="rating-bar-bg"><div class="rating-bar-fill" style="width:5%;"></div></div>
+                <span>5%</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid #e2e8f0; padding-top:8px;">
+            <div style="font-size:11px; font-weight:800; color:#111827;">Verified Customer Feedback:</div>
+            <p style="font-size:11px; color:#475569; margin-top:3px;">"Outstanding quality! Purchased for my kid's birthday in Madhurawada. Packaging was top-notch." — <strong>Sowmya R. (Verified Buyer)</strong></p>
+          </div>
+        </div>
+
+        <!-- Related Products Rail -->
+        ${relatedItems.length > 0 ? `
+          <h4 style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:6px;">You Might Also Like:</h4>
+          <div class="m-horizontal-product-rail no-scrollbar" style="padding:0 0 10px 0;">
+            ${relatedItems.map((p, idx) => createMiniProductHTML(p, idx)).join('')}
+          </div>
+        ` : ''}
       </div>
     </div>
 
-    <!-- 4. Amazon Side-by-Side Action Buttons (UE Brand Palette, Anchored Above Bottom Nav) -->
+    <!-- Action Buttons -->
     <div class="pdp-action-buttons-wrap">
       <button class="pdp-btn-amazon-cart" onclick="addPdpToCart(false)">
-        <i data-feather="shopping-bag" style="width:16px; height:16px;"></i> Add to Cart
+        <i class="ri-shopping-bag-line"></i> Add to Cart
       </button>
       <button class="pdp-btn-amazon-buy" onclick="addPdpToCart(true)">
         ⚡ Buy Now
       </button>
     </div>
   `;
+}
+
+function checkPdpPincode() {
+  const pin = document.getElementById('pdpPincodeInput')?.value.trim();
+  const resEl = document.getElementById('pdpPincodeResult');
+  if (!resEl) return;
+
+  if (pin === '530041' || pin.startsWith('530')) {
+    resEl.innerHTML = `🟢 Express Same-Day Delivery available for Visakhapatnam (${pin})!`;
+    resEl.style.color = '#16a34a';
+  } else {
+    resEl.innerHTML = `🚚 Standard Courier Delivery available for ${pin} (2-4 Days).`;
+    resEl.style.color = '#2563eb';
+  }
 }
 
 function selectPdpVariant(el, variantName) {
@@ -523,35 +601,392 @@ function addPdpToCart(goToCheckout = false) {
 }
 
 /* ==========================================================================
-   DEDICATED CATEGORIES BROWSER VIEW
+   SPRINT 1 SHOPPING JOURNEY STATE & UTILITIES
+   ========================================================================== */
+let plpCategory = 'All';
+let plpSortOption = 'featured';
+let plpMinRating = 0;
+let plpPriceRange = 'all';
+let plpViewMode = 'grid'; // 'grid' (2-column) or 'list' (1-column)
+
+let searchHistory = JSON.parse(localStorage.getItem('ue_search_history') || '["Teddy Bear", "RC Super Stunt Car", "Brass Ganesha", "Return Gift Box", "Pastel Highlighter"]');
+let giftWrapSelected = false;
+let giftWrapMessage = '';
+let selectedDeliveryAddress = 'home';
+let selectedDeliverySpeed = 'express';
+
+const SUBCATEGORIES_MAP = {
+  Toys: [
+    { title: "STEM & Learning Kits", icon: "🧩", count: 18 },
+    { title: "RC Stunt & Speed Cars", icon: "🏎️", count: 14 },
+    { title: "Soft Plush Teddy Bears", icon: "🧸", count: 12 },
+    { title: "Magnetic Board Games", icon: "🎲", count: 10 }
+  ],
+  Gadgets: [
+    { title: "Astronaut Star Lamps", icon: "🌌", count: 8 },
+    { title: "Mini RGB Speakers", icon: "🔊", count: 12 },
+    { title: "Smart Digital Clocks", icon: "⏰", count: 9 },
+    { title: "Cute Desk Fans", icon: "💡", count: 11 }
+  ],
+  Handicrafts: [
+    { title: "Brass Idol Sculptures", icon: "🔱", count: 15 },
+    { title: "Carved Wooden Decor", icon: "🪵", count: 14 },
+    { title: "Kondapalli Traditional Toys", icon: "🪆", count: 10 },
+    { title: "Terracotta Designer Lamps", icon: "🪔", count: 12 }
+  ],
+  Stationery: [
+    { title: "Kawaii Multi-Color Pen Sets", icon: "🖊️", count: 20 },
+    { title: "Password Hardbound Journals", icon: "📓", count: 14 },
+    { title: "Pastel Marker Highlighter Packs", icon: "🖍️", count: 16 },
+    { title: "Calligraphy Brush Sets", icon: "🎨", count: 12 }
+  ],
+  "Return Gifts": [
+    { title: "Kids Birthday Combo Boxes", icon: "🎁", count: 25 },
+    { title: "Custom Name Keychains", icon: "🔑", count: 18 },
+    { title: "Eco Seed Pencil Gift Packs", icon: "🌱", count: 22 },
+    { title: "Mini Drawing & Color Kits", icon: "✏️", count: 15 }
+  ]
+};
+
+/* ==========================================================================
+   1. FINISH CATEGORIES DIRECTORY VIEW
    ========================================================================== */
 function renderCategoriesView() {
   const container = document.getElementById('viewCategories');
   container.innerHTML = `
     <div class="m-view-header-bar">
-      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
+      <button class="m-back-btn" onclick="switchView('home')">← Store Home</button>
       <span class="m-view-title">Browse Categories</span>
       <div></div>
     </div>
 
     <div class="checkout-container">
-      <div class="checkout-card" style="margin-bottom:16px;">
-        <h3 style="font-size:16px; font-weight:800; margin-bottom:12px;">Explore Category Directory</h3>
-        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;">
-          ${CATEGORIES.map(cat => {
-            const count = ALL_PRODUCTS.filter(p => p.category === cat).length;
-            return `
-              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px; text-align:center; cursor:pointer;" onclick="filterCategory('${cat}'); switchView('home');">
-                <div style="font-size:24px; margin-bottom:4px;">${cat === 'Toys' ? '🧸' : cat === 'Gadgets' ? '📱' : cat === 'Handicrafts' ? '🎨' : cat === 'Stationery' ? '✏️' : '🎁'}</div>
-                <div style="font-size:12px; font-weight:800; color:#0f172a;">${cat}</div>
-                <div style="font-size:10px; color:#64748b;">${count} Products</div>
+      <div class="checkout-card" style="margin-bottom:14px; background:linear-gradient(135deg, #1e1b4b, #d82b7d); color:#ffffff; padding:18px;">
+        <span style="font-size:10px; font-weight:800; color:#fef08a; letter-spacing:0.04em;">BOUTIQUE TAXONOMY DIRECTORY</span>
+        <h2 style="font-size:18px; font-weight:800; margin:4px 0 6px 0;">200+ Curated Products</h2>
+        <p style="font-size:11px; opacity:0.9;">Explore direct store offerings in Visakhapatnam across Toys, Gadgets, Artisan Crafts, Stationery & Return Gifts.</p>
+      </div>
+
+      ${CATEGORIES.map(cat => {
+        const count = ALL_PRODUCTS.filter(p => p.category === cat).length;
+        const subcats = SUBCATEGORIES_MAP[cat] || [];
+        return `
+          <div class="checkout-card" style="margin-bottom:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div>
+                <h3 style="font-size:15px; font-weight:800; color:#111827;">${cat === 'Toys' ? '🧸' : cat === 'Gadgets' ? '📱' : cat === 'Handicrafts' ? '🎨' : cat === 'Stationery' ? '✏️' : '🎁'} ${cat} Collection</h3>
+                <span style="font-size:11px; color:#64748b; font-weight:600;">${count} Products Available</span>
               </div>
-            `;
-          }).join('')}
+              <button class="m-hero-cta-button" style="font-size:10px; padding:6px 12px;" onclick="switchView('plp', { category: '${cat}' })">
+                Open PLP →
+              </button>
+            </div>
+
+            <div class="m-subcat-grid">
+              ${subcats.map(sub => `
+                <div class="m-subcat-card" onclick="switchView('plp', { category: '${cat}' })">
+                  <div class="m-subcat-icon">${sub.icon}</div>
+                  <div class="m-subcat-title">${sub.title}</div>
+                  <div class="m-subcat-count">${sub.count} items</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+/* ==========================================================================
+   2. BUILD PRODUCT LISTING PAGE (PLP) FROM SCRATCH
+   ========================================================================== */
+function renderPLPView(categoryName = 'All') {
+  plpCategory = categoryName;
+  const container = document.getElementById('viewPLP');
+
+  let filtered = ALL_PRODUCTS;
+  if (plpCategory !== 'All') {
+    filtered = ALL_PRODUCTS.filter(p => p.category === plpCategory);
+  }
+
+  if (plpMinRating > 0) {
+    filtered = filtered.filter(p => parseFloat(p.rating) >= plpMinRating);
+  }
+
+  if (plpPriceRange !== 'all') {
+    if (plpPriceRange === 'under300') filtered = filtered.filter(p => p.price < 300);
+    else if (plpPriceRange === '300to700') filtered = filtered.filter(p => p.price >= 300 && p.price <= 700);
+    else if (plpPriceRange === '700to1500') filtered = filtered.filter(p => p.price > 700 && p.price <= 1500);
+    else if (plpPriceRange === 'above1500') filtered = filtered.filter(p => p.price > 1500);
+  }
+
+  // Sorting
+  if (plpSortOption === 'price-low') filtered.sort((a, b) => a.price - b.price);
+  else if (plpSortOption === 'price-high') filtered.sort((a, b) => b.price - a.price);
+  else if (plpSortOption === 'rating') filtered.sort((a, b) => b.rating - a.rating);
+  else if (plpSortOption === 'discount') filtered.sort((a, b) => b.discount - a.discount);
+
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('categories')">← Categories</button>
+      <span class="m-view-title">${plpCategory === 'All' ? 'All Products' : plpCategory + ' Store'} (${filtered.length})</span>
+      <div style="display:flex; gap:6px;">
+        <button class="m-icon-btn-circle" style="width:32px; height:32px;" onclick="switchView('search')"><i class="ri-search-line"></i></button>
+        <button class="m-icon-btn-circle" style="width:32px; height:32px;" onclick="openCartDrawer()"><i class="ri-shopping-bag-line"></i></button>
+      </div>
+    </div>
+
+    <!-- PLP Sticky Sort & Filter Bar -->
+    <div class="m-plp-bar-sticky">
+      <select class="m-plp-sort-select" onchange="changePLPSort(this.value)">
+        <option value="featured" ${plpSortOption === 'featured' ? 'selected' : ''}>Sort: Featured</option>
+        <option value="price-low" ${plpSortOption === 'price-low' ? 'selected' : ''}>Price: Low → High</option>
+        <option value="price-high" ${plpSortOption === 'price-high' ? 'selected' : ''}>Price: High → Low</option>
+        <option value="rating" ${plpSortOption === 'rating' ? 'selected' : ''}>Highest Rating</option>
+        <option value="discount" ${plpSortOption === 'discount' ? 'selected' : ''}>Biggest Discount</option>
+      </select>
+
+      <button class="m-plp-filter-btn" onclick="openFilterDrawer()">
+        <i class="ri-filter-3-line"></i> Filter ${plpMinRating > 0 || plpPriceRange !== 'all' ? '●' : ''}
+      </button>
+
+      <button class="m-plp-view-toggle-btn" onclick="togglePLPViewMode()" title="Toggle Grid/List">
+        <i class="${plpViewMode === 'grid' ? 'ri-list-check-2' : 'ri-grid-fill'}"></i>
+      </button>
+    </div>
+
+    <div style="padding:14px 16px;">
+      ${filtered.length === 0 ? `
+        <div style="text-align:center; padding:40px 16px; background:#fff; border-radius:20px;">
+          <h4 style="font-size:15px; font-weight:800; margin-bottom:6px;">No Matching Products Found</h4>
+          <p style="font-size:11px; color:#64748b; margin-bottom:14px;">Try clearing rating or price filters to see catalog items.</p>
+          <button class="m-hero-cta-button" onclick="resetPLPFilters()">Reset All Filters</button>
+        </div>
+      ` : plpViewMode === 'grid' ? `
+        <div class="m-product-grid-2col" style="padding:0;">
+          ${filtered.map((p, idx) => createMobileTileHTML(p, idx)).join('')}
+        </div>
+      ` : `
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          ${filtered.map((p, idx) => createMobileListCardHTML(p, idx)).join('')}
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function createMobileListCardHTML(product, index = 0) {
+  const isWishlisted = wishlist.includes(product.id);
+  const effectivePrice = getEffectivePrice(product.price);
+  const saveAmount = product.originalPrice - effectivePrice;
+  return `
+    <div class="m-product-list-card" onclick="openProductPage(${product.id})">
+      <div class="m-list-img-frame">
+        <img src="${product.image}" loading="lazy">
+        <span class="m-discount-badge-orange" style="top:6px; left:6px; font-size:8.5px; padding:2px 6px;">${product.discount}% OFF</span>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <span class="m-tile-cat-name">${product.category}</span>
+          <h4 class="m-tile-title" style="height:auto; margin:2px 0 4px 0;">${product.title}</h4>
+          <div style="font-size:11px; font-weight:700; color:#f59e0b;">★ ${product.rating} (${product.reviewsCount} reviews)</div>
+        </div>
+        <div>
+          <div style="display:flex; align-items:baseline; gap:6px;">
+            <span class="m-tile-curr-price">₹${effectivePrice}</span>
+            <span class="m-tile-mrp-price">₹${product.originalPrice}</span>
+            <span class="m-tile-save-green" style="font-size:9.5px;">Save ₹${saveAmount}</span>
+          </div>
+          <button class="m-tile-add-btn" style="margin-top:6px; padding:6px 10px;" onclick="event.stopPropagation(); quickAddToCart(${product.id})">
+            + Add to Cart
+          </button>
         </div>
       </div>
     </div>
   `;
+}
+
+function changePLPSort(val) {
+  plpSortOption = val;
+  renderPLPView(plpCategory);
+}
+
+function togglePLPViewMode() {
+  plpViewMode = plpViewMode === 'grid' ? 'list' : 'grid';
+  renderPLPView(plpCategory);
+}
+
+function openFilterDrawer() {
+  const container = document.getElementById('filterDrawerContent');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="form-group">
+      <label class="form-label">Price Range Filter:</label>
+      <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;">
+        <label style="font-size:11px; font-weight:700; background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; display:flex; align-items:center; gap:6px;">
+          <input type="radio" name="fltPrice" value="all" ${plpPriceRange === 'all' ? 'checked' : ''}> All Prices
+        </label>
+        <label style="font-size:11px; font-weight:700; background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; display:flex; align-items:center; gap:6px;">
+          <input type="radio" name="fltPrice" value="under300" ${plpPriceRange === 'under300' ? 'checked' : ''}> Under ₹300
+        </label>
+        <label style="font-size:11px; font-weight:700; background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; display:flex; align-items:center; gap:6px;">
+          <input type="radio" name="fltPrice" value="300to700" ${plpPriceRange === '300to700' ? 'checked' : ''}> ₹300 - ₹700
+        </label>
+        <label style="font-size:11px; font-weight:700; background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0; display:flex; align-items:center; gap:6px;">
+          <input type="radio" name="fltPrice" value="700to1500" ${plpPriceRange === '700to1500' ? 'checked' : ''}> ₹700 - ₹1,500
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Minimum Customer Rating:</label>
+      <div style="display:flex; gap:8px;">
+        <label style="font-size:11px; font-weight:700; background:#f8fafc; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; display:flex; align-items:center; gap:4px;">
+          <input type="radio" name="fltRating" value="0" ${plpMinRating === 0 ? 'checked' : ''}> All
+        </label>
+        <label style="font-size:11px; font-weight:700; background:#f8fafc; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; display:flex; align-items:center; gap:4px;">
+          <input type="radio" name="fltRating" value="4.0" ${plpMinRating === 4.0 ? 'checked' : ''}> 4.0★+
+        </label>
+        <label style="font-size:11px; font-weight:700; background:#f8fafc; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; display:flex; align-items:center; gap:4px;">
+          <input type="radio" name="fltRating" value="4.5" ${plpMinRating === 4.5 ? 'checked' : ''}> 4.5★+
+        </label>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:20px;">
+      <button class="m-back-btn" style="flex:1; justify-content:center;" onclick="resetPLPFilters()">Reset</button>
+      <button class="m-hero-cta-button" style="flex:2; justify-content:center;" onclick="applyPLPFiltersFromDrawer()">Apply Filters</button>
+    </div>
+  `;
+
+  document.getElementById('filterDrawerBackdrop').classList.add('active');
+}
+
+function closeFilterDrawer() {
+  document.getElementById('filterDrawerBackdrop').classList.remove('active');
+}
+
+function applyPLPFiltersFromDrawer() {
+  const priceEl = document.querySelector('input[name="fltPrice"]:checked');
+  const ratingEl = document.querySelector('input[name="fltRating"]:checked');
+
+  if (priceEl) plpPriceRange = priceEl.value;
+  if (ratingEl) plpMinRating = parseFloat(ratingEl.value);
+
+  closeFilterDrawer();
+  renderPLPView(plpCategory);
+}
+
+function resetPLPFilters() {
+  plpPriceRange = 'all';
+  plpMinRating = 0;
+  closeFilterDrawer();
+  renderPLPView(plpCategory);
+}
+
+/* ==========================================================================
+   3. BUILD SEARCH RESULTS & SEARCH HISTORY VIEW
+   ========================================================================== */
+function renderSearchView(initialQuery = '') {
+  const container = document.getElementById('viewSearch');
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('home')">← Back</button>
+      <div style="flex:1; margin:0 10px;" class="m-search-pill-input">
+        <i class="ri-search-line" style="color:var(--brand-magenta);"></i>
+        <input type="text" id="dedicatedSearchInput" class="m-search-input" placeholder="Search Toys, Gadgets, Gifts..." value="${initialQuery}" oninput="execLiveSearch(this.value)">
+        <i class="ri-mic-line" style="color:#64748b; cursor:pointer;" onclick="openVoiceSearchModal()"></i>
+      </div>
+    </div>
+
+    <div class="checkout-container">
+      <div id="searchHistoryBox" style="margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:12px; font-weight:800; color:#334155;">Recent Searches</span>
+          <span style="font-size:10px; color:var(--brand-magenta); cursor:pointer; font-weight:700;" onclick="clearSearchHistory()">Clear History</span>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+          ${searchHistory.map(term => `
+            <span style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:700; color:#334155; cursor:pointer;" onclick="setSearchTerm('${term}')">
+              🔍 ${term}
+            </span>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <span style="font-size:12px; font-weight:800; color:#334155; margin-bottom:8px; display:block;">🔥 Trending Keywords</span>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+          <span style="background:#fff0f6; border:1px solid #fbcfe8; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; color:#d82b7d; cursor:pointer;" onclick="setSearchTerm('Teddy')">🧸 Soft Teddy Bear</span>
+          <span style="background:#fff0f6; border:1px solid #fbcfe8; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; color:#d82b7d; cursor:pointer;" onclick="setSearchTerm('Stunt Car')">🏎️ RC Stunt Car</span>
+          <span style="background:#fff0f6; border:1px solid #fbcfe8; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; color:#d82b7d; cursor:pointer;" onclick="setSearchTerm('Ganesha')">🎨 Brass Ganesha</span>
+          <span style="background:#fff0f6; border:1px solid #fbcfe8; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; color:#d82b7d; cursor:pointer;" onclick="setSearchTerm('Return Gift')">🎁 Party Return Gifts</span>
+        </div>
+      </div>
+
+      <div id="searchResultsGrid"></div>
+    </div>
+  `;
+  if (initialQuery) execLiveSearch(initialQuery);
+}
+
+function setSearchTerm(term) {
+  const input = document.getElementById('dedicatedSearchInput');
+  if (input) input.value = term;
+  execLiveSearch(term);
+}
+
+function clearSearchHistory() {
+  searchHistory = [];
+  localStorage.removeItem('ue_search_history');
+  renderSearchView();
+}
+
+function execLiveSearch(query) {
+  const grid = document.getElementById('searchResultsGrid');
+  if (!grid) return;
+
+  const q = query.trim().toLowerCase();
+  if (q.length === 0) {
+    grid.innerHTML = '';
+    return;
+  }
+
+  if (!searchHistory.includes(q) && q.length > 2) {
+    searchHistory.unshift(q);
+    if (searchHistory.length > 6) searchHistory.pop();
+    localStorage.setItem('ue_search_history', JSON.stringify(searchHistory));
+  }
+
+  const matches = ALL_PRODUCTS.filter(p => p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+
+  if (matches.length === 0) {
+    grid.innerHTML = `
+      <div style="text-align:center; padding:30px 10px; background:#fff; border-radius:20px;">
+        <div style="font-size:32px; margin-bottom:6px;">🔍</div>
+        <h4 style="font-size:15px; font-weight:800;">No Items Match "${query}"</h4>
+        <p style="font-size:11px; color:#64748b; margin-bottom:14px;">Try searching for "Toys", "Gadgets", or "Gifts"</p>
+        <div style="font-size:12px; font-weight:800; text-align:left; margin-bottom:8px;">Recommended Items For You:</div>
+        <div class="m-product-grid-2col" style="padding:0;">
+          ${ALL_PRODUCTS.slice(0, 4).map((p, idx) => createMobileTileHTML(p, idx)).join('')}
+        </div>
+      </div>
+    `;
+  } else {
+    grid.innerHTML = `
+      <div style="font-size:12px; font-weight:800; color:#334155; margin-bottom:8px;">Found ${matches.length} matching items:</div>
+      <div class="m-product-grid-2col" style="padding:0;">
+        ${matches.map((p, idx) => createMobileTileHTML(p, idx)).join('')}
+      </div>
+    `;
+  }
+}
+
+function openVoiceSearchModal() {
+  alert('🎤 Voice Search Activated! Listening for product name...');
+  setSearchTerm('Stunt Car');
 }
 
 /* ==========================================================================
@@ -600,20 +1035,39 @@ function renderCheckoutView() {
         </div>
       </div>
 
-      <!-- Step 2: Delivery Address -->
+      <!-- Step 2: Delivery Address & Speed -->
       <div class="checkout-card">
-        <div class="checkout-step-title"><span class="checkout-step-num">2</span> Delivery Address (Visakhapatnam)</div>
+        <div class="checkout-step-title"><span class="checkout-step-num">2</span> Delivery Address & Speed</div>
+        
+        <span style="font-size:11px; font-weight:800; color:#334155; margin-bottom:6px; display:block;">Select Saved Address:</span>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+          <div class="payment-option-card ${selectedDeliveryAddress === 'home' ? 'active' : ''}" onclick="selectDeliveryAddressCard(this, 'home')">
+            <input type="radio" name="chkAddrRadio" ${selectedDeliveryAddress === 'home' ? 'checked' : ''}>
+            <div>
+              <div style="font-size:12px; font-weight:800;">🏠 Home Address (Default)</div>
+              <div style="font-size:10px; color:#64748b;">LIG 347, Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041</div>
+            </div>
+          </div>
+          <div class="payment-option-card ${selectedDeliveryAddress === 'work' ? 'active' : ''}" onclick="selectDeliveryAddressCard(this, 'work')">
+            <input type="radio" name="chkAddrRadio" ${selectedDeliveryAddress === 'work' ? 'checked' : ''}>
+            <div>
+              <div style="font-size:12px; font-weight:800;">💼 Work Office</div>
+              <div style="font-size:10px; color:#64748b;">IT Hill No. 3, Rushikonda, Visakhapatnam - 530045</div>
+            </div>
+          </div>
+        </div>
+
         <div class="form-group">
           <label class="form-label">Full Name *</label>
-          <input type="text" id="chkName" class="form-input" placeholder="e.g. Sowmya Rao">
+          <input type="text" id="chkName" class="form-input" placeholder="e.g. Sowmya Rao" value="Sowmya Rao">
         </div>
         <div class="form-group">
           <label class="form-label">Mobile / WhatsApp Number *</label>
-          <input type="tel" id="chkPhone" class="form-input" placeholder="e.g. 9876543210">
+          <input type="tel" id="chkPhone" class="form-input" placeholder="e.g. 9876543210" value="8886662334">
         </div>
         <div class="form-group">
           <label class="form-label">Delivery Street Address *</label>
-          <input type="text" id="chkAddress" class="form-input" placeholder="Flat No, Building, Street near Landmark">
+          <input type="text" id="chkAddress" class="form-input" placeholder="Flat No, Building, Street near Landmark" value="LIG 347, 2-115/9/1, near Shivalayam">
         </div>
         <div style="display:flex; gap:10px;">
           <div class="form-group" style="flex:1;">
@@ -695,6 +1149,10 @@ function selectPaymentMethod(el, methodName) {
   el.classList.add('active');
   const radio = el.querySelector('input[type="radio"]');
   if (radio) radio.checked = true;
+}
+
+function selectDeliveryAddressCard(el, addressKey) {
+  selectedDeliveryAddress = addressKey;
 }
 
 function placeOrderFinal(grandTotal) {
@@ -1093,25 +1551,57 @@ function renderDrawerCartItems() {
   }
 
   let subtotal = 0;
-  container.innerHTML = cart.map((item, idx) => {
-    subtotal += item.price * item.qty;
-    return `
-      <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #e2e8f0;">
-        <img src="${item.image}" style="width:50px; height:50px; border-radius:8px; object-fit:cover;">
-        <div style="flex:1;">
-          <h5 style="font-size:13px; font-weight:700; color:#0f172a;">${item.title}</h5>
-          <span style="font-size:13px; font-weight:800; color:var(--brand-magenta-dark);">₹${item.price}</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:6px; background:#f1f5f9; padding:2px 8px; border-radius:6px;">
-          <button onclick="updateCartQty(${idx}, -1)" style="font-weight:800; cursor:pointer;">-</button>
-          <span style="font-size:12px; font-weight:700; color:#0f172a;">${item.qty}</span>
-          <button onclick="updateCartQty(${idx}, 1)" style="font-weight:800; cursor:pointer;">+</button>
-        </div>
-      </div>
-    `;
-  }).join('');
+  cart.forEach(i => subtotal += i.price * i.qty);
+  const wrapCost = giftWrapSelected ? (30 * cart.length) : 0;
+  const finalSubtotal = subtotal + wrapCost;
 
-  if (subtotalEl) subtotalEl.innerText = `₹${subtotal}`;
+  const neededForFree = Math.max(0, 499 - subtotal);
+  const progressPercent = Math.min(100, Math.round((subtotal / 499) * 100));
+
+  let html = `
+    <div class="m-free-shipping-wrap">
+      <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:800; color:#111827;">
+        <span>${neededForFree === 0 ? '🎉 You Unlocked FREE Vizag Delivery!' : '🚚 Add ₹' + neededForFree + ' more for FREE Express Delivery'}</span>
+        <span>${progressPercent}%</span>
+      </div>
+      <div class="m-shipping-progress-track">
+        <div class="m-shipping-progress-bar" style="width:${progressPercent}%;"></div>
+      </div>
+    </div>
+
+    <div class="m-gift-wrap-box">
+      <label style="display:flex; align-items:center; gap:8px; font-weight:800; color:#111827; cursor:pointer;">
+        <input type="checkbox" id="cartGiftWrapChk" ${giftWrapSelected ? 'checked' : ''} onchange="toggleGiftWrap(this.checked)">
+        🎁 Add Luxury Gift Packaging & Custom Card (+₹30/item)
+      </label>
+      ${giftWrapSelected ? `
+        <input type="text" class="form-input" style="margin-top:6px; font-size:11px;" placeholder="Enter custom birthday/gift message card text..." value="${giftWrapMessage}" oninput="giftWrapMessage=this.value">
+      ` : ''}
+    </div>
+  `;
+
+  html += cart.map((item, idx) => `
+    <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #e2e8f0;">
+      <img src="${item.image}" style="width:50px; height:50px; border-radius:8px; object-fit:cover;">
+      <div style="flex:1;">
+        <h5 style="font-size:13px; font-weight:700; color:#0f172a;">${item.title}</h5>
+        <span style="font-size:13px; font-weight:800; color:var(--brand-magenta-dark);">₹${item.price}</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; background:#f1f5f9; padding:2px 8px; border-radius:6px;">
+        <button onclick="updateCartQty(${idx}, -1)" style="font-weight:800; cursor:pointer; border:none; background:none;">-</button>
+        <span style="font-size:12px; font-weight:700; color:#0f172a;">${item.qty}</span>
+        <button onclick="updateCartQty(${idx}, 1)" style="font-weight:800; cursor:pointer; border:none; background:none;">+</button>
+      </div>
+    </div>
+  `).join('');
+
+  container.innerHTML = html;
+  if (subtotalEl) subtotalEl.innerText = `₹${finalSubtotal}`;
+}
+
+function toggleGiftWrap(val) {
+  giftWrapSelected = val;
+  renderDrawerCartItems();
 }
 
 function updateCartQty(idx, change) {
