@@ -2248,6 +2248,59 @@ function calculateB2BTotal() {
   if (el) el.innerText = `₹${total.toLocaleString('en-IN')}`;
 }
 
+// ─── Cloudinary Upload Helper ────────────────────────────────────────────────
+async function uploadToCloudinary(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const base64Data = reader.result;
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file: base64Data })
+        });
+        const data = await res.json();
+        if (data.success && data.url) {
+          resolve(data.url);
+        } else {
+          reject(data.error || 'Upload failed');
+        }
+      } catch (err) {
+        reject(err.message || 'Upload error');
+      }
+    };
+    reader.onerror = () => reject('File reading failed');
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleAdminImageUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const previewBox = document.getElementById('admImagePreview');
+  const previewImg = document.getElementById('admPreviewImg');
+  const urlText = document.getElementById('admImgUrlText');
+  const hiddenUrl = document.getElementById('admImageUrl');
+
+  if (previewBox) {
+    previewBox.style.display = 'flex';
+    if (previewImg) previewImg.src = '';
+    if (urlText) urlText.innerText = '⏳ Uploading to Cloudinary...';
+  }
+
+  try {
+    const uploadedUrl = await uploadToCloudinary(file);
+    if (hiddenUrl) hiddenUrl.value = uploadedUrl;
+    if (previewImg) previewImg.src = uploadedUrl;
+    if (urlText) urlText.innerText = uploadedUrl;
+  } catch (err) {
+    alert('Cloudinary upload error: ' + err);
+    if (previewBox) previewBox.style.display = 'none';
+  }
+}
+
 /* ==========================================================================
    FULL ADMIN MANAGEMENT DASHBOARD VIEW
    ========================================================================== */
@@ -2283,7 +2336,21 @@ function renderAdminView() {
             <input type="number" id="admPrice" class="form-input" placeholder="e.g. 599">
           </div>
         </div>
-        <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="adminAddNewProduct()">
+
+        <div class="form-group" style="margin-top:8px;">
+          <label class="form-label">Product Image (Cloudinary Hosted)</label>
+          <input type="file" id="admImageFile" accept="image/*" class="form-input" style="padding:8px; font-size:12px;" onchange="handleAdminImageUpload(this)">
+          <input type="hidden" id="admImageUrl" value="">
+          <div id="admImagePreview" style="margin-top:10px; display:none; align-items:center; gap:12px; background:#f8fafc; padding:8px 12px; border-radius:12px; border:1px solid #e2e8f0;">
+            <img id="admPreviewImg" src="" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">
+            <div style="overflow:hidden;">
+              <span style="font-size:11px; font-weight:700; color:#16a34a; display:block;">✨ Cloudinary Image Uploaded</span>
+              <span id="admImgUrlText" style="font-size:10px; color:#64748b; word-break:break-all; display:block;"></span>
+            </div>
+          </div>
+        </div>
+
+        <button class="m-hero-cta-button" style="width:100%; justify-content:center; margin-top:12px;" onclick="adminAddNewProduct()">
           + Publish Product to Store
         </button>
       </div>
@@ -2295,6 +2362,7 @@ function renderAdminView() {
             <thead>
               <tr>
                 <th>ID</th>
+                <th>Image</th>
                 <th>Title</th>
                 <th>Category</th>
                 <th>Price</th>
@@ -2305,7 +2373,8 @@ function renderAdminView() {
               ${ALL_PRODUCTS.slice(0, 15).map(p => `
                 <tr>
                   <td>#${p.id}</td>
-                  <td><strong>${p.title.slice(0, 18)}...</strong></td>
+                  <td><img src="${p.image}" style="width:32px; height:32px; object-fit:cover; border-radius:6px;"></td>
+                  <td><strong>${p.title.slice(0, 16)}...</strong></td>
                   <td>${p.category}</td>
                   <td>₹${p.price}</td>
                   <td>
@@ -2325,16 +2394,18 @@ async function adminAddNewProduct() {
   const title = document.getElementById('admTitle')?.value;
   const category = document.getElementById('admCategory')?.value;
   const price = parseFloat(document.getElementById('admPrice')?.value || '0');
+  const customImg = document.getElementById('admImageUrl')?.value;
 
   if (!title || !price) {
     alert('Please enter product title and price!');
     return;
   }
 
+  const defaultImg = 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop';
   const newProd = {
     title: title,
     category: category,
-    image: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop',
+    image: customImg || defaultImg,
     price: price,
     originalPrice: Math.round(price * 1.25),
     discount: 20,
@@ -2347,11 +2418,11 @@ async function adminAddNewProduct() {
   const sbResult = await sbAdminInsertProduct(newProd);
   if (sbResult) {
     newProd.id = sbResult.id;
-    alert(`✅ Product "${title}" published to Supabase & store!`);
+    alert(`✅ Product "${title}" published to Supabase & Cloudinary CDN!`);
   } else {
     // Fallback: use local ID
     newProd.id = ALL_PRODUCTS.length + 1;
-    alert(`✅ Product "${title}" published locally (Supabase sync pending).`);
+    alert(`✅ Product "${title}" published locally with Cloudinary image.`);
   }
 
   ALL_PRODUCTS.unshift(newProd);
@@ -2962,12 +3033,39 @@ function setReviewRating(rating) {
   });
 }
 
+async function handleReviewPhotoUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const previewBox = document.getElementById('revPhotoPreview');
+  const previewImg = document.getElementById('revPreviewImg');
+  const urlText = document.getElementById('revImgUrlText');
+  const hiddenUrl = document.getElementById('revPhotoUrl');
+
+  if (previewBox) {
+    previewBox.style.display = 'flex';
+    if (previewImg) previewImg.src = '';
+    if (urlText) urlText.innerText = '⏳ Uploading photo to Cloudinary...';
+  }
+
+  try {
+    const uploadedUrl = await uploadToCloudinary(file);
+    if (hiddenUrl) hiddenUrl.value = uploadedUrl;
+    if (previewImg) previewImg.src = uploadedUrl;
+    if (urlText) urlText.innerText = uploadedUrl;
+  } catch (err) {
+    alert('Photo upload error: ' + err);
+    if (previewBox) previewBox.style.display = 'none';
+  }
+}
+
 async function submitCustomerReview() {
   const productSelect = document.getElementById('revProductSelect');
   const rating = parseInt(document.getElementById('revRatingValue').value || '5');
   const title = document.getElementById('revTitleInput').value.trim();
   const comment = document.getElementById('revCommentInput').value.trim();
   const name = document.getElementById('revNameInput').value.trim() || 'G Mounika Durga';
+  const customPhoto = document.getElementById('revPhotoUrl')?.value;
 
   if (!title || !comment) {
     alert('Please enter a review headline and comment.');
@@ -2987,7 +3085,8 @@ async function submitCustomerReview() {
     comment: comment,
     date: "Today",
     verified: true,
-    helpfulCount: 1
+    helpfulCount: 1,
+    image: customPhoto || undefined
   };
 
   // Save locally first

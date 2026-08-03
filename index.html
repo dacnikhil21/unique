@@ -627,6 +627,18 @@
         <label class="form-label">Your Name</label>
         <input type="text" id="revNameInput" class="form-input" value="G Mounika Durga">
       </div>
+      <div class="form-group">
+        <label class="form-label">Attach Product Photo (Optional - Cloudinary)</label>
+        <input type="file" id="revPhotoFile" accept="image/*" class="form-input" style="padding:6px; font-size:12px;" onchange="handleReviewPhotoUpload(this)">
+        <input type="hidden" id="revPhotoUrl" value="">
+        <div id="revPhotoPreview" style="margin-top:8px; display:none; align-items:center; gap:10px; background:#f8fafc; padding:6px 10px; border-radius:10px; border:1px solid #e2e8f0;">
+          <img id="revPreviewImg" src="" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1;">
+          <div style="overflow:hidden;">
+            <span style="font-size:10px; font-weight:700; color:#16a34a; display:block;">✨ Photo Uploaded to Cloudinary</span>
+            <span id="revImgUrlText" style="font-size:9px; color:#64748b; word-break:break-all; display:block;"></span>
+          </div>
+        </div>
+      </div>
       <div style="margin-bottom:14px;">
         <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:#475569; cursor:pointer;">
           <input type="checkbox" id="revVerifiedCheck" checked> I am a verified buyer in Visakhapatnam
