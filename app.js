@@ -277,9 +277,51 @@ function openWishlistDrawer() {
   switchView('wishlist');
 }
 
+// ─── History Router: encode/decode URL hash params ───────────────────────────
+function encodeNavParams(params) {
+  if (!params || Object.keys(params).length === 0) return '';
+  return '&' + Object.entries(params).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+}
+
+function parseNavHash() {
+  const hash = window.location.hash.slice(1); // remove leading '#'
+  if (!hash) return null;
+  const parts = {};
+  hash.split('&').forEach(seg => {
+    const [k, v] = seg.split('=');
+    if (k && v !== undefined) parts[decodeURIComponent(k)] = decodeURIComponent(v);
+  });
+  if (!parts.view) return null;
+  const { view, ...params } = parts;
+  // Convert numeric params back to numbers
+  Object.keys(params).forEach(k => {
+    if (!isNaN(params[k])) params[k] = Number(params[k]);
+  });
+  return { view, params };
+}
+
+// ─── popstate: Android Back button navigates through app screens ───────────────
+window.addEventListener('popstate', (e) => {
+  if (e.state && e.state.view) {
+    switchView(e.state.view, e.state.params || {}, true);
+  } else {
+    // Fell back to the base state (Home)
+    switchView('home', {}, true);
+  }
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
-  // Show app immediately with local data
-  switchView('home');
+  // Restore view from URL hash (deep link from WhatsApp etc.) or default to home
+  const restoredNav = parseNavHash();
+  if (restoredNav) {
+    // Replace base history entry with home so Back from deep link goes home first
+    history.replaceState({ view: 'home', params: {} }, '', '#view=home');
+    switchView(restoredNav.view, restoredNav.params || {});
+  } else {
+    // Set a base history entry — replaceState so Back from home exits the app
+    history.replaceState({ view: 'home', params: {} }, '', '#view=home');
+    switchView('home', {}, true); // skipHistory=true since we just set it above
+  }
   updateBadges();
   startHeroCarousel();
   if (window.feather) feather.replace();
@@ -350,8 +392,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 /* ==========================================================================
    SPA ROUTER ENGINE
    ========================================================================== */
-function switchView(viewName, params = {}) {
+function switchView(viewName, params = {}, skipHistory = false) {
   currentView = viewName;
+
+  // ── Push a history entry so Android Back navigates through screens ──────────
+  if (!skipHistory) {
+    history.pushState(
+      { view: viewName, params },
+      '',
+      `#view=${viewName}${encodeNavParams(params)}`
+    );
+  }
+
   document.querySelectorAll('.app-view').forEach(el => el.classList.remove('active-view'));
 
   // Header and Floating Cart FAB visibility
