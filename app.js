@@ -68,8 +68,8 @@ if (savedProducts) {
   try { ALL_PRODUCTS = JSON.parse(savedProducts); } catch (e) { ALL_PRODUCTS = []; }
 }
 
-if (!ALL_PRODUCTS || ALL_PRODUCTS.length === 0) {
-  ALL_PRODUCTS = [];
+function generateSeedProducts() {
+  const seeded = [];
   let productIdCounter = 1;
   CATEGORIES.forEach(cat => {
     const seeds = SEED_TEMPLATES[cat];
@@ -78,8 +78,7 @@ if (!ALL_PRODUCTS || ALL_PRODUCTS.length === 0) {
       const title = i > 3 ? `${seed.title} (Variant #${i + 1})` : seed.title;
       const basePrice = seed.basePrice + (i * 10);
       const originalPrice = Math.round(basePrice * (1 + seed.discount / 100));
-      
-      ALL_PRODUCTS.push({
+      seeded.push({
         id: productIdCounter++,
         title: title,
         category: cat,
@@ -94,6 +93,11 @@ if (!ALL_PRODUCTS || ALL_PRODUCTS.length === 0) {
       });
     }
   });
+  return seeded;
+}
+
+if (!ALL_PRODUCTS || ALL_PRODUCTS.length === 0) {
+  ALL_PRODUCTS = generateSeedProducts();
   localStorage.setItem('ue_products', JSON.stringify(ALL_PRODUCTS));
 }
 
@@ -108,14 +112,239 @@ let appliedDiscountAmount = 0;
 let cart = JSON.parse(localStorage.getItem('ue_cart') || '[]');
 let wishlist = JSON.parse(localStorage.getItem('ue_wishlist') || '[]');
 let recentlyViewed = JSON.parse(localStorage.getItem('ue_recently_viewed') || '[]');
-let userOrders = JSON.parse(localStorage.getItem('ue_orders') || '[]');
 
-document.addEventListener('DOMContentLoaded', () => {
+let userProfile = JSON.parse(localStorage.getItem('ue_user_profile') || JSON.stringify({
+  name: "G Mounika Durga",
+  email: "uniqueexpressions@gmail.com",
+  phone: "+91 8886662334",
+  city: "Visakhapatnam",
+  totalSavings: 1450
+}));
+
+let userAddresses = JSON.parse(localStorage.getItem('ue_addresses') || JSON.stringify([
+  {
+    id: 1,
+    name: "G Mounika Durga",
+    phone: "+91 8886662334",
+    street: "2nd floor LIG 347, 2-115/9/1, near Shivalayam",
+    area: "Midhilapuri VUDA Colony, Madhurawada",
+    city: "Visakhapatnam",
+    pincode: "530041",
+    type: "Home",
+    isDefault: true
+  },
+  {
+    id: 2,
+    name: "K. V. Raman",
+    phone: "+91 9876543210",
+    street: "Door No 10-4-5, VIP Road, Near Siripuram Circle",
+    area: "Siripuram",
+    city: "Visakhapatnam",
+    pincode: "530003",
+    type: "Work",
+    isDefault: false
+  }
+]));
+
+let userOrders = JSON.parse(localStorage.getItem('ue_orders') || JSON.stringify([
+  {
+    orderId: "UE-892410",
+    date: "01 Aug 2026, 10:15 AM",
+    status: "Out for Delivery",
+    stepIndex: 2,
+    customerName: "G Mounika Durga",
+    phone: "+91 8886662334",
+    address: "2nd floor LIG 347, Madhurawada, Visakhapatnam - 530041",
+    paymentMethod: "UPI / PhonePe",
+    totalAmount: 1298,
+    subtotal: 1298,
+    discountAmount: 130,
+    shippingFee: 0,
+    gstin: "37BVTPG7761F1Z1",
+    items: [
+      { id: 1, title: "RC Super Stunt Car 360", price: 799, qty: 1, image: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop" },
+      { id: 2, title: "Soft Cuddly Teddy Bear (Large)", price: 499, qty: 1, image: "https://images.unsplash.com/photo-1559454403-b8fb88521f11?q=80&w=600&auto=format&fit=crop" }
+    ]
+  },
+  {
+    orderId: "UE-781923",
+    date: "25 Jul 2026, 04:30 PM",
+    status: "Delivered",
+    stepIndex: 3,
+    customerName: "G Mounika Durga",
+    phone: "+91 8886662334",
+    address: "2nd floor LIG 347, Madhurawada, Visakhapatnam - 530041",
+    paymentMethod: "Cash on Delivery",
+    totalAmount: 1499,
+    subtotal: 1499,
+    discountAmount: 0,
+    shippingFee: 0,
+    gstin: "37BVTPG7761F1Z1",
+    items: [
+      { id: 9, title: "Handcrafted Brass Ganesha Idol", price: 1499, qty: 1, image: "https://images.unsplash.com/photo-1606293926075-69a00dbfde81?q=80&w=600&auto=format&fit=crop" }
+    ]
+  }
+]));
+
+let userReviews = JSON.parse(localStorage.getItem('ue_reviews') || JSON.stringify([
+  {
+    id: 101,
+    productId: 17,
+    productTitle: "Kids Birthday Return Gift Combo Box",
+    category: "Return Gifts",
+    userName: "Sowmya Rao",
+    city: "Visakhapatnam",
+    rating: 5,
+    title: "Absolute Lifesaver for Birthday Parties!",
+    comment: "Ordered 50 return gift hampers for my daughter's birthday. Exceptional quality and prompt same-day delivery in Madhurawada!",
+    date: "28 Jul 2026",
+    verified: true,
+    helpfulCount: 24,
+    image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=400&auto=format&fit=crop"
+  },
+  {
+    id: 102,
+    productId: 1,
+    productTitle: "RC Super Stunt Car 360",
+    category: "Toys",
+    userName: "Rajesh Varma",
+    city: "Madhurawada, Vizag",
+    rating: 5,
+    title: "Super Durable & Fun Remote Control Car",
+    comment: "My son loved this stunt car! The 360-degree flip works smoothly and battery performance is great.",
+    date: "24 Jul 2026",
+    verified: true,
+    helpfulCount: 18,
+    image: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop"
+  },
+  {
+    id: 103,
+    productId: 9,
+    productTitle: "Handcrafted Brass Ganesha Idol",
+    category: "Handicrafts",
+    userName: "Priya Sundaram",
+    city: "Siripuram, Vizag",
+    rating: 5,
+    title: "Exquisite Craftsmanship & Heavy Brass Build",
+    comment: "Bought this idol as a housewarming gift. The finish is handcrafted with intricate details. Highly recommended boutique!",
+    date: "19 Jul 2026",
+    verified: true,
+    helpfulCount: 15,
+    image: "https://images.unsplash.com/photo-1606293926075-69a00dbfde81?q=80&w=400&auto=format&fit=crop"
+  },
+  {
+    id: 104,
+    productId: 13,
+    productTitle: "Unicorn Kawaii Multi-Color Pen Set",
+    category: "Stationery",
+    userName: "K. V. Raman",
+    city: "Visakhapatnam",
+    rating: 4,
+    title: "Great Gift for School Children",
+    comment: "Seamless mobile app experience made ordering school stationery so convenient. Best boutique store!",
+    date: "15 Jul 2026",
+    verified: true,
+    helpfulCount: 9,
+    image: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?q=80&w=400&auto=format&fit=crop"
+  }
+]));
+
+let userReturns = JSON.parse(localStorage.getItem('ue_returns') || JSON.stringify([
+  {
+    returnId: "RET-904128",
+    orderId: "UE-781923",
+    date: "26 Jul 2026",
+    status: "Approved - Pickup Scheduled",
+    itemTitle: "Handcrafted Brass Ganesha Idol",
+    reason: "Requested Exchange for Different Statue Variant",
+    resolution: "Store Credit Refund",
+    amount: 1499
+  }
+]));
+
+let supportTickets = JSON.parse(localStorage.getItem('ue_tickets') || JSON.stringify([
+  {
+    ticketId: "TCK-4819",
+    category: "Wholesale Inquiry",
+    subject: "Bulk Return Gift Invoice with GSTIN",
+    status: "Resolved",
+    date: "29 Jul 2026",
+    message: "Requested official GST tax invoice for bulk return gift purchase."
+  }
+]));
+
+function openWishlistDrawer() {
+  switchView('wishlist');
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Show app immediately with local data
   switchView('home');
   updateBadges();
   startHeroCarousel();
   if (window.feather) feather.replace();
   if (window.lucide) lucide.createIcons();
+
+  // Bootstrap from Supabase in background
+  try {
+    const connected = await sbPing();
+    if (!connected) return;
+
+    // 1. Load products from Supabase
+    const sbProds = await sbGetProducts();
+    if (sbProds && sbProds.length > 0) {
+      ALL_PRODUCTS = sbProds;
+      localStorage.setItem('ue_products', JSON.stringify(ALL_PRODUCTS));
+      renderAllSections();
+    } else if (ALL_PRODUCTS.length > 0) {
+      // Seed Supabase with local products on first run
+      await sbSeedProducts(ALL_PRODUCTS);
+    }
+
+    // 2. Load orders from Supabase
+    const sbOrds = await sbGetOrders();
+    if (sbOrds !== null) {
+      // Merge: Supabase orders take precedence, keep local-only orders
+      const sbIds = new Set(sbOrds.map(o => o.orderId));
+      const localOnly = userOrders.filter(o => !sbIds.has(o.orderId));
+      userOrders = [...sbOrds, ...localOnly];
+      localStorage.setItem('ue_orders', JSON.stringify(userOrders));
+    }
+
+    // 3. Load reviews from Supabase
+    const sbRevs = await sbGetReviews();
+    if (sbRevs !== null && sbRevs.length > 0) {
+      const sbRevIds = new Set(sbRevs.map(r => r.id));
+      const localOnlyRevs = userReviews.filter(r => !sbRevIds.has(r.id));
+      userReviews = [...sbRevs, ...localOnlyRevs];
+      localStorage.setItem('ue_reviews', JSON.stringify(userReviews));
+    } else if (userReviews.length > 0) {
+      // Seed Supabase with demo reviews on first run
+      await sbSeedReviews(userReviews);
+    }
+
+    // 4. Load returns from Supabase
+    const sbRets = await sbGetReturns();
+    if (sbRets !== null && sbRets.length > 0) {
+      const sbRetIds = new Set(sbRets.map(r => r.returnId));
+      const localOnlyRets = userReturns.filter(r => !sbRetIds.has(r.returnId));
+      userReturns = [...sbRets, ...localOnlyRets];
+      localStorage.setItem('ue_returns', JSON.stringify(userReturns));
+    }
+
+    // 5. Load support tickets from Supabase
+    const sbTix = await sbGetTickets();
+    if (sbTix !== null && sbTix.length > 0) {
+      const sbTixIds = new Set(sbTix.map(t => t.ticketId));
+      const localOnlyTix = supportTickets.filter(t => !sbTixIds.has(t.ticketId));
+      supportTickets = [...sbTix, ...localOnlyTix];
+      localStorage.setItem('ue_tickets', JSON.stringify(supportTickets));
+    }
+
+    console.log('[UE] Supabase sync complete');
+  } catch (err) {
+    console.warn('[UE] Supabase bootstrap error (offline mode active):', err.message);
+  }
 });
 
 /* ==========================================================================
@@ -130,8 +359,8 @@ function switchView(viewName, params = {}) {
   const globalSearch = document.querySelector('.m-search-wrap-sticky');
   const cartFab = document.getElementById('mFloatingCartFab');
 
-  if (viewName === 'pdp' || viewName === 'checkout' || viewName === 'search' || viewName === 'plp') {
-    if (globalHeader) globalHeader.style.display = (viewName === 'plp' || viewName === 'search') ? 'none' : 'none';
+  if (viewName === 'pdp' || viewName === 'checkout' || viewName === 'search' || viewName === 'plp' || viewName === 'addresses' || viewName === 'orderDetails' || viewName === 'about' || viewName === 'faq' || viewName === 'terms' || viewName === 'privacy' || viewName === 'shipping' || viewName === 'reviews' || viewName === 'returns' || viewName === 'helpCenter' || viewName === 'storeLocator' || viewName === 'wholesale') {
+    if (globalHeader) globalHeader.style.display = 'none';
     if (globalSearch) globalSearch.style.display = 'none';
     if (cartFab) cartFab.style.display = 'none';
   } else {
@@ -173,10 +402,32 @@ function switchView(viewName, params = {}) {
     renderWishlistView();
   } else if (viewName === 'profile') {
     renderProfileView();
-  } else if (viewName === 'b2b') {
+  } else if (viewName === 'addresses') {
+    renderAddressesView();
+  } else if (viewName === 'orderDetails') {
+    renderOrderDetailsView(params.orderId || (userOrders[0] ? userOrders[0].orderId : null));
+  } else if (viewName === 'about') {
+    renderAboutView();
+  } else if (viewName === 'faq') {
+    renderFAQView();
+  } else if (viewName === 'terms') {
+    renderTermsView();
+  } else if (viewName === 'privacy') {
+    renderPrivacyView();
+  } else if (viewName === 'shipping') {
+    renderShippingView();
+  } else if (viewName === 'b2b' || viewName === 'wholesale') {
     renderB2BView();
   } else if (viewName === 'admin') {
     renderAdminView();
+  } else if (viewName === 'reviews') {
+    renderReviewsView();
+  } else if (viewName === 'returns') {
+    renderReturnsView();
+  } else if (viewName === 'helpCenter') {
+    renderHelpCenterView();
+  } else if (viewName === 'storeLocator') {
+    renderStoreLocatorView();
   }
 
   if (window.feather) feather.replace();
@@ -188,6 +439,10 @@ function capitalizeFirst(str) {
   if (str === 'pdp') return 'PDP';
   if (str === 'plp') return 'PLP';
   if (str === 'b2b') return 'B2B';
+  if (str === 'faq') return 'FAQ';
+  if (str === 'orderDetails') return 'OrderDetails';
+  if (str === 'helpCenter') return 'HelpCenter';
+  if (str === 'storeLocator') return 'StoreLocator';
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
@@ -327,7 +582,7 @@ function createMobileTileHTML(product, index = 0) {
         <img src="${product.image}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop'">
         <span class="m-discount-badge-orange">${product.discount}% OFF</span>
         <button class="m-wishlist-heart-btn" onclick="event.stopPropagation(); toggleWishlist(${product.id}, this)" title="Add to Wishlist">
-          <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="${isWishlisted ? 'color:#d82b7d;' : 'color:#1e293b;'}"></i>
+          <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="${isWishlisted ? 'color:#0f172a;' : 'color:#1e293b;'}"></i>
         </button>
         <div class="m-rating-badge-gold">
           <span style="color:#f59e0b;">★</span>
@@ -405,7 +660,7 @@ function renderPDPView(productId) {
 
         <div class="pdp-header-actions">
           <button class="pdp-back-icon-btn" onclick="toggleWishlist(${product.id})">
-            <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="${isWishlisted ? 'color:#d82b7d;' : ''}"></i>
+            <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="${isWishlisted ? 'color:#0f172a;' : ''}"></i>
           </button>
           <button class="pdp-back-icon-btn" onclick="openCartDrawer()">
             <i class="ri-shopping-bag-line"></i>
@@ -655,13 +910,13 @@ function renderCategoriesView() {
   const container = document.getElementById('viewCategories');
   container.innerHTML = `
     <div class="m-view-header-bar">
-      <button class="m-back-btn" onclick="switchView('home')">← Store Home</button>
+      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
       <span class="m-view-title">Browse Categories</span>
       <div></div>
     </div>
 
     <div class="checkout-container">
-      <div class="checkout-card" style="margin-bottom:14px; background:linear-gradient(135deg, #1e1b4b, #d82b7d); color:#ffffff; padding:18px;">
+      <div class="checkout-card" style="margin-bottom:14px; background:linear-gradient(135deg, #0f172a, #334155); color:#ffffff; padding:18px;">
         <span style="font-size:10px; font-weight:800; color:#fef08a; letter-spacing:0.04em;">BOUTIQUE TAXONOMY DIRECTORY</span>
         <h2 style="font-size:18px; font-weight:800; margin:4px 0 6px 0;">200+ Curated Products</h2>
         <p style="font-size:11px; opacity:0.9;">Explore direct store offerings in Visakhapatnam across Toys, Gadgets, Artisan Crafts, Stationery & Return Gifts.</p>
@@ -677,7 +932,7 @@ function renderCategoriesView() {
                 <h3 style="font-size:15px; font-weight:800; color:#111827;">${cat === 'Toys' ? '🧸' : cat === 'Gadgets' ? '📱' : cat === 'Handicrafts' ? '🎨' : cat === 'Stationery' ? '✏️' : '🎁'} ${cat} Collection</h3>
                 <span style="font-size:11px; color:#64748b; font-weight:600;">${count} Products Available</span>
               </div>
-              <button class="m-hero-cta-button" style="font-size:10px; padding:6px 12px;" onclick="switchView('plp', { category: '${cat}' })">
+              <button class="m-hero-cta-button" style="font-size:12px; min-height:36px; padding:6px 16px;" onclick="switchView('plp', { category: '${cat}' })">
                 Open PLP →
               </button>
             </div>
@@ -919,10 +1174,10 @@ function renderSearchView(initialQuery = '') {
       <div style="margin-bottom:16px;">
         <span style="font-size:12px; font-weight:800; color:#334155; margin-bottom:8px; display:block;">🔥 Trending Keywords</span>
         <div style="display:flex; flex-wrap:wrap; gap:6px;">
-          <span style="background:#fff0f6; border:1px solid #fbcfe8; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; color:#d82b7d; cursor:pointer;" onclick="setSearchTerm('Teddy')">🧸 Soft Teddy Bear</span>
-          <span style="background:#fff0f6; border:1px solid #fbcfe8; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; color:#d82b7d; cursor:pointer;" onclick="setSearchTerm('Stunt Car')">🏎️ RC Stunt Car</span>
-          <span style="background:#fff0f6; border:1px solid #fbcfe8; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; color:#d82b7d; cursor:pointer;" onclick="setSearchTerm('Ganesha')">🎨 Brass Ganesha</span>
-          <span style="background:#fff0f6; border:1px solid #fbcfe8; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; color:#d82b7d; cursor:pointer;" onclick="setSearchTerm('Return Gift')">🎁 Party Return Gifts</span>
+          <span style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; color:#1e293b; cursor:pointer;" onclick="setSearchTerm('Teddy')">🧸 Soft Teddy Bear</span>
+          <span style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; color:#1e293b; cursor:pointer;" onclick="setSearchTerm('Stunt Car')">🏎️ RC Stunt Car</span>
+          <span style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; color:#1e293b; cursor:pointer;" onclick="setSearchTerm('Ganesha')">🎨 Brass Ganesha</span>
+          <span style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; color:#1e293b; cursor:pointer;" onclick="setSearchTerm('Return Gift')">🎁 Party Return Gifts</span>
         </div>
       </div>
 
@@ -1178,17 +1433,27 @@ function placeOrderFinal(grandTotal) {
 
   const orderRecord = {
     orderId: 'UE-' + Math.floor(100000 + Math.random() * 900000),
-    date: new Date().toLocaleDateString(),
+    date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
     items: [...cart],
     totalAmount: grandTotal,
+    subtotal: grandTotal,
+    discountAmount: appliedDiscountAmount || 0,
+    shippingFee: 0,
+    stepIndex: 0,
     status: 'Order Confirmed',
     customerName: name,
     phone: phone,
-    address: address || 'Madhurawada, Visakhapatnam'
+    address: address || 'Madhurawada, Visakhapatnam',
+    paymentMethod: document.querySelector('.payment-option-card.active span')?.innerText || 'Online',
+    gstin: '37BVTPG7761F1Z1'
   };
 
+  // Save locally first
   userOrders.unshift(orderRecord);
   localStorage.setItem('ue_orders', JSON.stringify(userOrders));
+
+  // Sync to Supabase (non-blocking)
+  sbInsertOrder(orderRecord).catch(err => console.warn('[UE] Order sync failed:', err));
 
   // Reset Cart
   cart = [];
@@ -1208,7 +1473,7 @@ function placeOrderFinal(grandTotal) {
         <div style="width:60px; height:60px; border-radius:50%; background:#dcfce7; color:#16a34a; font-size:28px; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 14px auto; box-shadow:0 4px 12px rgba(22,163,74,0.2);">
           ✓
         </div>
-        <span style="background:rgba(216, 68, 142, 0.1); color:var(--brand-magenta-dark); font-size:11px; font-weight:800; padding:4px 12px; border-radius:99px; display:inline-block; margin-bottom:10px;">
+        <span style="background:#f1f5f9; color:#0f172a; font-size:11px; font-weight:800; padding:4px 12px; border-radius:99px; display:inline-block; margin-bottom:10px;">
           ORDER #${orderRecord.orderId}
         </span>
         <h2 style="font-size:19px; font-weight:800; color:#0f172a; margin-bottom:6px;">Thank You, ${name}!</h2>
@@ -1256,7 +1521,7 @@ function renderOffersView() {
     </div>
 
     <div class="checkout-container">
-      <div class="checkout-card" style="background:linear-gradient(135deg, #2a1e54, #d8448e); color:#fff;">
+      <div class="checkout-card" style="background:linear-gradient(135deg, #0f172a, #334155); color:#fff;">
         <span class="m-featured-tag" style="color:#fef08a;">FESTIVE SPECIAL</span>
         <h2 style="font-size:20px; font-weight:800; margin:4px 0;">Extra 10% Off Everything</h2>
         <p style="font-size:11px; opacity:0.9; margin-bottom:12px;">Use promo code UNIQUE10 at checkout on any order above ₹299.</p>
@@ -1285,17 +1550,32 @@ function renderWishlistView() {
     <div class="m-view-header-bar">
       <button class="m-back-btn" onclick="switchView('home')">← Home</button>
       <span class="m-view-title">My Wishlist (${wishlist.length})</span>
-      <div></div>
+      ${wishlist.length > 0 ? `
+        <button class="m-back-btn" style="background:#fee2e2; color:#dc2626; border-color:#fca5a5;" onclick="clearWishlist()">Clear All</button>
+      ` : '<div></div>'}
     </div>
 
     <div class="checkout-container">
       ${wishProducts.length === 0 ? `
         <div class="checkout-card" style="text-align:center; padding:40px 16px;">
-          <h3 style="font-size:16px; font-weight:800; margin-bottom:6px;">Your Wishlist is Empty</h3>
-          <p style="font-size:11px; color:#64748b; margin-bottom:14px;">Tap the heart icon on any product to save it for later.</p>
-          <button class="m-hero-cta-button" style="justify-content:center;" onclick="switchView('home')">Explore Store Products →</button>
+          <div style="width:60px; height:60px; border-radius:50%; background:#f1f5f9; color:#64748b; font-size:26px; display:flex; align-items:center; justify-content:center; margin:0 auto 12px auto;">❤️</div>
+          <h3 style="font-size:16px; font-weight:800; color:#0f172a; margin-bottom:6px;">Your Wishlist is Empty</h3>
+          <p style="font-size:11px; color:#64748b; margin-bottom:16px;">Tap the heart icon on any product to save items for quick access later.</p>
+          <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="switchView('home')">Explore Store Catalog →</button>
+        </div>
+
+        <div style="margin-top:16px;">
+          <h4 style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:10px;">🔥 Recommended Items You Might Like</h4>
+          <div class="m-product-grid-2col" style="padding:0;">
+            ${ALL_PRODUCTS.slice(0, 4).map((p, idx) => createMobileTileHTML(p, idx)).join('')}
+          </div>
         </div>
       ` : `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <span style="font-size:12px; font-weight:800; color:#334155;">Saved Items (${wishProducts.length})</span>
+          <button class="m-hero-cta-button" style="padding:5px 12px; font-size:11px;" onclick="moveWishlistToCart()">Move All to Cart →</button>
+        </div>
+
         <div class="m-product-grid-2col" style="padding:0;">
           ${wishProducts.map((p, idx) => createMobileTileHTML(p, idx)).join('')}
         </div>
@@ -1304,51 +1584,553 @@ function renderWishlistView() {
   `;
 }
 
+function moveWishlistToCart() {
+  if (wishlist.length === 0) return;
+  wishlist.forEach(pId => {
+    const product = ALL_PRODUCTS.find(p => p.id === pId);
+    if (product) {
+      const existing = cart.find(i => i.id === pId);
+      if (existing) existing.qty += 1;
+      else cart.push({ ...product, qty: 1 });
+    }
+  });
+  wishlist = [];
+  localStorage.setItem('ue_wishlist', JSON.stringify(wishlist));
+  saveCart();
+  alert('✅ All wishlist items moved to cart!');
+  renderWishlistView();
+}
+
+function clearWishlist() {
+  if (confirm('Are you sure you want to clear your wishlist?')) {
+    wishlist = [];
+    localStorage.setItem('ue_wishlist', JSON.stringify(wishlist));
+    updateBadges();
+    renderWishlistView();
+  }
+}
+
 /* ==========================================================================
-   USER PROFILE & ORDER TRACKING VIEW
+   USER PROFILE & CUSTOMER PORTAL VIEW
    ========================================================================== */
 function renderProfileView() {
   const container = document.getElementById('viewProfile');
+  const defaultAddress = userAddresses.find(a => a.isDefault) || userAddresses[0];
+
   container.innerHTML = `
     <div class="m-view-header-bar">
-      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
-      <span class="m-view-title">My Profile & Orders</span>
-      <button class="m-icon-btn-circle" onclick="openAdminPinModal()"><i data-feather="shield"></i></button>
+      <button class="m-back-btn" onclick="switchView('home')">← Store</button>
+      <span class="m-view-title">My Account Portal</span>
+      <button class="m-icon-btn-circle" onclick="openEditProfileModal()" title="Edit Profile"><i class="ri-edit-line"></i></button>
     </div>
 
     <div class="checkout-container">
-      <div class="checkout-card" style="display:flex; align-items:center; gap:14px;">
-        <div style="width:50px; height:50px; border-radius:50%; background:var(--brand-magenta); color:#fff; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:800;">UE</div>
-        <div>
-          <h3 style="font-size:15px; font-weight:800;">Visakhapatnam Store Customer</h3>
-          <p style="font-size:11px; color:#64748b;">Owner Contact: G MOUNIKA DURGA (+91 8886662334)</p>
+      <!-- Profile User Header Card -->
+      <div class="profile-user-card">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <div class="profile-avatar-circle">
+              ${userProfile.name ? userProfile.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'UE'}
+            </div>
+            <div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <h3 style="font-size:16px; font-weight:800; color:#0f172a;">${userProfile.name}</h3>
+                <span class="profile-vip-pill">✨ VIP</span>
+              </div>
+              <p style="font-size:11px; color:#64748b; margin-top:2px;">📞 ${userProfile.phone} • ${userProfile.city}</p>
+              <p style="font-size:10px; color:#94a3b8;">✉️ ${userProfile.email}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stats Grid -->
+        <div class="profile-stats-grid">
+          <div class="profile-stat-box" onclick="switchView('orderDetails')">
+            <div class="profile-stat-num">${userOrders.length}</div>
+            <div class="profile-stat-label">Total Orders</div>
+          </div>
+          <div class="profile-stat-box" onclick="switchView('wishlist')">
+            <div class="profile-stat-num">${wishlist.length}</div>
+            <div class="profile-stat-label">Saved Items</div>
+          </div>
+          <div class="profile-stat-box" onclick="switchView('addresses')">
+            <div class="profile-stat-num">${userAddresses.length}</div>
+            <div class="profile-stat-label">Addresses</div>
+          </div>
         </div>
       </div>
 
-      <div class="checkout-card">
-        <h3 style="font-size:14px; font-weight:800; margin-bottom:12px;">Order History (${userOrders.length})</h3>
-        ${userOrders.length === 0 ? `<p style="font-size:12px; color:#64748b;">No recent orders placed yet.</p>` : `
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            ${userOrders.map(ord => `
-              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px;">
-                <div style="display:flex; justify-content:space-between; font-weight:800; font-size:12px; margin-bottom:4px;">
-                  <span>${ord.orderId}</span>
-                  <span style="color:var(--func-green); font-size:11px;">● ${ord.status}</span>
-                </div>
-                <div style="font-size:10px; color:#64748b; margin-bottom:6px;">Date: ${ord.date} • Total: ₹${ord.totalAmount}</div>
-                <div style="font-size:11px; font-weight:700; color:#334155;">Delivery to: ${ord.customerName} (${ord.address})</div>
-              </div>
-            `).join('')}
+      <!-- Quick Action Menu Tiles -->
+      <h4 style="font-size:12px; font-weight:800; color:#334155; margin-bottom:8px;">MY ACCOUNT & SHOPPING</h4>
+
+      <div class="profile-menu-tile" onclick="switchView('orderDetails')">
+        <div class="profile-menu-left">
+          <div class="profile-menu-icon"><i class="ri-shopping-bag-3-line"></i></div>
+          <div>
+            <div class="profile-menu-title">Order History & Live Tracking</div>
+            <div class="profile-menu-sub">Track active dispatches & past orders (${userOrders.length})</div>
           </div>
-        `}
+        </div>
+        <span style="font-size:12px; color:#94a3b8;">→</span>
       </div>
 
-      <div class="checkout-card" style="text-align:center;">
-        <h4 style="font-size:13px; font-weight:800; margin-bottom:6px;">Store Owner Access</h4>
-        <button class="m-hero-cta-button" style="justify-content:center;" onclick="openAdminPinModal()">Open Admin Management System →</button>
+      <div class="profile-menu-tile" onclick="switchView('addresses')">
+        <div class="profile-menu-left">
+          <div class="profile-menu-icon"><i class="ri-map-pin-line"></i></div>
+          <div>
+            <div class="profile-menu-title">Saved Address Book</div>
+            <div class="profile-menu-sub">${defaultAddress ? defaultAddress.area + ' (' + defaultAddress.pincode + ')' : 'Manage delivery addresses'}</div>
+          </div>
+        </div>
+        <span style="font-size:12px; color:#94a3b8;">→</span>
+      </div>
+
+      <div class="profile-menu-tile" onclick="switchView('wishlist')">
+        <div class="profile-menu-left">
+          <div class="profile-menu-icon"><i class="ri-heart-3-line"></i></div>
+          <div>
+            <div class="profile-menu-title">My Saved Wishlist</div>
+            <div class="profile-menu-sub">${wishlist.length} items saved for later</div>
+          </div>
+        </div>
+        <span style="font-size:12px; color:#94a3b8;">→</span>
+      </div>
+
+      <div class="profile-menu-tile" onclick="switchView('offers')">
+        <div class="profile-menu-left">
+          <div class="profile-menu-icon"><i class="ri-coupon-3-line"></i></div>
+          <div>
+            <div class="profile-menu-title">Coupons & VIP Discounts</div>
+            <div class="profile-menu-sub">Active Code: UNIQUE10 (Flat 10% Off)</div>
+          </div>
+        </div>
+        <span style="font-size:12px; color:#94a3b8;">→</span>
+      </div>
+
+      ${userOrders.length > 0 ? `
+        <div class="profile-menu-tile" onclick="openInvoiceModal('${userOrders[0].orderId}')">
+          <div class="profile-menu-left">
+            <div class="profile-menu-icon"><i class="ri-file-text-line"></i></div>
+            <div>
+              <div class="profile-menu-title">Printable GST Invoice</div>
+              <div class="profile-menu-sub">Official Tax Invoice for Order #${userOrders[0].orderId}</div>
+            </div>
+          </div>
+          <span style="font-size:12px; color:#94a3b8;">→</span>
+        </div>
+      ` : ''}
+
+      <div class="profile-menu-tile" onclick="openWhatsAppChat()">
+        <div class="profile-menu-left">
+          <div class="profile-menu-icon" style="background:#dcfce7; color:#16a34a;"><i class="ri-whatsapp-line"></i></div>
+          <div>
+            <div class="profile-menu-title">24/7 VIP Customer Support</div>
+            <div class="profile-menu-sub">Direct WhatsApp chat with Store Owner G Mounika Durga</div>
+          </div>
+        </div>
+        <span style="font-size:12px; color:#94a3b8;">→</span>
+      </div>
+
+      <div class="checkout-card" style="text-align:center; margin-top:14px;">
+        <h4 style="font-size:12px; font-weight:800; color:#334155; margin-bottom:4px;">Store Management Portal</h4>
+        <button class="m-hero-cta-button" style="width:100%; justify-content:center; min-height:44px;" onclick="openAdminPinModal()">🔐 Open Store Admin System →</button>
       </div>
     </div>
   `;
+}
+
+/* ==========================================================================
+   SAVED ADDRESS BOOK VIEW
+   ========================================================================== */
+function renderAddressesView() {
+  const container = document.getElementById('viewAddresses');
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('profile')">← Profile</button>
+      <span class="m-view-title">Saved Address Book</span>
+      <button class="m-hero-cta-button" style="padding:6px 14px; font-size:11.5px; min-height:36px;" onclick="openAddressModal()">+ Add New</button>
+    </div>
+
+    <div class="checkout-container">
+      ${userAddresses.length === 0 ? `
+        <div class="checkout-card" style="text-align:center; padding:30px 16px;">
+          <h3 style="font-size:15px; font-weight:800; margin-bottom:4px;">No Saved Addresses</h3>
+          <p style="font-size:11px; color:#64748b; margin-bottom:14px;">Add a delivery address for fast 1-click checkout.</p>
+          <button class="m-hero-cta-button" style="justify-content:center;" onclick="openAddressModal()">+ Add Delivery Address</button>
+        </div>
+      ` : `
+        <div style="margin-bottom:10px; font-size:11px; font-weight:700; color:#475569;">
+          Default address will be automatically pre-selected during checkout.
+        </div>
+        ${userAddresses.map(addr => `
+          <div class="address-card ${addr.isDefault ? 'is-default' : ''}">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="address-type-tag">${addr.type || 'Home'}</span>
+                <strong style="font-size:13px; color:#0f172a;">${addr.name}</strong>
+              </div>
+              ${addr.isDefault ? `<span class="address-default-badge">✓ DEFAULT</span>` : ''}
+            </div>
+
+            <div style="font-size:11px; color:#334155; line-height:1.5;">
+              ${addr.street}<br>
+              ${addr.area}, ${addr.city} - <strong>${addr.pincode}</strong><br>
+              📞 Phone: <strong>${addr.phone}</strong>
+            </div>
+
+            <div class="address-actions-row">
+              ${!addr.isDefault ? `
+                <button class="m-back-btn" style="min-height:34px; padding:6px 12px; font-size:11px;" onclick="setDefaultAddress(${addr.id})">Set Default</button>
+              ` : ''}
+              <button class="m-back-btn" style="min-height:34px; padding:6px 12px; font-size:11px;" onclick="openAddressModal(${addr.id})">Edit</button>
+              <button class="m-back-btn" style="min-height:34px; padding:6px 12px; font-size:11px; background:#fee2e2; color:#dc2626; border-color:#fca5a5;" onclick="deleteAddress(${addr.id})">Delete</button>
+            </div>
+          </div>
+        `).join('')}
+      `}
+    </div>
+  `;
+}
+
+function openAddressModal(addressId = null) {
+  document.getElementById('addressModalBackdrop').classList.add('active');
+  const title = document.getElementById('addressModalTitle');
+  const editId = document.getElementById('addrEditId');
+  const name = document.getElementById('addrName');
+  const phone = document.getElementById('addrPhone');
+  const street = document.getElementById('addrStreet');
+  const area = document.getElementById('addrArea');
+  const pincode = document.getElementById('addrPincode');
+  const type = document.getElementById('addrType');
+  const isDefault = document.getElementById('addrIsDefault');
+
+  if (addressId) {
+    const addr = userAddresses.find(a => a.id === addressId);
+    if (addr) {
+      if (title) title.innerText = "Edit Delivery Address";
+      if (editId) editId.value = addr.id;
+      if (name) name.value = addr.name;
+      if (phone) phone.value = addr.phone;
+      if (street) street.value = addr.street;
+      if (area) area.value = addr.area;
+      if (pincode) pincode.value = addr.pincode;
+      if (type) type.value = addr.type || "Home";
+      if (isDefault) isDefault.checked = addr.isDefault;
+      return;
+    }
+  }
+
+  if (title) title.innerText = "Add New Delivery Address";
+  if (editId) editId.value = "";
+  if (name) name.value = userProfile.name || "";
+  if (phone) phone.value = userProfile.phone || "";
+  if (street) street.value = "";
+  if (area) area.value = "Madhurawada";
+  if (pincode) pincode.value = "530041";
+  if (type) type.value = "Home";
+  if (isDefault) isDefault.checked = userAddresses.length === 0;
+}
+
+function closeAddressModal() {
+  document.getElementById('addressModalBackdrop').classList.remove('active');
+}
+
+function saveAddressFromModal() {
+  const editId = document.getElementById('addrEditId')?.value;
+  const name = document.getElementById('addrName')?.value;
+  const phone = document.getElementById('addrPhone')?.value;
+  const street = document.getElementById('addrStreet')?.value;
+  const area = document.getElementById('addrArea')?.value;
+  const pincode = document.getElementById('addrPincode')?.value;
+  const type = document.getElementById('addrType')?.value;
+  const isDefault = document.getElementById('addrIsDefault')?.checked;
+
+  if (!name || !phone || !street || !area || !pincode) {
+    alert('Please fill in all address fields!');
+    return;
+  }
+
+  if (isDefault) {
+    userAddresses.forEach(a => a.isDefault = false);
+  }
+
+  if (editId) {
+    const idx = userAddresses.findIndex(a => a.id == editId);
+    if (idx > -1) {
+      userAddresses[idx] = { id: Number(editId), name, phone, street, area, city: "Visakhapatnam", pincode, type, isDefault };
+    }
+  } else {
+    const newId = userAddresses.length > 0 ? Math.max(...userAddresses.map(a => a.id)) + 1 : 1;
+    userAddresses.push({ id: newId, name, phone, street, area, city: "Visakhapatnam", pincode, type, isDefault });
+  }
+
+  localStorage.setItem('ue_addresses', JSON.stringify(userAddresses));
+  closeAddressModal();
+  renderAddressesView();
+}
+
+function setDefaultAddress(addressId) {
+  userAddresses.forEach(a => a.isDefault = (a.id === addressId));
+  localStorage.setItem('ue_addresses', JSON.stringify(userAddresses));
+  renderAddressesView();
+}
+
+function deleteAddress(addressId) {
+  if (confirm('Are you sure you want to delete this address?')) {
+    userAddresses = userAddresses.filter(a => a.id !== addressId);
+    if (userAddresses.length > 0 && !userAddresses.some(a => a.isDefault)) {
+      userAddresses[0].isDefault = true;
+    }
+    localStorage.setItem('ue_addresses', JSON.stringify(userAddresses));
+    renderAddressesView();
+  }
+}
+
+/* ==========================================================================
+   ORDER DETAILS & INTERACTIVE TRACKING VIEW
+   ========================================================================== */
+function renderOrderDetailsView(orderId) {
+  const container = document.getElementById('viewOrderDetails');
+  const order = userOrders.find(o => o.orderId === orderId) || userOrders[0];
+
+  if (!order) {
+    container.innerHTML = `
+      <div class="m-view-header-bar">
+        <button class="m-back-btn" onclick="switchView('profile')">← Profile</button>
+        <span class="m-view-title">Order Details</span>
+        <div></div>
+      </div>
+      <div class="checkout-container">
+        <div class="checkout-card" style="text-align:center; padding:30px;">
+          <h3 style="font-size:15px; font-weight:800;">No Orders Found</h3>
+          <button class="m-hero-cta-button" style="justify-content:center; margin-top:12px;" onclick="switchView('home')">Start Shopping →</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const steps = [
+    { title: "Order Placed", desc: `Received on ${order.date}` },
+    { title: "Packed & Quality Checked", desc: "Inspection completed at Madhurawada Store" },
+    { title: "Out for Delivery", desc: "Assigned to Vizag Express Delivery Agent" },
+    { title: "Delivered", desc: "Package handed over to recipient" }
+  ];
+
+  const currentStep = order.stepIndex !== undefined ? order.stepIndex : (order.status === 'Delivered' ? 3 : 2);
+
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('profile')">← Profile</button>
+      <span class="m-view-title">Order #${order.orderId}</span>
+      <button class="m-icon-btn-circle" onclick="openInvoiceModal('${order.orderId}')" title="Invoice"><i class="ri-file-text-line"></i></button>
+    </div>
+
+    <div class="checkout-container">
+      <!-- Order Summary Header Card -->
+      <div class="checkout-card" style="background:#0f172a; color:#ffffff;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span style="font-size:10px; font-weight:800; color:#fef08a; letter-spacing:0.04em;">ORDER STATUS</span>
+          <span style="font-size:11px; font-weight:800; background:#16a34a; color:#fff; padding:2px 8px; border-radius:99px;">● ${order.status}</span>
+        </div>
+        <h2 style="font-size:18px; font-weight:800;">Total: ₹${order.totalAmount}</h2>
+        <div style="font-size:10px; color:#cbd5e1; margin-top:4px;">
+          Placed on: ${order.date} • Payment: ${order.paymentMethod}
+        </div>
+      </div>
+
+      <!-- Real-Time Interactive Tracking Timeline -->
+      <div class="tracking-timeline-box">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h4 style="font-size:13px; font-weight:800; color:#0f172a;">📍 Real-Time Dispatch Timeline</h4>
+          <button class="m-back-btn" style="padding:5px 10px; font-size:10.5px;" onclick="advanceOrderStatus('${order.orderId}')">Simulate 🔄</button>
+        </div>
+
+        <div class="timeline-steps-list">
+          ${steps.map((s, idx) => `
+            <div class="timeline-step-item ${idx < currentStep ? 'completed' : (idx === currentStep ? 'active' : '')}">
+              <div class="timeline-step-node"></div>
+              <div class="timeline-step-title">${s.title} ${idx < currentStep ? '✓' : ''}</div>
+              <div class="timeline-step-desc">${idx <= currentStep ? s.desc : 'Pending next dispatch step'}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Shipping Address Box -->
+      <div class="checkout-card">
+        <h4 style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:6px;">📦 Delivery Address:</h4>
+        <div style="font-size:11px; color:#334155; line-height:1.5;">
+          <strong>${order.customerName}</strong> (📞 ${order.phone})<br>
+          ${order.address}
+        </div>
+      </div>
+
+      <!-- Itemized Products List -->
+      <div class="checkout-card">
+        <h4 style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:10px;">Items in this Order (${order.items.length}):</h4>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          ${order.items.map(item => `
+            <div style="display:flex; align-items:center; gap:12px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+              <img src="${item.image}" style="width:50px; height:50px; border-radius:10px; object-fit:cover;">
+              <div style="flex:1;">
+                <h5 style="font-size:12px; font-weight:700; color:#0f172a;">${item.title}</h5>
+                <div style="font-size:11px; color:#64748b;">Qty: ${item.qty} × ₹${item.price}</div>
+              </div>
+              <strong style="font-size:12px; color:#0f172a;">₹${item.qty * item.price}</strong>
+            </div>
+          `).join('')}
+        </div>
+
+        <div style="margin-top:12px; padding-top:10px; border-top:1px dashed #cbd5e1; font-size:11px; display:flex; flex-direction:column; gap:4px;">
+          <div style="display:flex; justify-content:space-between; color:#64748b;">
+            <span>Subtotal:</span> <span>₹${order.subtotal || order.totalAmount}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; color:#16a34a;">
+            <span>Discount Applied:</span> <span>-₹${order.discountAmount || 0}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; color:#64748b;">
+            <span>Vizag Express Delivery:</span> <span>FREE</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-weight:800; font-size:13px; color:#0f172a; margin-top:4px;">
+            <span>Total Paid:</span> <span>₹${order.totalAmount}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons Row -->
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <button class="m-hero-cta-button" style="flex:1; justify-content:center;" onclick="reorderItems('${order.orderId}')">🔄 Reorder Items</button>
+        <button class="m-hero-cta-button" style="flex:1; justify-content:center; background:#25D366;" onclick="openWhatsAppChat('Hi UNIQUE EXPRESSIONS! I am checking on my Order #${order.orderId}')">💬 Track on WhatsApp</button>
+      </div>
+    </div>
+  `;
+}
+
+function advanceOrderStatus(orderId) {
+  const order = userOrders.find(o => o.orderId === orderId);
+  if (!order) return;
+  const statuses = ["Order Placed", "Packed & Quality Checked", "Out for Delivery", "Delivered"];
+  let currIdx = order.stepIndex !== undefined ? order.stepIndex : 2;
+  currIdx = (currIdx + 1) % statuses.length;
+  order.stepIndex = currIdx;
+  order.status = statuses[currIdx];
+  localStorage.setItem('ue_orders', JSON.stringify(userOrders));
+  renderOrderDetailsView(orderId);
+}
+
+function reorderItems(orderId) {
+  const order = userOrders.find(o => o.orderId === orderId);
+  if (!order) return;
+  order.items.forEach(item => {
+    const existing = cart.find(i => i.id === item.id);
+    if (existing) existing.qty += item.qty;
+    else cart.push({ ...item, qty: item.qty });
+  });
+  saveCart();
+  alert(`✅ Items from Order #${orderId} re-added to your cart!`);
+  openCartDrawer();
+}
+
+function openEditProfileModal() {
+  document.getElementById('editProfileModalBackdrop').classList.add('active');
+  const name = document.getElementById('profEditName');
+  const email = document.getElementById('profEditEmail');
+  const phone = document.getElementById('profEditPhone');
+  const city = document.getElementById('profEditCity');
+
+  if (name) name.value = userProfile.name;
+  if (email) email.value = userProfile.email;
+  if (phone) phone.value = userProfile.phone;
+  if (city) city.value = userProfile.city;
+}
+
+function closeEditProfileModal() {
+  document.getElementById('editProfileModalBackdrop').classList.remove('active');
+}
+
+function saveUserProfile() {
+  const name = document.getElementById('profEditName')?.value;
+  const email = document.getElementById('profEditEmail')?.value;
+  const phone = document.getElementById('profEditPhone')?.value;
+  const city = document.getElementById('profEditCity')?.value;
+
+  if (!name || !phone) {
+    alert('Please enter your name and phone number!');
+    return;
+  }
+
+  userProfile.name = name;
+  userProfile.email = email;
+  userProfile.phone = phone;
+  userProfile.city = city;
+
+  localStorage.setItem('ue_user_profile', JSON.stringify(userProfile));
+  closeEditProfileModal();
+  renderProfileView();
+}
+
+function openInvoiceModal(orderId) {
+  const order = userOrders.find(o => o.orderId === orderId) || userOrders[0];
+  if (!order) return;
+
+  const content = document.getElementById('invoiceModalContent');
+  if (content) {
+    content.innerHTML = `
+      <div class="gst-invoice-modal-box">
+        <div style="border-bottom:2px solid #0f172a; padding-bottom:10px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0;">UNIQUE EXPRESSIONS</h3>
+            <div style="font-size:10px; color:#64748b;">GSTIN: <strong>37BVTPG7761F1Z1</strong></div>
+            <div style="font-size:9.5px; color:#64748b;">Owner: G MOUNIKA DURGA | Madhurawada, Visakhapatnam</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:800; font-size:12px; color:#0f172a;">TAX INVOICE</div>
+            <div style="font-size:10px; color:#64748b;">#${order.orderId}</div>
+            <div style="font-size:9.5px; color:#64748b;">Date: ${order.date.split(',')[0]}</div>
+          </div>
+        </div>
+
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px; margin-bottom:12px; font-size:10px;">
+          <strong>Billed To:</strong> ${order.customerName} (${order.phone})<br>
+          <strong>Address:</strong> ${order.address}
+        </div>
+
+        <table style="width:100%; border-collapse:collapse; font-size:10.5px; margin-bottom:12px;">
+          <thead>
+            <tr style="background:#f1f5f9; border-bottom:1px solid #cbd5e1; text-align:left;">
+              <th style="padding:4px;">Item</th>
+              <th style="padding:4px; text-align:center;">Qty</th>
+              <th style="padding:4px; text-align:right;">Price</th>
+              <th style="padding:4px; text-align:right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${order.items.map(item => `
+              <tr style="border-bottom:1px solid #e2e8f0;">
+                <td style="padding:4px;">${item.title}</td>
+                <td style="padding:4px; text-align:center;">${item.qty}</td>
+                <td style="padding:4px; text-align:right;">₹${item.price}</td>
+                <td style="padding:4px; text-align:right;">₹${item.qty * item.price}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div style="display:flex; justify-content:space-between; font-weight:800; font-size:13px; color:#0f172a; border-top:1.5px solid #0f172a; padding-top:6px; margin-bottom:14px;">
+          <span>Grand Total (Incl. 18% GST):</span>
+          <span>₹${order.totalAmount}</span>
+        </div>
+
+        <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="window.print()">🖨️ Print GST Invoice</button>
+      </div>
+    `;
+  }
+  document.getElementById('invoiceModalBackdrop').classList.add('active');
+}
+
+function closeInvoiceModal() {
+  document.getElementById('invoiceModalBackdrop').classList.remove('active');
 }
 
 /* ==========================================================================
@@ -1487,7 +2269,7 @@ function renderAdminView() {
   `;
 }
 
-function adminAddNewProduct() {
+async function adminAddNewProduct() {
   const title = document.getElementById('admTitle')?.value;
   const category = document.getElementById('admCategory')?.value;
   const price = parseFloat(document.getElementById('admPrice')?.value || '0');
@@ -1498,7 +2280,6 @@ function adminAddNewProduct() {
   }
 
   const newProd = {
-    id: ALL_PRODUCTS.length + 1,
     title: title,
     category: category,
     image: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop',
@@ -1510,18 +2291,29 @@ function adminAddNewProduct() {
     description: `New ${category} item added by store admin.`
   };
 
+  // Try Supabase first to get a real auto-incremented ID
+  const sbResult = await sbAdminInsertProduct(newProd);
+  if (sbResult) {
+    newProd.id = sbResult.id;
+    alert(`✅ Product "${title}" published to Supabase & store!`);
+  } else {
+    // Fallback: use local ID
+    newProd.id = ALL_PRODUCTS.length + 1;
+    alert(`✅ Product "${title}" published locally (Supabase sync pending).`);
+  }
+
   ALL_PRODUCTS.unshift(newProd);
   localStorage.setItem('ue_products', JSON.stringify(ALL_PRODUCTS));
 
-  alert(`✅ Product "${title}" published successfully!`);
   renderAdminView();
   renderAllSections();
 }
 
-function adminDeleteProduct(id) {
+async function adminDeleteProduct(id) {
   if (confirm(`Are you sure you want to delete Product #${id}?`)) {
     ALL_PRODUCTS = ALL_PRODUCTS.filter(p => p.id !== id);
     localStorage.setItem('ue_products', JSON.stringify(ALL_PRODUCTS));
+    sbAdminDeleteProduct(id).catch(err => console.warn('[UE] Delete sync failed:', err));
     renderAdminView();
     renderAllSections();
   }
@@ -1542,61 +2334,120 @@ function closeCartDrawer() {
 function renderDrawerCartItems() {
   const container = document.getElementById('drawerCartItems');
   const subtotalEl = document.getElementById('drawerSubtotalPrice');
+  const itemsSubtotalEl = document.getElementById('drawerItemsSubtotal');
+  const wrapRowEl = document.getElementById('drawerWrapRow');
+  const wrapCostEl = document.getElementById('drawerWrapCost');
+  const subCountEl = document.getElementById('drawerItemCountSub');
+
   if (!container) return;
 
+  const totalItemsCount = cart.reduce((acc, i) => acc + i.qty, 0);
+  if (subCountEl) subCountEl.innerText = `${totalItemsCount} Item${totalItemsCount !== 1 ? 's' : ''}`;
+
   if (cart.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding:30px 10px; color:#94a3b8;"><p style="font-weight:700;">Your Cart is Empty</p></div>`;
+    container.innerHTML = `
+      <div style="text-align:center; padding:50px 16px; color:#64748b;">
+        <div style="width:64px; height:64px; border-radius:50%; background:#f1f5f9; color:#94a3b8; font-size:28px; display:flex; align-items:center; justify-content:center; margin:0 auto 14px auto;">
+          🛒
+        </div>
+        <h4 style="font-size:16px; font-weight:800; color:#0f172a; margin-bottom:4px;">Your Cart is Empty</h4>
+        <p style="font-size:11px; color:#64748b; margin-bottom:16px;">Add items from our boutique collection to get started.</p>
+        <button class="m-hero-cta-button" style="justify-content:center; width:100%;" onclick="closeCartDrawer(); switchView('home');">
+          Explore Products →
+        </button>
+      </div>
+    `;
     if (subtotalEl) subtotalEl.innerText = "₹0";
+    if (itemsSubtotalEl) itemsSubtotalEl.innerText = "₹0";
+    if (wrapRowEl) wrapRowEl.style.display = "none";
     return;
   }
 
-  let subtotal = 0;
-  cart.forEach(i => subtotal += i.price * i.qty);
+  let itemsSubtotal = 0;
+  cart.forEach(i => itemsSubtotal += i.price * i.qty);
   const wrapCost = giftWrapSelected ? (30 * cart.length) : 0;
-  const finalSubtotal = subtotal + wrapCost;
+  const finalSubtotal = itemsSubtotal + wrapCost;
 
-  const neededForFree = Math.max(0, 499 - subtotal);
-  const progressPercent = Math.min(100, Math.round((subtotal / 499) * 100));
+  const neededForFree = Math.max(0, 499 - itemsSubtotal);
+  const progressPercent = Math.min(100, Math.round((itemsSubtotal / 499) * 100));
 
   let html = `
-    <div class="m-free-shipping-wrap">
-      <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:800; color:#111827;">
-        <span>${neededForFree === 0 ? '🎉 You Unlocked FREE Vizag Delivery!' : '🚚 Add ₹' + neededForFree + ' more for FREE Express Delivery'}</span>
-        <span>${progressPercent}%</span>
+    <!-- 1. Free Vizag Express Delivery Tracker Bar -->
+    <div class="m-free-shipping-wrap" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:12px 14px; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; font-weight:800; color:#0f172a; margin-bottom:6px;">
+        <span>${neededForFree === 0 ? '🎉 <span style="color:#16a34a;">FREE Vizag Express Delivery Unlocked!</span>' : '🚚 Add <strong style="color:#0f172a;">₹' + neededForFree + '</strong> more for FREE Delivery'}</span>
+        <span style="background:#0f172a; color:#fff; font-size:9.5px; padding:2px 7px; border-radius:99px; font-weight:800;">${progressPercent}%</span>
       </div>
-      <div class="m-shipping-progress-track">
-        <div class="m-shipping-progress-bar" style="width:${progressPercent}%;"></div>
+      <div class="m-shipping-progress-track" style="height:8px; background:#e2e8f0; border-radius:99px; overflow:hidden;">
+        <div class="m-shipping-progress-bar" style="width:${progressPercent}%; height:100%; background:linear-gradient(90deg, #0f172a, #334155); border-radius:99px; transition:width 0.4s ease;"></div>
       </div>
     </div>
 
-    <div class="m-gift-wrap-box">
-      <label style="display:flex; align-items:center; gap:8px; font-weight:800; color:#111827; cursor:pointer;">
-        <input type="checkbox" id="cartGiftWrapChk" ${giftWrapSelected ? 'checked' : ''} onchange="toggleGiftWrap(this.checked)">
-        🎁 Add Luxury Gift Packaging & Custom Card (+₹30/item)
+    <!-- 2. Luxury Gift Packaging Card (Wrapping Fix) -->
+    <div class="m-gift-wrap-box" style="background:#ffffff; border:1.5px solid ${giftWrapSelected ? '#0f172a' : '#cbd5e1'}; border-radius:16px; padding:12px 14px; margin-bottom:16px; transition:all 0.2s ease;">
+      <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+        <input type="checkbox" id="cartGiftWrapChk" ${giftWrapSelected ? 'checked' : ''} onchange="toggleGiftWrap(this.checked)" style="width:16px; height:16px; accent-color:#0f172a; margin-top:2px; cursor:pointer;">
+        <div style="flex:1;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+            <span style="font-size:12px; font-weight:800; color:#0f172a;">🎁 Luxury Gift Packaging</span>
+            <span style="font-size:9.5px; font-weight:800; background:#f1f5f9; color:#0f172a; padding:2px 8px; border-radius:99px; border:1px solid #cbd5e1; white-space:nowrap;">+₹30/item</span>
+          </div>
+          <p style="font-size:10.5px; color:#64748b; margin-top:2px; line-height:1.3;">Satin ribbon packaging & custom greeting card text.</p>
+        </div>
       </label>
       ${giftWrapSelected ? `
-        <input type="text" class="form-input" style="margin-top:6px; font-size:11px;" placeholder="Enter custom birthday/gift message card text..." value="${giftWrapMessage}" oninput="giftWrapMessage=this.value">
+        <div style="margin-top:10px; padding-top:8px; border-top:1px dashed #cbd5e1;">
+          <input type="text" class="form-input" style="font-size:11px; padding:8px 12px; border-radius:10px;" placeholder="✍️ Enter custom greeting message..." value="${giftWrapMessage}" oninput="giftWrapMessage=this.value">
+        </div>
       ` : ''}
     </div>
+
+    <div style="font-size:11px; font-weight:800; color:#475569; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Selected Items (${cart.length}):</div>
   `;
 
   html += cart.map((item, idx) => `
-    <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #e2e8f0;">
-      <img src="${item.image}" style="width:50px; height:50px; border-radius:8px; object-fit:cover;">
-      <div style="flex:1;">
-        <h5 style="font-size:13px; font-weight:700; color:#0f172a;">${item.title}</h5>
-        <span style="font-size:13px; font-weight:800; color:var(--brand-magenta-dark);">₹${item.price}</span>
+    <div class="cart-item-tile-card" style="display:flex; align-items:center; gap:12px; padding:12px; background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; margin-bottom:10px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+      <img src="${item.image}" style="width:64px; height:64px; border-radius:12px; object-fit:cover; border:1px solid #e2e8f0; flex-shrink:0;">
+      
+      <div style="flex:1; min-width:0;">
+        <h5 style="font-size:12.5px; font-weight:800; color:#0f172a; margin:0 0 4px 0; line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.title}</h5>
+        <div style="display:flex; align-items:baseline; gap:6px;">
+          <span style="font-size:14px; font-weight:800; color:#0f172a;">₹${item.price}</span>
+          ${item.originalPrice ? `<span style="font-size:10.5px; color:#94a3b8; text-decoration:line-through;">₹${item.originalPrice}</span>` : ''}
+        </div>
       </div>
-      <div style="display:flex; align-items:center; gap:6px; background:#f1f5f9; padding:2px 8px; border-radius:6px;">
-        <button onclick="updateCartQty(${idx}, -1)" style="font-weight:800; cursor:pointer; border:none; background:none;">-</button>
-        <span style="font-size:12px; font-weight:700; color:#0f172a;">${item.qty}</span>
-        <button onclick="updateCartQty(${idx}, 1)" style="font-weight:800; cursor:pointer; border:none; background:none;">+</button>
+
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+        <button onclick="removeCartItem(${idx})" title="Remove Item" style="background:none; border:none; color:#ef4444; font-size:15px; cursor:pointer; padding:2px; outline:none;">
+          <i class="ri-delete-bin-line"></i>
+        </button>
+        <div class="cart-qty-pill-box" style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:3px 8px; border-radius:99px; border:1px solid #cbd5e1;">
+          <button onclick="updateCartQty(${idx}, -1)" style="width:20px; height:20px; border-radius:50%; border:none; background:#ffffff; font-weight:800; font-size:12px; cursor:pointer; color:#0f172a; box-shadow:0 1px 3px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; outline:none;">-</button>
+          <span style="font-size:12px; font-weight:800; color:#0f172a; min-width:14px; text-align:center;">${item.qty}</span>
+          <button onclick="updateCartQty(${idx}, 1)" style="width:20px; height:20px; border-radius:50%; border:none; background:#ffffff; font-weight:800; font-size:12px; cursor:pointer; color:#0f172a; box-shadow:0 1px 3px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; outline:none;">+</button>
+        </div>
       </div>
     </div>
   `).join('');
 
   container.innerHTML = html;
+
+  if (itemsSubtotalEl) itemsSubtotalEl.innerText = `₹${itemsSubtotal}`;
+  if (wrapRowEl) {
+    if (giftWrapSelected && wrapCost > 0) {
+      wrapRowEl.style.display = "flex";
+      if (wrapCostEl) wrapCostEl.innerText = `+₹${wrapCost}`;
+    } else {
+      wrapRowEl.style.display = "none";
+    }
+  }
   if (subtotalEl) subtotalEl.innerText = `₹${finalSubtotal}`;
+}
+
+function removeCartItem(idx) {
+  cart.splice(idx, 1);
+  saveCart();
+  renderDrawerCartItems();
 }
 
 function toggleGiftWrap(val) {
@@ -1704,6 +2555,9 @@ function verifyAdminPin() {
 function closeAllModals() {
   document.getElementById('modalBackdrop')?.classList.remove('active');
   document.getElementById('adminPinBackdrop')?.classList.remove('active');
+  document.getElementById('addressModalBackdrop')?.classList.remove('active');
+  document.getElementById('editProfileModalBackdrop')?.classList.remove('active');
+  document.getElementById('invoiceModalBackdrop')?.classList.remove('active');
 }
 
 function openWhatsAppChat(customMsg) {
@@ -1711,3 +2565,790 @@ function openWhatsAppChat(customMsg) {
   const msg = customMsg || "Hello UNIQUE EXPRESSIONS! I am interested in placing an order.";
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
 }
+
+/* ==========================================================================
+   SPRINT 4 STATIC INFORMATION PAGES RENDERERS
+   ========================================================================== */
+
+/* 1. ABOUT US PAGE */
+function renderAboutView() {
+  const container = document.getElementById('viewAbout');
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
+      <span class="m-view-title">About Unique Expressions</span>
+      <div></div>
+    </div>
+
+    <div class="checkout-container">
+      <div class="info-hero-card">
+        <span class="profile-vip-pill" style="margin-bottom:8px;">LUXURY E-COMMERCE BOUTIQUE</span>
+        <h1 class="info-hero-title">UNIQUE EXPRESSIONS</h1>
+        <p class="info-hero-sub">Visakhapatnam's premier destination for curated Kids Toys, Smart Gadgets, Artisan Handicrafts, Fancy Stationery, and Customized Return Gift Hampers.</p>
+      </div>
+
+      <div class="info-content-card">
+        <h3 class="info-section-heading">🌟 Our Store Story & Vision</h3>
+        <p class="info-text-p">
+          Founded and managed by <strong>G MOUNIKA DURGA</strong>, UNIQUE EXPRESSIONS is a boutique retail and wholesale storefront based in Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam.
+        </p>
+        <p class="info-text-p">
+          We bring together high-grade educational toys for toddlers, innovative gadgets for tech enthusiasts, traditional Indian handicrafts crafted by master artisans, aesthetic school stationery, and custom birthday party return gifts under one roof.
+        </p>
+      </div>
+
+      <div class="info-content-card">
+        <h3 class="info-section-heading">🏢 Physical Store Details & GSTIN</h3>
+        <div style="font-size:11.5px; color:#334155; line-height:1.6; background:#f8fafc; padding:12px; border-radius:14px; border:1px solid #e2e8f0; margin-bottom:12px;">
+          <strong>Store Owner:</strong> G MOUNIKA DURGA<br>
+          <strong>Official GSTIN:</strong> 37BVTPG7761F1Z1<br>
+          <strong>Address:</strong> 2nd floor LIG 347, 2-115/9/1, near Shivalayam, Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041<br>
+          <strong>Contact / WhatsApp:</strong> +91 8886662334
+        </div>
+
+        <button class="m-hero-cta-button" style="width:100%; justify-content:center; background:#25D366;" onclick="openWhatsAppChat()">
+          💬 Connect Directly on WhatsApp →
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+/* 2. FREQUENTLY ASKED QUESTIONS (FAQ) PAGE */
+function renderFAQView() {
+  const container = document.getElementById('viewFAQ');
+  const faqs = [
+    {
+      q: "How fast is delivery in Visakhapatnam?",
+      a: "We provide Same-Day Express Delivery for local orders placed in Madhurawada, Siripuram, Gajuwaka, MVP Colony, and surrounding Vizag areas! All orders above ₹499 unlock FREE delivery."
+    },
+    {
+      q: "Do you provide official GST Tax Invoices for business credit?",
+      a: "Yes! UNIQUE EXPRESSIONS is a registered GST entity (GSTIN: 37BVTPG7761F1Z1). Every retail and wholesale order includes an official GST Tax Invoice for claiming Input Tax Credit."
+    },
+    {
+      q: "Can I place bulk return gift orders for birthday parties?",
+      a: "Absolutely! We specialize in customized return gift hampers for birthday parties, weddings, baby showers, and school events. You can calculate volume quotes in our B2B Wholesale Portal or chat with us on WhatsApp."
+    },
+    {
+      q: "What payment methods are supported?",
+      a: "We support Cash on Delivery (COD), UPI (PhonePe, Google Pay, Paytm, BHIM), Credit/Debit Cards, and Net Banking."
+    },
+    {
+      q: "What is your replacement policy if an item arrives damaged?",
+      a: "We offer a 7-day hassle-free replacement guarantee. Simply share a photo or video on WhatsApp (+91 8886662334) for an immediate replacement."
+    }
+  ];
+
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
+      <span class="m-view-title">Frequently Asked Questions</span>
+      <div></div>
+    </div>
+
+    <div class="checkout-container">
+      <div class="info-hero-card">
+        <h1 class="info-hero-title">Help & FAQs</h1>
+        <p class="info-hero-sub">Find answers regarding delivery timelines, GST invoices, return gift hampers, and store policies.</p>
+      </div>
+
+      <div class="info-content-card">
+        ${faqs.map((f, idx) => `
+          <div class="faq-accordion-item ${idx === 0 ? 'active' : ''}" onclick="toggleFAQAccordion(this)">
+            <div class="faq-accordion-header">
+              <span>❓ ${f.q}</span>
+              <span class="faq-accordion-icon">▼</span>
+            </div>
+            <div class="faq-accordion-body">
+              ${f.a}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="info-content-card" style="text-align:center;">
+        <h4 style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:4px;">Have more questions?</h4>
+        <p style="font-size:11px; color:#64748b; margin-bottom:12px;">Our boutique team in Madhurawada is available 24/7 on WhatsApp.</p>
+        <button class="m-hero-cta-button" style="width:100%; justify-content:center; background:#25D366; min-height:46px; font-size:13.5px;" onclick="openWhatsAppChat()">
+          <i class="ri-whatsapp-line" style="font-size:18px;"></i> Ask Us on WhatsApp →
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function toggleFAQAccordion(el) {
+  el.classList.toggle('active');
+}
+
+/* 3. TERMS & CONDITIONS PAGE */
+function renderTermsView() {
+  const container = document.getElementById('viewTerms');
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
+      <span class="m-view-title">Terms & Conditions</span>
+      <div></div>
+    </div>
+
+    <div class="checkout-container">
+      <div class="info-hero-card">
+        <h1 class="info-hero-title">Terms & Conditions</h1>
+        <p class="info-hero-sub">Please review the terms governing retail and wholesale purchases at UNIQUE EXPRESSIONS.</p>
+      </div>
+
+      <div class="info-content-card">
+        <h3 class="info-section-heading">1. Ownership & Legal Entity</h3>
+        <p class="info-text-p">
+          UNIQUE EXPRESSIONS is a registered commercial entity operating in Visakhapatnam, Andhra Pradesh under GSTIN <strong>37BVTPG7761F1Z1</strong>, managed by G MOUNIKA DURGA.
+        </p>
+
+        <h3 class="info-section-heading">2. Product Descriptions & Pricing</h3>
+        <p class="info-text-p">
+          We strive for maximum accuracy in product photographs, specifications, and MRP discount pricing. Prices are subject to revision based on seasonal availability and bulk wholesale tiers.
+        </p>
+
+        <h3 class="info-section-heading">3. Retail & Wholesale Orders</h3>
+        <p class="info-text-p">
+          Retail orders are processed immediately upon checkout. Wholesale B2B orders with GST credit invoices are verified against official GSTIN credentials prior to bulk dispatch.
+        </p>
+
+        <h3 class="info-section-heading">4. Governing Jurisdiction</h3>
+        <p class="info-text-p">
+          All legal transactions and disputes are subject to the exclusive jurisdiction of the courts in Visakhapatnam, Andhra Pradesh, India.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+/* 4. PRIVACY POLICY PAGE */
+function renderPrivacyView() {
+  const container = document.getElementById('viewPrivacy');
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
+      <span class="m-view-title">Privacy Policy</span>
+      <div></div>
+    </div>
+
+    <div class="checkout-container">
+      <div class="info-hero-card">
+        <h1 class="info-hero-title">Privacy Policy</h1>
+        <p class="info-hero-sub">Your personal data security and privacy are fundamental to UNIQUE EXPRESSIONS.</p>
+      </div>
+
+      <div class="info-content-card">
+        <h3 class="info-section-heading">1. Information Collection</h3>
+        <p class="info-text-p">
+          We collect essential customer information (Name, Phone Number, Delivery Address, Pincode) strictly to fulfill your order and facilitate express local delivery in Visakhapatnam.
+        </p>
+
+        <h3 class="info-section-heading">2. Data Usage & Protection</h3>
+        <p class="info-text-p">
+          Your personal contact details are stored securely. We do not sell, rent, or lease customer data to third-party marketing brokers.
+        </p>
+
+        <h3 class="info-section-heading">3. Communication & WhatsApp Updates</h3>
+        <p class="info-text-p">
+          We send transactional WhatsApp updates for order status, dispatch tracking, and GST invoice delivery. You can opt out of promotional alerts anytime.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+/* 5. REFUND & SHIPPING POLICY PAGE */
+function renderShippingView() {
+  const container = document.getElementById('viewShipping');
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
+      <span class="m-view-title">Refund & Shipping Policy</span>
+      <div></div>
+    </div>
+
+    <div class="checkout-container">
+      <div class="info-hero-card">
+        <h1 class="info-hero-title">Refund & Shipping Policy</h1>
+        <p class="info-hero-sub">Fast local Visakhapatnam delivery & 7-day hassle-free replacement guarantee.</p>
+      </div>
+
+      <div class="info-content-card">
+        <h3 class="info-section-heading">🚚 Local Express Delivery Timelines</h3>
+        <p class="info-text-p">
+          • <strong>Madhurawada & Local Vizag:</strong> Same-day delivery for orders placed before 3:00 PM.<br>
+          • <strong>Rest of India Shipping:</strong> Dispatched via reliable courier partners within 2-4 business days.<br>
+          • <strong>Free Delivery Threshold:</strong> Orders above ₹499 qualify for FREE shipping.
+        </p>
+
+        <h3 class="info-section-heading">🔄 7-Day Replacement Guarantee</h3>
+        <p class="info-text-p">
+          If any item arrives damaged or incomplete, contact our store customer service within 7 days of delivery. Send an unboxing photo/video to <strong>+91 8886662334</strong> for an immediate replacement.
+        </p>
+
+        <h3 class="info-section-heading">💳 Refund Processing</h3>
+        <p class="info-text-p">
+          Approved refunds are credited directly to your original payment method (UPI / Bank Account) within 24 to 48 business hours.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+/* ==========================================================================
+   SPRINT 3 SUPPORT & BUSINESS MODULES (REVIEWS, RETURNS, HELP CENTER, STORE LOCATOR, OFFERS)
+   ========================================================================== */
+
+/* 1. REVIEWS & RATINGS HUB VIEW */
+let currentReviewFilterCat = 'All';
+
+function renderReviewsView(filterCat = 'All') {
+  currentReviewFilterCat = filterCat;
+  const container = document.getElementById('viewReviews');
+  if (!container) return;
+
+  const filtered = filterCat === 'All'
+    ? userReviews
+    : userReviews.filter(r => r.category === filterCat || r.rating === parseInt(filterCat));
+
+  let reviewsHtml = filtered.map(r => `
+    <div class="info-content-card" style="margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:34px; height:34px; border-radius:50%; background:var(--gradient-brand); color:#fff; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center;">
+            ${r.userName.charAt(0)}
+          </div>
+          <div>
+            <h4 style="font-size:13px; font-weight:800; color:#0f172a; margin:0;">${r.userName}</h4>
+            <span style="font-size:10px; color:#64748b;">${r.city} • ${r.date}</span>
+          </div>
+        </div>
+        ${r.verified ? `<span style="font-size:10px; font-weight:700; color:#16a34a; background:#dcfce7; padding:2px 8px; border-radius:99px;">✓ Verified Buyer</span>` : ''}
+      </div>
+      
+      <div style="color:var(--func-gold); font-size:13px; margin:4px 0 6px 0;">
+        ${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}
+      </div>
+
+      <h5 style="font-size:12.5px; font-weight:800; color:#0f172a; margin:0 0 4px 0;">${r.title}</h5>
+      <p style="font-size:11.5px; color:#475569; line-height:1.5; margin-bottom:8px;">"${r.comment}"</p>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #e2e8f0; padding-top:8px; font-size:10.5px; color:#64748b;">
+        <span>Item: <strong>${r.productTitle}</strong></span>
+        <button onclick="incrementHelpful(${r.id})" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:99px; padding:3px 10px; font-size:10px; font-weight:700; cursor:pointer;">
+          👍 Helpful (${r.helpfulCount || 0})
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  if (filtered.length === 0) {
+    reviewsHtml = `<div class="info-content-card" style="text-align:center; padding:30px;"><p style="color:#64748b;">No reviews found for this filter category.</p></div>`;
+  }
+
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
+      <span class="m-view-title">Customer Reviews</span>
+      <button class="m-icon-btn-circle" onclick="openWriteReviewModal()" title="Write Review"><i class="ri-edit-line"></i></button>
+    </div>
+
+    <div class="checkout-container">
+      <div class="info-hero-card" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span style="font-size:32px; font-weight:800; color:#fff; line-height:1;">4.8</span>
+          <span style="font-size:14px; color:var(--func-gold);">★★★★★</span>
+          <p style="font-size:11px; color:#cbd5e1; margin-top:4px;">Based on 450+ Verified Vizag Orders</p>
+        </div>
+        <button class="m-hero-cta-button" style="padding:8px 14px; font-size:11px;" onclick="openWriteReviewModal()">Write a Review</button>
+      </div>
+
+      <!-- Rating Bar Breakdown -->
+      <div class="info-content-card" style="margin-bottom:14px;">
+        <h4 style="font-size:13px; font-weight:800; margin-bottom:10px;">Rating Breakdown</h4>
+        <div class="rating-bar-row"><span>5 Star</span><div class="rating-bar-bg"><div class="rating-bar-fill" style="width:82%;"></div></div><span>82%</span></div>
+        <div class="rating-bar-row"><span>4 Star</span><div class="rating-bar-bg"><div class="rating-bar-fill" style="width:14%;"></div></div><span>14%</span></div>
+        <div class="rating-bar-row"><span>3 Star</span><div class="rating-bar-bg"><div class="rating-bar-fill" style="width:3%;"></div></div><span>3%</span></div>
+        <div class="rating-bar-row"><span>2 Star</span><div class="rating-bar-bg"><div class="rating-bar-fill" style="width:1%;"></div></div><span>1%</span></div>
+      </div>
+
+      <!-- Category Filter Chips -->
+      <div class="chip-filter-scroll no-scrollbar">
+        <div class="chip-pill ${filterCat === 'All' ? 'active' : ''}" onclick="renderReviewsView('All')">All Reviews</div>
+        <div class="chip-pill ${filterCat === '5' ? 'active' : ''}" onclick="renderReviewsView('5')">5 ★ Only</div>
+        <div class="chip-pill ${filterCat === 'Return Gifts' ? 'active' : ''}" onclick="renderReviewsView('Return Gifts')">🎁 Return Gifts</div>
+        <div class="chip-pill ${filterCat === 'Toys' ? 'active' : ''}" onclick="renderReviewsView('Toys')">🧸 Toys</div>
+        <div class="chip-pill ${filterCat === 'Handicrafts' ? 'active' : ''}" onclick="renderReviewsView('Handicrafts')">🎨 Handicrafts</div>
+        <div class="chip-pill ${filterCat === 'Stationery' ? 'active' : ''}" onclick="renderReviewsView('Stationery')">✏️ Stationery</div>
+      </div>
+
+      <div id="reviewsListContainer">
+        ${reviewsHtml}
+      </div>
+    </div>
+  `;
+}
+
+function openWriteReviewModal() {
+  const modal = document.getElementById('writeReviewModalBackdrop');
+  if (modal) modal.classList.add('active');
+}
+
+function closeWriteReviewModal() {
+  const modal = document.getElementById('writeReviewModalBackdrop');
+  if (modal) modal.classList.remove('active');
+}
+
+function setReviewRating(rating) {
+  document.getElementById('revRatingValue').value = rating;
+  const stars = document.querySelectorAll('#starRatingPicker span');
+  stars.forEach((s, idx) => {
+    if (idx < rating) s.classList.add('active');
+    else s.classList.remove('active');
+  });
+}
+
+async function submitCustomerReview() {
+  const productSelect = document.getElementById('revProductSelect');
+  const rating = parseInt(document.getElementById('revRatingValue').value || '5');
+  const title = document.getElementById('revTitleInput').value.trim();
+  const comment = document.getElementById('revCommentInput').value.trim();
+  const name = document.getElementById('revNameInput').value.trim() || 'G Mounika Durga';
+
+  if (!title || !comment) {
+    alert('Please enter a review headline and comment.');
+    return;
+  }
+
+  const selectedOpt = productSelect.options[productSelect.selectedIndex];
+  const newRev = {
+    id: Date.now(),
+    productId: parseInt(productSelect.value),
+    productTitle: selectedOpt.text.split('(')[0].trim(),
+    category: "General",
+    userName: name,
+    city: "Visakhapatnam",
+    rating: rating,
+    title: title,
+    comment: comment,
+    date: "Today",
+    verified: true,
+    helpfulCount: 1
+  };
+
+  // Save locally first
+  userReviews.unshift(newRev);
+  localStorage.setItem('ue_reviews', JSON.stringify(userReviews));
+
+  // Sync to Supabase (non-blocking)
+  sbInsertReview(newRev).catch(err => console.warn('[UE] Review sync failed:', err));
+
+  closeWriteReviewModal();
+  alert('Thank you! Your verified customer review has been submitted.');
+  if (currentView === 'reviews') renderReviewsView();
+}
+
+function incrementHelpful(revId) {
+  const rev = userReviews.find(r => r.id === revId);
+  if (rev) {
+    rev.helpfulCount = (rev.helpfulCount || 0) + 1;
+    localStorage.setItem('ue_reviews', JSON.stringify(userReviews));
+    // Sync to Supabase (non-blocking)
+    sbIncrementHelpful(revId).catch(err => console.warn('[UE] Helpful sync failed:', err));
+    if (currentView === 'reviews') renderReviewsView(currentReviewFilterCat);
+  }
+}
+
+
+/* 2. RETURNS & EXCHANGE PORTAL VIEW */
+function renderReturnsView() {
+  const container = document.getElementById('viewReturns');
+  if (!container) return;
+
+  let returnsListHtml = userReturns.map(r => `
+    <div class="info-content-card" style="border-left:4px solid var(--brand-magenta); margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-bottom:4px;">
+        <span>Return ID: <strong>${r.returnId}</strong></span>
+        <span style="font-weight:700; color:#16a34a;">${r.status}</span>
+      </div>
+      <h4 style="font-size:13px; font-weight:800; color:#0f172a; margin:2px 0;">${r.itemTitle}</h4>
+      <p style="font-size:11px; color:#475569; margin:2px 0;">Reason: ${r.reason}</p>
+      <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; margin-top:6px; border-top:1px dashed #e2e8f0; padding-top:6px;">
+        <span>Resolution: ${r.resolution}</span>
+        <span style="color:#0f172a;">Refund: ₹${r.amount}</span>
+      </div>
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
+      <span class="m-view-title">Returns & Exchange Portal</span>
+      <div></div>
+    </div>
+
+    <div class="checkout-container">
+      <div class="info-hero-card">
+        <h1 class="info-hero-title">7-Day Easy Returns & Exchange</h1>
+        <p class="info-hero-sub">Direct door pickup across Visakhapatnam or free drop-off at Madhurawada store.</p>
+      </div>
+
+      ${userReturns.length > 0 ? `
+        <div style="margin-bottom:16px;">
+          <h3 class="info-section-heading">Active Return Requests</h3>
+          ${returnsListHtml}
+        </div>
+      ` : ''}
+
+      <div class="info-content-card">
+        <h3 class="info-section-heading">Request a New Return / Exchange</h3>
+        
+        <div class="form-group">
+          <label class="form-label">Select Delivered Order</label>
+          <select id="retOrderSelect" class="form-input">
+            ${userOrders.map(o => `<option value="${o.orderId}">${o.orderId} - ${o.items.map(i=>i.title).join(', ')} (₹${o.totalAmount})</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Reason for Return / Replacement</label>
+          <select id="retReasonSelect" class="form-input">
+            <option value="Damaged or Defective Item Delivered">Damaged or Defective Item Delivered</option>
+            <option value="Wrong Item or Weight Variant Received">Wrong Item or Weight Variant Received</option>
+            <option value="Quality Not as Expected">Quality Not as Expected</option>
+            <option value="Changed Mind / No Longer Needed">Changed Mind / No Longer Needed</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Preferred Refund Method</label>
+          <select id="retResolutionSelect" class="form-input">
+            <option value="Store Credit Wallet (+5% Extra Bonus)">Store Credit Wallet (+5% Extra Bonus)</option>
+            <option value="Direct UPI / Bank Transfer Refund">Direct UPI / Bank Transfer Refund</option>
+            <option value="Free Exchange Replacement">Free Exchange Replacement</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">UPI ID / PhonePe Number for Refund</label>
+          <input type="text" id="retUpiInput" class="form-input" placeholder="e.g. 8886662334@ybl or UPI ID" value="8886662334@ybl">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Pickup & Drop Options</label>
+          <select id="retPickupType" class="form-input">
+            <option value="Doorstep Courier Pickup (Visakhapatnam)">Doorstep Courier Pickup (Visakhapatnam)</option>
+            <option value="In-Store Drop-off at Madhurawada Boutique">In-Store Drop-off at Madhurawada Boutique</option>
+          </select>
+        </div>
+
+        <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="submitReturnRequest()">Submit Return Request →</button>
+      </div>
+    </div>
+  `;
+}
+
+async function submitReturnRequest() {
+  const orderId = document.getElementById('retOrderSelect').value;
+  const reason = document.getElementById('retReasonSelect').value;
+  const resolution = document.getElementById('retResolutionSelect').value;
+
+  const selectedOrder = userOrders.find(o => o.orderId === orderId) || userOrders[0];
+  const returnObj = {
+    returnId: "RET-" + Math.floor(100000 + Math.random() * 900000),
+    orderId: orderId,
+    date: "Today",
+    status: "Requested - Under Review",
+    itemTitle: selectedOrder ? selectedOrder.items[0].title : "Catalog Item",
+    reason: reason,
+    resolution: resolution,
+    amount: selectedOrder ? selectedOrder.totalAmount : 999
+  };
+
+  // Save locally first
+  userReturns.unshift(returnObj);
+  localStorage.setItem('ue_returns', JSON.stringify(userReturns));
+
+  // Sync to Supabase (non-blocking)
+  sbInsertReturn(returnObj).catch(err => console.warn('[UE] Return sync failed:', err));
+
+  alert(`Return request submitted! Your Return ID is ${returnObj.returnId}. Our team will schedule pickup within 24 hours.`);
+  renderReturnsView();
+}
+
+
+/* 3. HELP CENTER & SEARCHABLE FAQ VIEW */
+function renderHelpCenterView() {
+  const container = document.getElementById('viewHelpCenter');
+  if (!container) return;
+
+  const faqs = [
+    { q: "What are the store hours for UNIQUE EXPRESSIONS Madhurawada?", a: "Our store is open 7 days a week from 9:30 AM to 9:30 PM. Visit us at 2nd floor LIG 347, 2-115/9/1, near Shivalayam, Midhilapuri VUDA Colony, Madhurwada, Visakhapatnam." },
+    { q: "How fast is delivery within Visakhapatnam?", a: "We offer express same-day delivery across Madhurawada, PM Palem, MVP Colony, Siripuram, Gajuwaka, and all Vizag areas for orders placed before 3:00 PM." },
+    { q: "Do you offer GST Invoicing for Wholesale & Corporate buyers?", a: "Yes! We issue official B2B GST Invoices with our GSTIN 37BVTPG7761F1Z1 for input tax credit. Enter your GST number during checkout or in our Wholesale B2B portal." },
+    { q: "Can I customize return gift hampers for birthday parties?", a: "Absolutely! We specialize in custom return gift boxes for kids birthdays, weddings, baby showers, and school events. Contact us at +91 8886662334 for personalized hampers." },
+    { q: "What is the return and replacement policy?", a: "We offer a 7-day hassle-free replacement guarantee. If any product is damaged or defective, we provide doorstep pickup or instant exchange at our Madhurawada store." }
+  ];
+
+  let faqItemsHtml = faqs.map((item, idx) => `
+    <div class="faq-accordion-item" id="faqItem-${idx}">
+      <div class="faq-accordion-header" onclick="toggleFaqAccordion(${idx})">
+        <span>${item.q}</span>
+        <span class="faq-accordion-icon">▼</span>
+      </div>
+      <div class="faq-accordion-body">
+        <p>${item.a}</p>
+      </div>
+    </div>
+  `).join('');
+
+  let ticketsHtml = supportTickets.map(t => `
+    <div class="info-content-card" style="margin-bottom:10px; border-left:3px solid var(--brand-magenta);">
+      <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b;">
+        <span>Ticket #${t.ticketId} • ${t.category}</span>
+        <span style="font-weight:700; color:#16a34a;">${t.status}</span>
+      </div>
+      <h5 style="font-size:12px; font-weight:800; color:#0f172a; margin:4px 0 2px 0;">${t.subject}</h5>
+      <p style="font-size:11px; color:#475569; margin:0;">${t.message}</p>
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
+      <span class="m-view-title">Help Center & Support</span>
+      <button class="m-icon-btn-circle" onclick="openRaiseTicketModal()" title="Raise Ticket"><i class="ri-customer-service-2-line"></i></button>
+    </div>
+
+    <div class="checkout-container">
+      <div class="info-hero-card">
+        <h1 class="info-hero-title">How can we help you today?</h1>
+        <p class="info-hero-sub">Direct support from UNIQUE EXPRESSIONS boutique store, Visakhapatnam.</p>
+        <div style="margin-top:12px; position:relative;">
+          <input type="text" placeholder="Search FAQs, shipping, GST billing..." class="form-input" style="border-radius:99px; padding-left:36px; background:#fff; color:#0f172a;" oninput="filterFaqSearch(this.value)">
+          <i class="ri-search-line" style="position:absolute; left:12px; top:10px; color:#64748b;"></i>
+        </div>
+      </div>
+
+      <!-- Quick Contact Actions -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+        <div class="info-content-card" style="margin:0; text-align:center; cursor:pointer;" onclick="openWhatsAppChat()">
+          <i class="ri-whatsapp-line" style="font-size:24px; color:#25D366;"></i>
+          <h4 style="font-size:12px; font-weight:800; margin:4px 0 2px 0;">WhatsApp Us</h4>
+          <span style="font-size:10px; color:#64748b;">+91 8886662334</span>
+        </div>
+        <div class="info-content-card" style="margin:0; text-align:center; cursor:pointer;" onclick="window.location.href='tel:+918886662334'">
+          <i class="ri-phone-line" style="font-size:24px; color:var(--brand-magenta);"></i>
+          <h4 style="font-size:12px; font-weight:800; margin:4px 0 2px 0;">Call Store Direct</h4>
+          <span style="font-size:10px; color:#64748b;">+91 8886662334</span>
+        </div>
+      </div>
+
+      ${ticketsHtml.length > 0 ? `
+        <div style="margin-bottom:16px;">
+          <h3 class="info-section-heading">Your Support Requests</h3>
+          ${ticketsHtml}
+        </div>
+      ` : ''}
+
+      <div class="info-content-card">
+        <h3 class="info-section-heading">Frequently Asked Questions</h3>
+        <div id="faqListContainer">
+          ${faqItemsHtml}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleFaqAccordion(idx) {
+  const item = document.getElementById(`faqItem-${idx}`);
+  if (item) item.classList.toggle('active');
+}
+
+function filterFaqSearch(val) {
+  const query = val.toLowerCase();
+  document.querySelectorAll('.faq-accordion-item').forEach(el => {
+    const text = el.innerText.toLowerCase();
+    if (text.includes(query)) el.style.display = 'block';
+    else el.style.display = 'none';
+  });
+}
+
+function openRaiseTicketModal() {
+  const modal = document.getElementById('raiseTicketModalBackdrop');
+  if (modal) modal.classList.add('active');
+}
+
+function closeRaiseTicketModal() {
+  const modal = document.getElementById('raiseTicketModalBackdrop');
+  if (modal) modal.classList.remove('active');
+}
+
+async function submitSupportTicket() {
+  const cat = document.getElementById('ticketCategory').value;
+  const subj = document.getElementById('ticketSubject').value.trim();
+  const msg = document.getElementById('ticketMessage').value.trim();
+
+  if (!subj || !msg) {
+    alert('Please enter a subject and message.');
+    return;
+  }
+
+  const ticketObj = {
+    ticketId: "TCK-" + Math.floor(1000 + Math.random() * 9000),
+    category: cat,
+    subject: subj,
+    status: "Open - In Progress",
+    date: "Today",
+    message: msg
+  };
+
+  // Save locally first
+  supportTickets.unshift(ticketObj);
+  localStorage.setItem('ue_tickets', JSON.stringify(supportTickets));
+
+  // Sync to Supabase (non-blocking)
+  sbInsertTicket(ticketObj).catch(err => console.warn('[UE] Ticket sync failed:', err));
+
+  closeRaiseTicketModal();
+  alert(`Support Ticket #${ticketObj.ticketId} created! Our store representative will contact you via WhatsApp/Phone.`);
+  renderHelpCenterView();
+}
+
+
+/* 4. STORE LOCATOR & VIZAG BOUTIQUE VIEW */
+function renderStoreLocatorView() {
+  const container = document.getElementById('viewStoreLocator');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
+      <span class="m-view-title">Visakhapatnam Store Locator</span>
+      <div></div>
+    </div>
+
+    <div class="checkout-container">
+      <div class="store-map-card">
+        <div class="store-map-overlay">
+          <span style="font-size:10px; font-weight:800; text-transform:uppercase; color:var(--func-gold); letter-spacing:1px;">FLAGSHIP BOUTIQUE STORE</span>
+          <h2 style="font-size:18px; font-weight:800; margin:2px 0;">UNIQUE EXPRESSIONS</h2>
+          <p style="font-size:11px; opacity:0.9; margin-bottom:8px;">Madhurawada, Visakhapatnam - 530041</p>
+          <a href="https://maps.google.com/?q=Midhilapuri+VUDA+Colony+Madhurwada+Visakhapatnam" target="_blank" style="display:inline-flex; align-items:center; gap:6px; background:#ffffff; color:#0f172a; padding:6px 14px; border-radius:99px; font-size:11px; font-weight:800; text-decoration:none;">
+            <i class="ri-navigation-fill" style="color:var(--brand-magenta);"></i> Get Google Maps Directions
+          </a>
+        </div>
+      </div>
+
+      <div class="info-content-card">
+        <h3 class="info-section-heading">🏢 Store Details & Physical Address</h3>
+        <p class="info-text-p">
+          <strong>Owner Name:</strong> G MOUNIKA DURGA<br>
+          <strong>Address:</strong> UNIQUE Expressions, 2nd floor LIG 347, 2-115/9/1, near Shivalayam, Midhilapuri VUDA Colony, Madhurwada, Visakhapatnam - 530041<br>
+          <strong>Landmark:</strong> Near Shivalayam Temple, Midhilapuri VUDA Colony<br>
+          <strong>Contact Number:</strong> +91 8886662334<br>
+          <strong>GSTIN:</strong> <code>37BVTPG7761F1Z1</code>
+        </p>
+
+        <h3 class="info-section-heading">🕒 Operating Hours</h3>
+        <p class="info-text-p">
+          • <strong>Monday to Sunday:</strong> 9:30 AM – 9:30 PM (Open 7 Days a Week)<br>
+          • <strong>Festival Days:</strong> Special extended hours for Diwali, Sankranti & Christmas shopping.
+        </p>
+
+        <h3 class="info-section-heading">🛍️ In-Store Facilities & Services</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+          <div class="facility-badge">🎁 Custom Gift Hampers</div>
+          <div class="facility-badge">📦 Wholesale Counter</div>
+          <div class="facility-badge">⚡ Express Store Pickup</div>
+          <div class="facility-badge">💳 Cards, UPI & Cash</div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button class="m-hero-cta-button" style="flex:1; justify-content:center;" onclick="window.location.href='tel:+918886662334'">
+            <i class="ri-phone-line"></i> Call Store Now
+          </button>
+          <button class="m-hero-cta-button" style="flex:1; justify-content:center; background:#25D366; box-shadow:none;" onclick="openWhatsAppChat()">
+            <i class="ri-whatsapp-line"></i> WhatsApp Location
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+
+/* 5. OFFERS & PROMO COUPONS HUB VIEW */
+function renderOffersView() {
+  const container = document.getElementById('viewOffers');
+  if (!container) return;
+
+  const coupons = [
+    { code: "UNIQUE10", title: "Flat 10% Off Everything", desc: "Applicable on all retail purchases above ₹499", badge: "POPULAR" },
+    { code: "VIZAGFREE", title: "Free Same-Day Delivery", desc: "Valid for all orders delivered in Visakhapatnam", badge: "LOCAL VIZAG" },
+    { code: "WHOLESALE25", title: "Flat 25% Off Bulk Orders", desc: "For Wholesale & Return Gift orders above ₹10,000", badge: "WHOLESALE" },
+    { code: "WELCOME50", title: "Flat ₹50 Off First Purchase", desc: "Exclusive welcome gift for new app users", badge: "NEW USER" }
+  ];
+
+  let couponsHtml = coupons.map(c => `
+    <div class="coupon-promo-card">
+      <span style="position:absolute; top:14px; right:14px; background:rgba(255,255,255,0.2); color:#fff; font-size:9px; font-weight:800; padding:3px 8px; border-radius:99px;">${c.badge}</span>
+      <h3 style="font-size:16px; font-weight:800; margin:0 0 4px 0;">${c.title}</h3>
+      <p style="font-size:11px; opacity:0.85; margin:0 0 10px 0;">${c.desc}</p>
+      <div class="coupon-code-badge" onclick="copyCouponCode('${c.code}')">
+        <span>${c.code}</span>
+        <i class="ri-file-copy-line"></i>
+      </div>
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
+      <span class="m-view-title">Deals & Promo Coupons</span>
+      <div></div>
+    </div>
+
+    <div class="checkout-container">
+      <div class="info-hero-card">
+        <h1 class="info-hero-title">Exclusive Promo Hub</h1>
+        <p class="info-hero-sub">Tap any coupon code below to copy & apply at checkout.</p>
+      </div>
+
+      ${couponsHtml}
+    </div>
+  `;
+}
+
+function copyCouponCode(code) {
+  navigator.clipboard.writeText(code).then(() => {
+    alert(`Coupon code "${code}" copied to clipboard! Paste it at checkout for instant discounts.`);
+  }).catch(() => {
+    alert(`Coupon code: ${code}`);
+  });
+}
+
+function openSampleKitModal() {
+  const modal = document.getElementById('sampleKitModalBackdrop');
+  if (modal) modal.classList.add('active');
+}
+
+function closeSampleKitModal() {
+  const modal = document.getElementById('sampleKitModalBackdrop');
+  if (modal) modal.classList.remove('active');
+}
+
+function submitSampleKitRequest() {
+  const biz = document.getElementById('sampleBizName').value.trim();
+  const phone = document.getElementById('samplePhone').value.trim();
+  if (!biz || !phone) {
+    alert('Please enter your Business/School Name and Contact Phone Number.');
+    return;
+  }
+  closeSampleKitModal();
+  alert('Thank you! Your Wholesale Sample Kit request has been registered. Our representative G Mounika Durga will contact you within 24 hours.');
+}
+

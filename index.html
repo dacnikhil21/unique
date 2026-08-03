@@ -314,12 +314,21 @@
             📞 +91 8886662334
           </p>
 
-          <h4 class="m-footer-section-title">Store Customer Service</h4>
+          <h4 class="m-footer-section-title">Store Customer Service & Info</h4>
           <ul class="m-footer-links-list">
-            <li><a href="#" onclick="openWhatsAppChat()">WhatsApp Customer Support</a></li>
-            <li><a href="#" onclick="switchView('b2b')">Wholesale B2B Bulk Order</a></li>
-            <li><a href="#" onclick="switchView('profile')">Track Order & History</a></li>
-            <li><a href="#" onclick="switchView('admin')">Admin Portal Dashboard</a></li>
+            <li><a href="#" onclick="switchView('reviews'); return false;">⭐ Customer Reviews & Ratings</a></li>
+            <li><a href="#" onclick="switchView('returns'); return false;">🔄 Returns & Exchange Portal</a></li>
+            <li><a href="#" onclick="switchView('helpCenter'); return false;">❓ Help Center & Support</a></li>
+            <li><a href="#" onclick="switchView('storeLocator'); return false;">📍 Visakhapatnam Store Locator</a></li>
+            <li><a href="#" onclick="switchView('b2b'); return false;">📦 Wholesale B2B Bulk Orders</a></li>
+            <li><a href="#" onclick="switchView('offers'); return false;">🏷️ Deals & Promo Coupons</a></li>
+            <li><a href="#" onclick="switchView('about'); return false;">About Unique Expressions</a></li>
+            <li><a href="#" onclick="switchView('faq'); return false;">Frequently Asked Questions (FAQ)</a></li>
+            <li><a href="#" onclick="switchView('shipping'); return false;">Refund & Shipping Policy</a></li>
+            <li><a href="#" onclick="switchView('terms'); return false;">Terms & Conditions</a></li>
+            <li><a href="#" onclick="switchView('privacy'); return false;">Privacy Policy</a></li>
+            <li><a href="#" onclick="openWhatsAppChat(); return false;">WhatsApp Customer Support</a></li>
+            <li><a href="#" onclick="switchView('admin'); return false;">Admin Portal Dashboard</a></li>
           </ul>
 
           <div style="border-top:1px solid rgba(255,255,255,0.08); margin-top:20px; padding-top:16px; font-size:11px; color:#64748b; text-align:center;">
@@ -352,11 +361,47 @@
       <!-- VIEW 9: USER PROFILE & ORDER TRACKING -->
       <div class="app-view" id="viewProfile"></div>
 
-      <!-- VIEW 10: B2B WHOLESALE PORTAL -->
+      <!-- VIEW 10: SAVED ADDRESS BOOK -->
+      <div class="app-view" id="viewAddresses"></div>
+
+      <!-- VIEW 11: ORDER DETAILS & INTERACTIVE TRACKING -->
+      <div class="app-view" id="viewOrderDetails"></div>
+
+      <!-- VIEW 12: ABOUT US PAGE -->
+      <div class="app-view" id="viewAbout"></div>
+
+      <!-- VIEW 13: FAQ ACCORDION PAGE -->
+      <div class="app-view" id="viewFAQ"></div>
+
+      <!-- VIEW 14: TERMS & CONDITIONS PAGE -->
+      <div class="app-view" id="viewTerms"></div>
+
+      <!-- VIEW 15: PRIVACY POLICY PAGE -->
+      <div class="app-view" id="viewPrivacy"></div>
+
+      <!-- VIEW 16: REFUND & SHIPPING POLICY PAGE -->
+      <div class="app-view" id="viewShipping"></div>
+
+      <!-- VIEW 17: B2B WHOLESALE PORTAL -->
       <div class="app-view" id="viewB2B"></div>
 
-      <!-- VIEW 11: FULL ADMIN DASHBOARD -->
+      <!-- VIEW 18: FULL ADMIN DASHBOARD -->
       <div class="app-view" id="viewAdmin"></div>
+
+      <!-- VIEW 19: REVIEWS & CUSTOMER FEEDBACK HUB -->
+      <div class="app-view" id="viewReviews"></div>
+
+      <!-- VIEW 20: RETURNS & EXCHANGE PORTAL -->
+      <div class="app-view" id="viewReturns"></div>
+
+      <!-- VIEW 21: HELP CENTER & KNOWLEDGE BASE -->
+      <div class="app-view" id="viewHelpCenter"></div>
+
+      <!-- VIEW 22: STORE LOCATOR & VIZAG BOUTIQUE -->
+      <div class="app-view" id="viewStoreLocator"></div>
+
+      <!-- VIEW 23: WHOLESALE B2B BULK PORTAL (ALIAS) -->
+      <div class="app-view" id="viewWholesale"></div>
     </main>
 
     <nav class="m-curved-bottom-nav">
@@ -372,16 +417,44 @@
   <div class="drawer-backdrop" id="cartDrawerBackdrop" onclick="closeCartDrawer()">
     <div class="cart-side-drawer" onclick="event.stopPropagation()">
       <div class="drawer-header">
-        <h3 style="font-family:var(--font-sans); font-size:18px; font-weight:800; color:#0f172a;">Your Shopping Cart</h3>
-        <button onclick="closeCartDrawer()" style="font-size:18px; font-weight:800;">✕</button>
-      </div>
-      <div class="drawer-body" id="drawerCartItems"></div>
-      <div class="drawer-footer">
-        <div style="display:flex; justify-content:space-between; font-weight:700; font-size:16px; margin-bottom:12px;">
-          <span>Subtotal:</span>
-          <span id="drawerSubtotalPrice">₹0</span>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:36px; height:36px; border-radius:10px; background:#f1f5f9; color:#0f172a; display:flex; align-items:center; justify-content:center; font-size:18px;">
+            <i class="ri-shopping-bag-3-line"></i>
+          </div>
+          <div>
+            <h3 style="font-family:var(--font-sans); font-size:16px; font-weight:800; color:#0f172a; margin:0; line-height:1.2;">Your Shopping Cart</h3>
+            <span style="font-size:11px; color:#64748b; font-weight:600;" id="drawerItemCountSub">0 Items</span>
+          </div>
         </div>
-        <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="closeCartDrawer(); switchView('checkout');">Proceed to Checkout →</button>
+        <button class="m-icon-btn-circle" onclick="closeCartDrawer()" title="Close Cart" style="width:34px; height:34px; border-color:#e2e8f0; cursor:pointer;">
+          <i class="ri-close-line" style="font-size:18px; color:#0f172a;"></i>
+        </button>
+      </div>
+
+      <div class="drawer-body" id="drawerCartItems"></div>
+
+      <div class="drawer-footer">
+        <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:14px;">
+          <div style="display:flex; justify-content:space-between; font-size:12px; color:#64748b;">
+            <span>Items Subtotal:</span>
+            <span id="drawerItemsSubtotal">₹0</span>
+          </div>
+          <div id="drawerWrapRow" style="display:none; justify-content:space-between; font-size:12px; color:#64748b;">
+            <span>Gift Packaging & Message Card:</span>
+            <span id="drawerWrapCost">₹0</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:12px; color:#16a34a; font-weight:700;">
+            <span>Vizag Express Delivery:</span>
+            <span>FREE</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-weight:800; font-size:16px; color:#0f172a; border-top:1px dashed #e2e8f0; padding-top:8px; margin-top:2px;">
+            <span>Total Amount:</span>
+            <span id="drawerSubtotalPrice">₹0</span>
+          </div>
+        </div>
+        <button class="m-hero-cta-button" style="width:100%; justify-content:center; height:46px; font-size:13px; border-radius:99px; box-shadow:0 4px 14px rgba(15, 23, 42, 0.3);" onclick="closeCartDrawer(); switchView('checkout');">
+          Proceed to Checkout →
+        </button>
       </div>
     </div>
   </div>
@@ -417,6 +490,93 @@
     </div>
   </div>
 
+  <!-- Add / Edit Address Modal -->
+  <div class="drawer-backdrop" id="addressModalBackdrop" onclick="closeAddressModal()">
+    <div class="modal-window" style="max-width:420px;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-family:var(--font-sans); font-size:17px; font-weight:800; color:#0f172a;" id="addressModalTitle">Add New Delivery Address</h3>
+        <button onclick="closeAddressModal()" style="font-size:18px; font-weight:800; background:none; border:none; cursor:pointer;">✕</button>
+      </div>
+      <input type="hidden" id="addrEditId" value="">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input type="text" id="addrName" class="form-input" placeholder="e.g. G Mounika Durga">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mobile Phone Number</label>
+        <input type="tel" id="addrPhone" class="form-input" placeholder="e.g. +91 8886662334">
+      </div>
+      <div class="form-group">
+        <label class="form-label">House / Flat / Street Address</label>
+        <input type="text" id="addrStreet" class="form-input" placeholder="e.g. 2nd floor LIG 347, 2-115/9/1, near Shivalayam">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Area / Colony</label>
+          <input type="text" id="addrArea" class="form-input" placeholder="e.g. Madhurawada">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Pincode</label>
+          <input type="text" id="addrPincode" class="form-input" value="530041" placeholder="530041">
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Address Tag</label>
+          <select id="addrType" class="form-input">
+            <option value="Home">Home</option>
+            <option value="Work">Work / Office</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1; display:flex; align-items:center; margin-top:16px;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:#334155; cursor:pointer;">
+            <input type="checkbox" id="addrIsDefault"> Set Default
+          </label>
+        </div>
+      </div>
+      <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="saveAddressFromModal()">Save Address</button>
+    </div>
+  </div>
+
+  <!-- Edit Profile Modal -->
+  <div class="drawer-backdrop" id="editProfileModalBackdrop" onclick="closeEditProfileModal()">
+    <div class="modal-window" style="max-width:380px;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-family:var(--font-sans); font-size:17px; font-weight:800; color:#0f172a;">Edit Customer Profile</h3>
+        <button onclick="closeEditProfileModal()" style="font-size:18px; font-weight:800; background:none; border:none; cursor:pointer;">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input type="text" id="profEditName" class="form-input" value="G Mounika Durga">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" id="profEditEmail" class="form-input" value="uniqueexpressions@gmail.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input type="tel" id="profEditPhone" class="form-input" value="+91 8886662334">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Preferred Delivery City</label>
+        <input type="text" id="profEditCity" class="form-input" value="Visakhapatnam">
+      </div>
+      <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="saveUserProfile()">Save Profile Changes</button>
+    </div>
+  </div>
+
+  <!-- Shared GST Printable Invoice Modal -->
+  <div class="drawer-backdrop" id="invoiceModalBackdrop" onclick="closeInvoiceModal()">
+    <div class="modal-window" style="max-width:440px;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-family:var(--font-sans); font-size:16px; font-weight:800; color:#0f172a;">Official GST Tax Invoice</h3>
+        <button onclick="closeInvoiceModal()" style="font-size:18px; font-weight:800; background:none; border:none; cursor:pointer;">✕</button>
+      </div>
+      <div id="invoiceModalContent"></div>
+    </div>
+  </div>
+
   <!-- Shared Admin Auth Modal -->
   <div class="drawer-backdrop" id="adminPinBackdrop" onclick="closeAdminPinModal()">
     <div class="modal-window" style="max-width:340px; text-align:center;" onclick="event.stopPropagation()">
@@ -427,10 +587,135 @@
     </div>
   </div>
 
-  <script src="app.js?v=5.0"></script>
+  <!-- Write Customer Review Modal -->
+  <div class="drawer-backdrop" id="writeReviewModalBackdrop" onclick="closeWriteReviewModal()">
+    <div class="modal-window" style="max-width:420px;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-family:var(--font-sans); font-size:17px; font-weight:800; color:#0f172a;">Write a Verified Review</h3>
+        <button onclick="closeWriteReviewModal()" style="font-size:18px; font-weight:800; background:none; border:none; cursor:pointer;">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Select Product</label>
+        <select id="revProductSelect" class="form-input">
+          <option value="1">RC Super Stunt Car 360 (Toys)</option>
+          <option value="9">Handcrafted Brass Ganesha Idol (Handicrafts)</option>
+          <option value="5">Mini RGB Bluetooth Speaker (Gadgets)</option>
+          <option value="13">Unicorn Kawaii Multi-Color Pen Set (Stationery)</option>
+          <option value="17">Kids Birthday Return Gift Combo Box (Return Gifts)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rating (1 to 5 Stars)</label>
+        <div class="star-rating-picker" id="starRatingPicker">
+          <span onclick="setReviewRating(1)" data-star="1">★</span>
+          <span onclick="setReviewRating(2)" data-star="2">★</span>
+          <span onclick="setReviewRating(3)" data-star="3">★</span>
+          <span onclick="setReviewRating(4)" data-star="4">★</span>
+          <span onclick="setReviewRating(5)" data-star="5" class="active">★</span>
+        </div>
+        <input type="hidden" id="revRatingValue" value="5">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Review Headline / Title</label>
+        <input type="text" id="revTitleInput" class="form-input" placeholder="e.g. Exceptional quality & beautiful packaging!">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your Review Comments</label>
+        <textarea id="revCommentInput" class="form-input" style="height:70px; resize:none;" placeholder="Share details of your experience with the item..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your Name</label>
+        <input type="text" id="revNameInput" class="form-input" value="G Mounika Durga">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:#475569; cursor:pointer;">
+          <input type="checkbox" id="revVerifiedCheck" checked> I am a verified buyer in Visakhapatnam
+        </label>
+      </div>
+      <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="submitCustomerReview()">Submit Review →</button>
+    </div>
+  </div>
+
+  <!-- Help Center Support Ticket Modal -->
+  <div class="drawer-backdrop" id="raiseTicketModalBackdrop" onclick="closeRaiseTicketModal()">
+    <div class="modal-window" style="max-width:420px;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-family:var(--font-sans); font-size:17px; font-weight:800; color:#0f172a;">Submit Support Request</h3>
+        <button onclick="closeRaiseTicketModal()" style="font-size:18px; font-weight:800; background:none; border:none; cursor:pointer;">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Issue Category</label>
+        <select id="ticketCategory" class="form-input">
+          <option value="Order Tracking">Order & Delivery Status</option>
+          <option value="Return / Refund">Returns, Exchange & Refund</option>
+          <option value="Wholesale Inquiry">Wholesale B2B & GST Invoice</option>
+          <option value="Return Gifts">Custom Return Gift Hampers</option>
+          <option value="Product Details">Product Inquiry & Stock</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Order Reference ID (Optional)</label>
+        <input type="text" id="ticketOrderId" class="form-input" placeholder="e.g. UE-892410">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subject</label>
+        <input type="text" id="ticketSubject" class="form-input" placeholder="Brief summary of your query...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Message Details</label>
+        <textarea id="ticketMessage" class="form-input" style="height:70px; resize:none;" placeholder="Explain what you need assistance with..."></textarea>
+      </div>
+      <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="submitSupportTicket()">Send Ticket to Support →</button>
+    </div>
+  </div>
+
+  <!-- Wholesale B2B Sample Kit Request Modal -->
+  <div class="drawer-backdrop" id="sampleKitModalBackdrop" onclick="closeSampleKitModal()">
+    <div class="modal-window" style="max-width:420px;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-family:var(--font-sans); font-size:17px; font-weight:800; color:#0f172a;">Request Wholesale Sample Kit</h3>
+        <button onclick="closeSampleKitModal()" style="font-size:18px; font-weight:800; background:none; border:none; cursor:pointer;">✕</button>
+      </div>
+      <p style="font-size:11px; color:#64748b; margin-bottom:12px;">Get physical samples of return gift hampers, wooden crafts & stationery delivered to your institution/store.</p>
+      <div class="form-group">
+        <label class="form-label">Business / School Name</label>
+        <input type="text" id="sampleBizName" class="form-input" placeholder="e.g. Visakha Kids School / Store Name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">GSTIN (Optional)</label>
+        <input type="text" id="sampleGstin" class="form-input" placeholder="e.g. 37BVTPG7761F1Z1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contact Person</label>
+        <input type="text" id="samplePerson" class="form-input" value="G Mounika Durga">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input type="tel" id="samplePhone" class="form-input" value="+91 8886662334">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sample Categories Requested</label>
+        <select id="sampleCat" class="form-input">
+          <option value="Return Gifts & Toys">Return Gifts & Toys Sample Box</option>
+          <option value="Handicrafts & Decor">Brass & Wooden Handicrafts Box</option>
+          <option value="School Stationery">School Stationery Kit Box</option>
+          <option value="All Categories Mix">All Categories Mega Sample Box</option>
+        </select>
+      </div>
+      <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="submitSampleKitRequest()">Request Sample Box →</button>
+    </div>
+  </div>
+
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Supabase config & DB helpers -->
+  <script src="supabase.js?v=1.0"></script>
+  <!-- Main App -->
+  <script src="app.js?v=5.1"></script>
   <script>
     if (window.feather) feather.replace();
     if (window.lucide) lucide.createIcons();
   </script>
 </body>
 </html>
+
