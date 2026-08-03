@@ -718,6 +718,68 @@
     </div>
   </div>
 
+  <!-- Admin Product Create/Edit Modal -->
+  <div class="admin-modal-backdrop" id="adminProductModalBackdrop" onclick="closeAdminProductModal()">
+    <div class="admin-modal-window" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="font-size:16px; font-weight:800; color:#0f172a;" id="admModalHeaderTitle">Add / Edit Product</h3>
+        <button onclick="closeAdminProductModal()" style="background:none; border:none; font-size:18px; font-weight:800; cursor:pointer;">✕</button>
+      </div>
+      <input type="hidden" id="admEditId" value="">
+      <div class="form-group">
+        <label class="form-label">Product Title</label>
+        <input type="text" id="admModalTitleInput" class="form-input" placeholder="e.g. Remote Control Stunt Car">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Category</label>
+          <select id="admModalCategorySelect" class="form-input">
+            <option value="Toys">Toys</option>
+            <option value="Gadgets">Gadgets</option>
+            <option value="Handicrafts">Handicrafts</option>
+            <option value="Stationery">Stationery</option>
+            <option value="Return Gifts">Return Gifts</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Price (₹)</label>
+          <input type="number" id="admModalPriceInput" class="form-input" placeholder="599">
+        </div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Original Price (₹)</label>
+          <input type="number" id="admModalOrigPriceInput" class="form-input" placeholder="799">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Discount %</label>
+          <input type="number" id="admModalDiscountInput" class="form-input" placeholder="25">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="admModalDescInput" class="form-input" style="height:60px; resize:none;" placeholder="Item details & description..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Product Image (Cloudinary Hosted)</label>
+        <input type="file" id="admModalImgFile" accept="image/*" class="form-input" style="padding:6px; font-size:12px;" onchange="handleModalImageUpload(this)">
+        <input type="hidden" id="admModalImgUrl" value="">
+        <div id="admModalImgPreview" style="margin-top:8px; display:none; align-items:center; gap:10px; background:#f8fafc; padding:8px; border-radius:10px; border:1px solid #cbd5e1;">
+          <img id="admModalPreviewImg" src="" style="width:40px; height:40px; object-fit:cover; border-radius:6px;">
+          <div style="overflow:hidden;">
+            <span style="font-size:10px; font-weight:700; color:#16a34a; display:block;">✨ Cloudinary Photo Ready</span>
+            <span id="admModalImgUrlText" style="font-size:9px; color:#64748b; word-break:break-all; display:block;"></span>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="admModalInStock" checked>
+        <label for="admModalInStock" style="font-size:12px; font-weight:700; color:#334155; cursor:pointer;">In Stock (Available for Purchase)</label>
+      </div>
+      <button class="m-hero-cta-button" style="width:100%; justify-content:center; margin-top:12px;" onclick="saveAdminProductFromModal()">Save Product Details →</button>
+    </div>
+  </div>
+
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Supabase config & DB helpers -->

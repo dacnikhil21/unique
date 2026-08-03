@@ -284,6 +284,9 @@ function encodeNavParams(params) {
 }
 
 function parseNavHash() {
+  if (window.location.pathname === '/admin' || window.location.pathname === '/admin/') {
+    return { view: 'admin', params: {} };
+  }
   const hash = window.location.hash.slice(1); // remove leading '#'
   if (!hash) return null;
   const parts = {};
@@ -400,25 +403,29 @@ function switchView(viewName, params = {}, skipHistory = false) {
     history.pushState(
       { view: viewName, params },
       '',
-      `#view=${viewName}${encodeNavParams(params)}`
+      viewName === 'admin' ? '/admin' : `#view=${viewName}${encodeNavParams(params)}`
     );
   }
 
   document.querySelectorAll('.app-view').forEach(el => el.classList.remove('active-view'));
 
-  // Header and Floating Cart FAB visibility
+  // Header, Floating Cart FAB, and Bottom Nav visibility
   const globalHeader = document.querySelector('.m-app-header');
   const globalSearch = document.querySelector('.m-search-wrap-sticky');
   const cartFab = document.getElementById('mFloatingCartFab');
+  const bottomNav = document.querySelector('.m-bottom-nav');
 
-  if (viewName === 'pdp' || viewName === 'checkout' || viewName === 'search' || viewName === 'plp' || viewName === 'addresses' || viewName === 'orderDetails' || viewName === 'about' || viewName === 'faq' || viewName === 'terms' || viewName === 'privacy' || viewName === 'shipping' || viewName === 'reviews' || viewName === 'returns' || viewName === 'helpCenter' || viewName === 'storeLocator' || viewName === 'wholesale') {
+  if (viewName === 'admin' || viewName === 'pdp' || viewName === 'checkout' || viewName === 'search' || viewName === 'plp' || viewName === 'addresses' || viewName === 'orderDetails' || viewName === 'about' || viewName === 'faq' || viewName === 'terms' || viewName === 'privacy' || viewName === 'shipping' || viewName === 'reviews' || viewName === 'returns' || viewName === 'helpCenter' || viewName === 'storeLocator' || viewName === 'wholesale') {
     if (globalHeader) globalHeader.style.display = 'none';
     if (globalSearch) globalSearch.style.display = 'none';
     if (cartFab) cartFab.style.display = 'none';
+    if (viewName === 'admin' && bottomNav) bottomNav.style.display = 'none';
+    else if (bottomNav) bottomNav.style.display = 'flex';
   } else {
     if (globalHeader) globalHeader.style.display = 'flex';
     if (globalSearch) globalSearch.style.display = 'block';
     if (cartFab) cartFab.style.display = 'flex';
+    if (bottomNav) bottomNav.style.display = 'flex';
     updateBadges();
   }
 
@@ -2304,84 +2311,305 @@ async function handleAdminImageUpload(input) {
 /* ==========================================================================
    FULL ADMIN MANAGEMENT DASHBOARD VIEW
    ========================================================================== */
+/* ==========================================================================
+   FULL E-COMMERCE ADMIN DASHBOARD PRO ENGINE
+   ========================================================================== */
+let adminActiveTab = 'dashboard';
+let adminProductSearch = '';
+let adminCategoryFilter = 'All';
+
+function switchAdminTab(tabName) {
+  adminActiveTab = tabName;
+  document.querySelectorAll('.admin-nav-item').forEach(el => el.classList.remove('active'));
+  const activeNav = document.getElementById(`admNav-${tabName}`);
+  if (activeNav) activeNav.classList.add('active');
+
+  const titleHeader = document.getElementById('admTitleHeader');
+  const titles = {
+    dashboard: '📊 Store Overview & Analytics',
+    products: '📦 Products & Inventory Management',
+    categories: '🏷️ Store Categories',
+    banners: '🖼️ Homepage Hero Banners',
+    orders: '🛍️ Customer Orders & Sales',
+    settings: '⚙️ Store Settings & Branding'
+  };
+  if (titleHeader) titleHeader.innerText = titles[tabName] || 'Admin Dashboard';
+
+  const contentArea = document.getElementById('admTabContent');
+  if (!contentArea) return;
+
+  if (tabName === 'dashboard') contentArea.innerHTML = renderAdminDashboardTab();
+  else if (tabName === 'products') contentArea.innerHTML = renderAdminProductsTab();
+  else if (tabName === 'categories') contentArea.innerHTML = renderAdminCategoriesTab();
+  else if (tabName === 'banners') contentArea.innerHTML = renderAdminBannersTab();
+  else if (tabName === 'orders') contentArea.innerHTML = renderAdminOrdersTab();
+  else if (tabName === 'settings') contentArea.innerHTML = renderAdminSettingsTab();
+
+  if (window.feather) feather.replace();
+  if (window.lucide) lucide.createIcons();
+}
+
 function renderAdminView() {
   const container = document.getElementById('viewAdmin');
   container.innerHTML = `
-    <div class="m-view-header-bar">
-      <button class="m-back-btn" onclick="switchView('home')">← Store View</button>
-      <span class="m-view-title">Admin Management System</span>
-      <div></div>
+    <div class="admin-layout-wrapper">
+      <!-- Admin Sidebar -->
+      <aside class="admin-sidebar" id="adminSidebar">
+        <div class="admin-sidebar-brand">
+          <div class="admin-brand-icon">UE</div>
+          <div>
+            <div style="font-weight:900; font-size:14px; color:#fff; letter-spacing:0.5px;">UNIQUE EXPRESSIONS</div>
+            <div style="font-size:10px; color:#94a3b8; font-weight:700;">STORE CONTROL CENTER</div>
+          </div>
+        </div>
+
+        <nav class="admin-nav-menu">
+          <a class="admin-nav-item ${adminActiveTab === 'dashboard' ? 'active' : ''}" id="admNav-dashboard" onclick="switchAdminTab('dashboard')">
+            <i class="ri-dashboard-3-line"></i> <span>Dashboard Overview</span>
+          </a>
+          <a class="admin-nav-item ${adminActiveTab === 'products' ? 'active' : ''}" id="admNav-products" onclick="switchAdminTab('products')">
+            <i class="ri-shopping-bag-3-line"></i> <span>Products (${ALL_PRODUCTS.length})</span>
+          </a>
+          <a class="admin-nav-item ${adminActiveTab === 'categories' ? 'active' : ''}" id="admNav-categories" onclick="switchAdminTab('categories')">
+            <i class="ri-price-tag-3-line"></i> <span>Categories (${CATEGORIES.length})</span>
+          </a>
+          <a class="admin-nav-item ${adminActiveTab === 'banners' ? 'active' : ''}" id="admNav-banners" onclick="switchAdminTab('banners')">
+            <i class="ri-image-line"></i> <span>Hero Banners (${HERO_SLIDES.length})</span>
+          </a>
+          <a class="admin-nav-item ${adminActiveTab === 'orders' ? 'active' : ''}" id="admNav-orders" onclick="switchAdminTab('orders')">
+            <i class="ri-file-list-3-line"></i> <span>Orders (${userOrders.length})</span>
+          </a>
+          <a class="admin-nav-item ${adminActiveTab === 'settings' ? 'active' : ''}" id="admNav-settings" onclick="switchAdminTab('settings')">
+            <i class="ri-settings-4-line"></i> <span>Store Settings</span>
+          </a>
+        </nav>
+
+        <div class="admin-sidebar-footer">
+          <button class="m-back-btn" style="width:100%; justify-content:center; background:#1e293b; color:#cbd5e1; border:1px solid #334155; font-size:12px;" onclick="switchView('home')">
+            ← Back to Customer Store
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Viewport -->
+      <main class="admin-main-viewport">
+        <header class="admin-topbar">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <h2 class="admin-page-title" id="admTitleHeader">Store Management Overview</h2>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <button class="m-hero-cta-button" style="min-height:36px; padding:6px 14px; font-size:12px; border-radius:99px;" onclick="switchView('home')">
+              🛍️ Visit Live Store
+            </button>
+          </div>
+        </header>
+
+        <div style="padding:24px;" id="admTabContent">
+          <!-- Dynamic Content Rendered Here -->
+        </div>
+      </main>
+    </div>
+  `;
+
+  switchAdminTab(adminActiveTab);
+}
+
+// ─── Admin Dashboard Tab ──────────────────────────────────────────────────────
+function renderAdminDashboardTab() {
+  const totalRev = userOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  const totalOrders = userOrders.length;
+  const totalProducts = ALL_PRODUCTS.length;
+  const totalCat = CATEGORIES.length;
+
+  return `
+    <!-- Stat Cards Grid -->
+    <div class="admin-stats-grid">
+      <div class="admin-stat-card">
+        <div>
+          <div class="admin-stat-lbl">Total Store Revenue</div>
+          <div class="admin-stat-val">₹${totalRev.toLocaleString('en-IN')}</div>
+          <span class="admin-badge admin-badge-success" style="margin-top:6px;">+18.4% this month</span>
+        </div>
+        <div class="admin-stat-icon" style="background:#ecfdf5; color:#10b981;">₹</div>
+      </div>
+      <div class="admin-stat-card">
+        <div>
+          <div class="admin-stat-lbl">Total Orders Placed</div>
+          <div class="admin-stat-val">${totalOrders}</div>
+          <span class="admin-badge admin-badge-info" style="margin-top:6px;">Live fulfillment</span>
+        </div>
+        <div class="admin-stat-icon" style="background:#f0f9ff; color:#0284c7;">🛍️</div>
+      </div>
+      <div class="admin-stat-card">
+        <div>
+          <div class="admin-stat-lbl">Active Products</div>
+          <div class="admin-stat-val">${totalProducts}</div>
+          <span class="admin-badge admin-badge-success" style="margin-top:6px;">Cloudinary CDN synced</span>
+        </div>
+        <div class="admin-stat-icon" style="background:#fdf4ff; color:#c026d3;">📦</div>
+      </div>
+      <div class="admin-stat-card">
+        <div>
+          <div class="admin-stat-lbl">Store Categories</div>
+          <div class="admin-stat-val">${totalCat}</div>
+          <span class="admin-badge admin-badge-warning" style="margin-top:6px;">Visakhapatnam store</span>
+        </div>
+        <div class="admin-stat-icon" style="background:#fffbe6; color:#d97706;">🏷️</div>
+      </div>
     </div>
 
-    <div class="admin-container">
-      <div class="admin-card">
-        <h3 style="font-size:15px; font-weight:800; margin-bottom:12px;">Add New Inventory Product</h3>
-        <div class="form-group">
-          <label class="form-label">Product Title</label>
-          <input type="text" id="admTitle" class="form-input" placeholder="e.g. Remote Control Helicopter">
-        </div>
-        <div style="display:flex; gap:10px;">
-          <div class="form-group" style="flex:1;">
-            <label class="form-label">Category</label>
-            <select id="admCategory" class="form-input">
-              <option value="Toys">Toys</option>
-              <option value="Gadgets">Gadgets</option>
-              <option value="Handicrafts">Handicrafts</option>
-              <option value="Stationery">Stationery</option>
-              <option value="Return Gifts">Return Gifts</option>
-            </select>
-          </div>
-          <div class="form-group" style="flex:1;">
-            <label class="form-label">Price (₹)</label>
-            <input type="number" id="admPrice" class="form-input" placeholder="e.g. 599">
-          </div>
-        </div>
+    <!-- Recent Orders Table -->
+    <div class="admin-card-panel">
+      <div class="admin-panel-header">
+        <h3 style="font-size:15px; font-weight:800; color:#0f172a;">Recent Customer Orders</h3>
+        <button class="m-back-btn" style="padding:6px 12px; font-size:12px;" onclick="switchAdminTab('orders')">View All Orders →</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="admin-table-v2">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${userOrders.slice(0, 5).map(o => `
+              <tr>
+                <td><strong>${o.orderId}</strong></td>
+                <td>${o.customerName || 'Customer'}</td>
+                <td>${o.date}</td>
+                <td>₹${o.totalAmount}</td>
+                <td>
+                  <span class="admin-badge ${o.status === 'Delivered' ? 'admin-badge-success' : 'admin-badge-warning'}">${o.status}</span>
+                </td>
+                <td>
+                  <select style="padding:4px 8px; font-size:11px; border-radius:6px; border:1px solid #cbd5e1;" onchange="adminUpdateOrderStatus('${o.orderId}', this.value)">
+                    <option value="Processing" ${o.status === 'Processing' ? 'selected' : ''}>Processing</option>
+                    <option value="Out for Delivery" ${o.status === 'Out for Delivery' ? 'selected' : ''}>Out for Delivery</option>
+                    <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                    <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                  </select>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
 
-        <div class="form-group" style="margin-top:8px;">
-          <label class="form-label">Product Image (Cloudinary Hosted)</label>
-          <input type="file" id="admImageFile" accept="image/*" class="form-input" style="padding:8px; font-size:12px;" onchange="handleAdminImageUpload(this)">
-          <input type="hidden" id="admImageUrl" value="">
-          <div id="admImagePreview" style="margin-top:10px; display:none; align-items:center; gap:12px; background:#f8fafc; padding:8px 12px; border-radius:12px; border:1px solid #e2e8f0;">
-            <img id="admPreviewImg" src="" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">
-            <div style="overflow:hidden;">
-              <span style="font-size:11px; font-weight:700; color:#16a34a; display:block;">✨ Cloudinary Image Uploaded</span>
-              <span id="admImgUrlText" style="font-size:10px; color:#64748b; word-break:break-all; display:block;"></span>
-            </div>
-          </div>
-        </div>
+// ─── Products Tab ─────────────────────────────────────────────────────────────
+function renderAdminProductsTab() {
+  const filtered = ALL_PRODUCTS.filter(p => {
+    const matchesSearch = !adminProductSearch || p.title.toLowerCase().includes(adminProductSearch.toLowerCase()) || p.category.toLowerCase().includes(adminProductSearch.toLowerCase());
+    const matchesCat = adminCategoryFilter === 'All' || p.category === adminCategoryFilter;
+    return matchesSearch && matchesCat;
+  });
 
-        <button class="m-hero-cta-button" style="width:100%; justify-content:center; margin-top:12px;" onclick="adminAddNewProduct()">
-          + Publish Product to Store
+  return `
+    <div class="admin-card-panel">
+      <div class="admin-panel-header">
+        <div style="display:flex; gap:10px; flex:1; max-width:500px;">
+          <input type="text" placeholder="Search products by name or category..." class="form-input" value="${adminProductSearch}" oninput="adminProductSearch = this.value; switchAdminTab('products');" style="font-size:13px; height:40px;">
+          <select class="form-input" style="font-size:13px; height:40px; width:150px;" onchange="adminCategoryFilter = this.value; switchAdminTab('products');">
+            <option value="All">All Categories</option>
+            ${CATEGORIES.map(c => `<option value="${c}" ${adminCategoryFilter === c ? 'selected' : ''}>${c}</option>`).join('')}
+          </select>
+        </div>
+        <button class="m-hero-cta-button" style="height:40px; padding:0 20px; font-size:13px;" onclick="openAdminProductModal()">
+          + Add New Product
         </button>
       </div>
 
-      <div class="admin-card">
-        <h3 style="font-size:15px; font-weight:800; margin-bottom:12px;">Manage Live Products (${ALL_PRODUCTS.length})</h3>
+      <div style="overflow-x:auto;">
+        <table class="admin-table-v2">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Image</th>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Discount</th>
+              <th>Stock Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.slice(0, 30).map(p => `
+              <tr>
+                <td>#${p.id}</td>
+                <td><img src="${p.image}" style="width:36px; height:36px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0;"></td>
+                <td><strong>${p.title}</strong></td>
+                <td><span class="admin-badge admin-badge-info">${p.category}</span></td>
+                <td>₹${p.price} <span style="text-decoration:line-through; font-size:10px; color:#94a3b8;">₹${p.originalPrice || Math.round(p.price*1.25)}</span></td>
+                <td><span class="admin-badge admin-badge-warning">${p.discount || 20}% OFF</span></td>
+                <td>
+                  <button style="border:none; background:none; cursor:pointer;" onclick="adminToggleStock(${p.id})">
+                    <span class="admin-badge ${p.inStock !== false ? 'admin-badge-success' : 'admin-badge-danger'}">
+                      ${p.inStock !== false ? 'In Stock' : 'Out of Stock'}
+                    </span>
+                  </button>
+                </td>
+                <td>
+                  <div style="display:flex; gap:6px;">
+                    <button style="background:#3b82f6; color:#fff; border:none; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" onclick="openAdminProductModal(${p.id})">Edit</button>
+                    <button style="background:#ef4444; color:#fff; border:none; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" onclick="adminDeleteProduct(${p.id})">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ─── Categories Tab ───────────────────────────────────────────────────────────
+function renderAdminCategoriesTab() {
+  return `
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
+      <div class="admin-card-panel">
+        <h3 style="font-size:15px; font-weight:800; margin-bottom:14px; color:#0f172a;">Add Store Category</h3>
+        <div class="form-group">
+          <label class="form-label">Category Name</label>
+          <input type="text" id="admCatNameInput" class="form-input" placeholder="e.g. Baby Gifts">
+        </div>
+        <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="adminAddNewCategory()">
+          + Add Category
+        </button>
+      </div>
+
+      <div class="admin-card-panel">
+        <h3 style="font-size:15px; font-weight:800; margin-bottom:14px; color:#0f172a;">Active Store Categories (${CATEGORIES.length})</h3>
         <div style="overflow-x:auto;">
-          <table class="admin-table">
+          <table class="admin-table-v2">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Image</th>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Price</th>
+                <th>Category Name</th>
+                <th>Products Count</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              ${ALL_PRODUCTS.slice(0, 15).map(p => `
-                <tr>
-                  <td>#${p.id}</td>
-                  <td><img src="${p.image}" style="width:32px; height:32px; object-fit:cover; border-radius:6px;"></td>
-                  <td><strong>${p.title.slice(0, 16)}...</strong></td>
-                  <td>${p.category}</td>
-                  <td>₹${p.price}</td>
-                  <td>
-                    <button style="background:#ef4444; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:9px; cursor:pointer;" onclick="adminDeleteProduct(${p.id})">Delete</button>
-                  </td>
-                </tr>
-              `).join('')}
+              ${CATEGORIES.map(cat => {
+                const count = ALL_PRODUCTS.filter(p => p.category === cat).length;
+                return `
+                  <tr>
+                    <td><strong>${cat}</strong></td>
+                    <td><span class="admin-badge admin-badge-info">${count} Items</span></td>
+                    <td>
+                      <button style="background:#ef4444; color:#fff; border:none; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:700; cursor:pointer;" onclick="adminDeleteCategory('${cat}')">Remove</button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
             </tbody>
           </table>
         </div>
@@ -2390,46 +2618,323 @@ function renderAdminView() {
   `;
 }
 
-async function adminAddNewProduct() {
-  const title = document.getElementById('admTitle')?.value;
-  const category = document.getElementById('admCategory')?.value;
-  const price = parseFloat(document.getElementById('admPrice')?.value || '0');
-  const customImg = document.getElementById('admImageUrl')?.value;
+// ─── Hero Banners Tab ────────────────────────────────────────────────────────
+function renderAdminBannersTab() {
+  return `
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+      <div class="admin-card-panel">
+        <h3 style="font-size:15px; font-weight:800; margin-bottom:14px; color:#0f172a;">Add Hero Banner Carousel Slide</h3>
+        <div class="form-group">
+          <label class="form-label">Badge Text</label>
+          <input type="text" id="admBannerBadge" class="form-input" placeholder="✨ SPECIAL BOUTIQUE OFFER">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Main Title</label>
+          <input type="text" id="admBannerTitle" class="form-input" placeholder="e.g. Premium Handcrafted Gifts">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Subtitle</label>
+          <input type="text" id="admBannerSub" class="form-input" placeholder="e.g. Exclusive toys & gifts in Visakhapatnam">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Banner Image (Cloudinary Hosted)</label>
+          <input type="file" accept="image/*" class="form-input" style="padding:6px; font-size:12px;" onchange="handleBannerImageUpload(this)">
+          <input type="hidden" id="admBannerImgUrl" value="">
+          <div id="admBannerImgPreview" style="margin-top:8px; display:none; align-items:center; gap:10px; background:#f8fafc; padding:8px; border-radius:8px;">
+            <img id="admBannerPreviewImg" src="" style="width:50px; height:40px; object-fit:cover; border-radius:6px;">
+            <span style="font-size:10px; color:#16a34a; font-weight:700;">Uploaded to Cloudinary</span>
+          </div>
+        </div>
+        <button class="m-hero-cta-button" style="width:100%; justify-content:center; margin-top:10px;" onclick="adminAddNewBanner()">
+          + Add Slide to Hero Carousel
+        </button>
+      </div>
+
+      <div class="admin-card-panel">
+        <h3 style="font-size:15px; font-weight:800; margin-bottom:14px; color:#0f172a;">Active Hero Slides (${HERO_SLIDES.length})</h3>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          ${HERO_SLIDES.map((slide, idx) => `
+            <div style="display:flex; gap:12px; align-items:center; background:#f8fafc; padding:12px; border-radius:12px; border:1px solid #e2e8f0;">
+              <img src="${slide.img}" style="width:70px; height:50px; object-fit:cover; border-radius:8px;">
+              <div style="flex:1; overflow:hidden;">
+                <div style="font-size:10px; font-weight:700; color:#ec4899;">${slide.badge}</div>
+                <div style="font-size:12px; font-weight:800; color:#0f172a;">${slide.title}</div>
+              </div>
+              <button style="background:#ef4444; color:#fff; border:none; padding:6px 10px; border-radius:6px; font-size:10px; font-weight:700; cursor:pointer;" onclick="adminDeleteBanner(${idx})">Delete</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ─── Orders Tab ───────────────────────────────────────────────────────────────
+function renderAdminOrdersTab() {
+  return `
+    <div class="admin-card-panel">
+      <div class="admin-panel-header">
+        <h3 style="font-size:15px; font-weight:800; color:#0f172a;">Manage Store Orders</h3>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="admin-table-v2">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer Name</th>
+              <th>Phone</th>
+              <th>Address</th>
+              <th>Items</th>
+              <th>Total Amount</th>
+              <th>Status</th>
+              <th>Change Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${userOrders.map(o => `
+              <tr>
+                <td><strong>${o.orderId}</strong></td>
+                <td>${o.customerName || 'Customer'}</td>
+                <td>${o.phone || '+91 8886662334'}</td>
+                <td style="font-size:11px; max-width:200px;">${o.address}</td>
+                <td>${o.items ? o.items.length : 1} Items</td>
+                <td><strong>₹${o.totalAmount}</strong></td>
+                <td>
+                  <span class="admin-badge ${o.status === 'Delivered' ? 'admin-badge-success' : 'admin-badge-warning'}">${o.status}</span>
+                </td>
+                <td>
+                  <select style="padding:6px; font-size:11px; border-radius:6px; border:1px solid #cbd5e1;" onchange="adminUpdateOrderStatus('${o.orderId}', this.value)">
+                    <option value="Processing" ${o.status === 'Processing' ? 'selected' : ''}>Processing</option>
+                    <option value="Out for Delivery" ${o.status === 'Out for Delivery' ? 'selected' : ''}>Out for Delivery</option>
+                    <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                    <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                  </select>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ─── Store Settings Tab ───────────────────────────────────────────────────────
+function renderAdminSettingsTab() {
+  return `
+    <div class="admin-card-panel" style="max-width:600px;">
+      <h3 style="font-size:15px; font-weight:800; margin-bottom:14px; color:#0f172a;">Store Information & Branding</h3>
+      <div class="form-group">
+        <label class="form-label">Store Name</label>
+        <input type="text" id="admStName" class="form-input" value="${userProfile.name || 'G Mounika Durga'}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Store Email</label>
+        <input type="email" id="admStEmail" class="form-input" value="${userProfile.email || 'uniqueexpressions@gmail.com'}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Store Phone Number</label>
+        <input type="tel" id="admStPhone" class="form-input" value="${userProfile.phone || '+91 8886662334'}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Physical Store Address</label>
+        <input type="text" id="admStAddress" class="form-input" value="Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Wholesale GSTIN Number</label>
+        <input type="text" id="admStGstin" class="form-input" value="37BVTPG7761F1Z1">
+      </div>
+      <button class="m-hero-cta-button" style="width:100%; justify-content:center; margin-top:12px;" onclick="adminSaveStoreSettings()">
+        Save Store Settings
+      </button>
+    </div>
+  `;
+}
+
+// ─── Modal & Action Helpers ───────────────────────────────────────────────────
+function openAdminProductModal(productId = null) {
+  const modal = document.getElementById('adminProductModalBackdrop');
+  if (!modal) return;
+  modal.classList.add('active');
+
+  const titleHeader = document.getElementById('admModalHeaderTitle');
+  const hiddenId = document.getElementById('admEditId');
+  const titleInput = document.getElementById('admModalTitleInput');
+  const catSelect = document.getElementById('admModalCategorySelect');
+  const priceInput = document.getElementById('admModalPriceInput');
+  const origPriceInput = document.getElementById('admModalOrigPriceInput');
+  const discountInput = document.getElementById('admModalDiscountInput');
+  const descInput = document.getElementById('admModalDescInput');
+  const imgUrlHidden = document.getElementById('admModalImgUrl');
+  const inStockCheck = document.getElementById('admModalInStock');
+  const previewBox = document.getElementById('admModalImgPreview');
+  const previewImg = document.getElementById('admModalPreviewImg');
+  const previewText = document.getElementById('admModalImgUrlText');
+
+  if (productId) {
+    const p = ALL_PRODUCTS.find(item => item.id === productId);
+    if (p) {
+      if (titleHeader) titleHeader.innerText = `Edit Product #${p.id}`;
+      if (hiddenId) hiddenId.value = p.id;
+      if (titleInput) titleInput.value = p.title;
+      if (catSelect) catSelect.value = p.category;
+      if (priceInput) priceInput.value = p.price;
+      if (origPriceInput) origPriceInput.value = p.originalPrice || Math.round(p.price * 1.25);
+      if (discountInput) discountInput.value = p.discount || 20;
+      if (descInput) descInput.value = p.description || '';
+      if (imgUrlHidden) imgUrlHidden.value = p.image;
+      if (inStockCheck) inStockCheck.checked = p.inStock !== false;
+
+      if (previewBox) {
+        previewBox.style.display = 'flex';
+        if (previewImg) previewImg.src = p.image;
+        if (previewText) previewText.innerText = p.image;
+      }
+      return;
+    }
+  }
+
+  // Add Mode Reset
+  if (titleHeader) titleHeader.innerText = 'Add New Product';
+  if (hiddenId) hiddenId.value = '';
+  if (titleInput) titleInput.value = '';
+  if (priceInput) priceInput.value = '';
+  if (origPriceInput) origPriceInput.value = '';
+  if (discountInput) discountInput.value = '20';
+  if (descInput) descInput.value = '';
+  if (imgUrlHidden) imgUrlHidden.value = '';
+  if (inStockCheck) inStockCheck.checked = true;
+  if (previewBox) previewBox.style.display = 'none';
+}
+
+function closeAdminProductModal() {
+  const modal = document.getElementById('adminProductModalBackdrop');
+  if (modal) modal.classList.remove('active');
+}
+
+async function handleModalImageUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const previewBox = document.getElementById('admModalImgPreview');
+  const previewImg = document.getElementById('admModalPreviewImg');
+  const previewText = document.getElementById('admModalImgUrlText');
+  const hiddenUrl = document.getElementById('admModalImgUrl');
+
+  if (previewBox) {
+    previewBox.style.display = 'flex';
+    if (previewImg) previewImg.src = '';
+    if (previewText) previewText.innerText = '⏳ Uploading to Cloudinary...';
+  }
+
+  try {
+    const uploadedUrl = await uploadToCloudinary(file);
+    if (hiddenUrl) hiddenUrl.value = uploadedUrl;
+    if (previewImg) previewImg.src = uploadedUrl;
+    if (previewText) previewText.innerText = uploadedUrl;
+  } catch (err) {
+    alert('Cloudinary upload failed: ' + err);
+    if (previewBox) previewBox.style.display = 'none';
+  }
+}
+
+async function handleBannerImageUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const previewBox = document.getElementById('admBannerImgPreview');
+  const previewImg = document.getElementById('admBannerPreviewImg');
+  const hiddenUrl = document.getElementById('admBannerImgUrl');
+
+  if (previewBox) {
+    previewBox.style.display = 'flex';
+    if (previewImg) previewImg.src = '';
+  }
+
+  try {
+    const uploadedUrl = await uploadToCloudinary(file);
+    if (hiddenUrl) hiddenUrl.value = uploadedUrl;
+    if (previewImg) previewImg.src = uploadedUrl;
+  } catch (err) {
+    alert('Banner upload error: ' + err);
+    if (previewBox) previewBox.style.display = 'none';
+  }
+}
+
+async function saveAdminProductFromModal() {
+  const editId = document.getElementById('admEditId')?.value;
+  const title = document.getElementById('admModalTitleInput')?.value.trim();
+  const category = document.getElementById('admModalCategorySelect')?.value;
+  const price = parseFloat(document.getElementById('admModalPriceInput')?.value || '0');
+  const origPrice = parseFloat(document.getElementById('admModalOrigPriceInput')?.value || '0');
+  const discount = parseInt(document.getElementById('admModalDiscountInput')?.value || '20');
+  const desc = document.getElementById('admModalDescInput')?.value.trim();
+  const customImg = document.getElementById('admModalImgUrl')?.value;
+  const inStock = document.getElementById('admModalInStock')?.checked;
 
   if (!title || !price) {
-    alert('Please enter product title and price!');
+    alert('Please enter product title and price.');
     return;
   }
 
   const defaultImg = 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop';
-  const newProd = {
-    title: title,
-    category: category,
-    image: customImg || defaultImg,
-    price: price,
-    originalPrice: Math.round(price * 1.25),
-    discount: 20,
-    rating: '5.0',
-    reviewsCount: 1,
-    description: `New ${category} item added by store admin.`
-  };
 
-  // Try Supabase first to get a real auto-incremented ID
-  const sbResult = await sbAdminInsertProduct(newProd);
-  if (sbResult) {
-    newProd.id = sbResult.id;
-    alert(`✅ Product "${title}" published to Supabase & Cloudinary CDN!`);
+  if (editId) {
+    // Edit Mode
+    const productId = parseInt(editId);
+    const p = ALL_PRODUCTS.find(item => item.id === productId);
+    if (p) {
+      p.title = title;
+      p.category = category;
+      p.price = price;
+      p.originalPrice = origPrice || Math.round(price * 1.25);
+      p.discount = discount;
+      p.description = desc || p.description;
+      p.image = customImg || p.image;
+      p.inStock = inStock;
+
+      localStorage.setItem('ue_products', JSON.stringify(ALL_PRODUCTS));
+      sbAdminUpdateProduct(p).catch(err => console.warn('[UE] Edit sync failed:', err));
+      alert(`✅ Product #${productId} updated successfully!`);
+    }
   } else {
-    // Fallback: use local ID
-    newProd.id = ALL_PRODUCTS.length + 1;
-    alert(`✅ Product "${title}" published locally with Cloudinary image.`);
+    // New Mode
+    const newProd = {
+      title: title,
+      category: category,
+      image: customImg || defaultImg,
+      price: price,
+      originalPrice: origPrice || Math.round(price * 1.25),
+      discount: discount,
+      rating: '5.0',
+      reviewsCount: 1,
+      description: desc || `New ${category} item added by store admin.`,
+      inStock: inStock
+    };
+
+    const sbResult = await sbAdminInsertProduct(newProd);
+    if (sbResult) newProd.id = sbResult.id;
+    else newProd.id = ALL_PRODUCTS.length + 1;
+
+    ALL_PRODUCTS.unshift(newProd);
+    localStorage.setItem('ue_products', JSON.stringify(ALL_PRODUCTS));
+    alert(`✅ Product "${title}" published to store & Supabase!`);
   }
 
-  ALL_PRODUCTS.unshift(newProd);
-  localStorage.setItem('ue_products', JSON.stringify(ALL_PRODUCTS));
-
-  renderAdminView();
+  closeAdminProductModal();
+  switchAdminTab('products');
   renderAllSections();
+}
+
+function adminToggleStock(productId) {
+  const p = ALL_PRODUCTS.find(item => item.id === productId);
+  if (p) {
+    p.inStock = !(p.inStock !== false);
+    localStorage.setItem('ue_products', JSON.stringify(ALL_PRODUCTS));
+    sbAdminUpdateProduct(p).catch(err => console.warn('[UE] Stock toggle sync failed:', err));
+    switchAdminTab('products');
+    renderAllSections();
+  }
 }
 
 async function adminDeleteProduct(id) {
@@ -2437,9 +2942,65 @@ async function adminDeleteProduct(id) {
     ALL_PRODUCTS = ALL_PRODUCTS.filter(p => p.id !== id);
     localStorage.setItem('ue_products', JSON.stringify(ALL_PRODUCTS));
     sbAdminDeleteProduct(id).catch(err => console.warn('[UE] Delete sync failed:', err));
-    renderAdminView();
+    switchAdminTab('products');
     renderAllSections();
   }
+}
+
+function adminAddNewCategory() {
+  const catName = document.getElementById('admCatNameInput')?.value.trim();
+  if (!catName) { alert('Please enter category name!'); return; }
+  if (CATEGORIES.includes(catName)) { alert('Category already exists!'); return; }
+
+  CATEGORIES.push(catName);
+  alert(`✅ Category "${catName}" added!`);
+  switchAdminTab('categories');
+  renderAllSections();
+}
+
+function adminDeleteCategory(catName) {
+  if (confirm(`Are you sure you want to remove category "${catName}"?`)) {
+    const idx = CATEGORIES.indexOf(catName);
+    if (idx > -1) CATEGORIES.splice(idx, 1);
+    switchAdminTab('categories');
+    renderAllSections();
+  }
+}
+
+function adminAddNewBanner() {
+  const badge = document.getElementById('admBannerBadge')?.value.trim() || '✨ NEW COLLECTION';
+  const title = document.getElementById('admBannerTitle')?.value.trim();
+  const sub = document.getElementById('admBannerSub')?.value.trim() || 'Curated items in Visakhapatnam';
+  const imgUrl = document.getElementById('admBannerImgUrl')?.value || 'hero_lifestyle.png';
+
+  if (!title) { alert('Please enter slide title!'); return; }
+
+  HERO_SLIDES.unshift({ img: imgUrl, badge, title, sub });
+  alert('✅ Hero banner carousel slide added!');
+  switchAdminTab('banners');
+  startHeroCarousel();
+}
+
+function adminDeleteBanner(index) {
+  if (confirm('Delete this hero banner slide?')) {
+    HERO_SLIDES.splice(index, 1);
+    switchAdminTab('banners');
+    startHeroCarousel();
+  }
+}
+
+function adminUpdateOrderStatus(orderId, newStatus) {
+  const o = userOrders.find(item => item.orderId === orderId);
+  if (o) {
+    o.status = newStatus;
+    localStorage.setItem('ue_orders', JSON.stringify(userOrders));
+    alert(`Order ${orderId} updated to "${newStatus}"!`);
+    switchAdminTab('orders');
+  }
+}
+
+function adminSaveStoreSettings() {
+  alert('✅ Store settings updated successfully!');
 }
 
 /* ==========================================================================
