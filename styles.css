@@ -3146,28 +3146,49 @@ body {
 }
 
 /* ==========================================================================
-   DESKTOP RESPONSIVE LAYOUT ENGINE (SCALES UP ON SCREENS ≥ 992px)
+   DEDICATED PREMIUM DESKTOP LAYOUT (SCALES UP ON SCREENS ≥ 1024px)
    ========================================================================== */
 
 /* 1. Mobile Default Hidden Items for Desktop */
 .dt-header { display: none; }
 .dt-footer { display: none; }
+.dt-hero-split-container { display: none; }
 
-/* 2. Desktop Media Query */
-@media (min-width: 992px) {
-  /* Hide Mobile Header, Mobile Sticky Search, and Mobile Bottom Navigation */
+/* 2. Desktop Media Query (≥ 1024px) */
+@media (min-width: 1024px) {
+  /* Hide Mobile Navigation, Header, and Sticky Mobile Search */
   .m-app-header,
   .m-search-wrap-sticky,
   .m-curved-bottom-nav {
     display: none !important;
   }
 
-  /* Expand Container Width */
+  /* Maximum Content Width & Container */
   .app-container {
-    max-width: 1280px !important;
+    max-width: 1440px !important;
     width: 100% !important;
     margin: 0 auto !important;
     padding-bottom: 0 !important;
+    background-color: #ffffff !important;
+  }
+
+  #appMainContainer {
+    max-width: 1320px !important;
+    margin: 0 auto !important;
+    padding: 0 64px !important;
+  }
+
+  /* Section Spacing (80px) */
+  .m-section-header {
+    margin-top: 80px !important;
+    margin-bottom: 24px !important;
+  }
+
+  .m-section-title {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    letter-spacing: -0.5px !important;
   }
 
   /* Desktop Header Bar */
@@ -3178,16 +3199,16 @@ body {
     position: sticky;
     top: 0;
     z-index: 1000;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
   }
 
   .dt-header-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 32px;
-    gap: 24px;
-    max-width: 1280px;
+    padding: 20px 64px;
+    gap: 32px;
+    max-width: 1440px;
     margin: 0 auto;
   }
 
@@ -3199,51 +3220,54 @@ body {
   }
 
   .dt-logo-img {
-    height: 48px;
+    height: 52px;
     width: auto;
     object-fit: contain;
   }
 
+  /* Desktop Centered Search (600px) */
   .dt-search-container {
     flex: 1;
-    max-width: 580px;
+    max-width: 600px;
     position: relative;
     display: flex;
     align-items: center;
+    margin: 0 auto;
   }
 
   .dt-search-icon {
     position: absolute;
-    left: 16px;
+    left: 20px;
     font-size: 18px;
     color: #64748b;
   }
 
   .dt-search-input {
     width: 100%;
-    height: 46px;
+    height: 48px;
     background: #f1f5f9;
     border: 1px solid #cbd5e1;
     border-radius: 99px 0 0 99px;
-    padding: 0 16px 0 48px;
+    padding: 0 20px 0 52px;
     font-size: 14px;
     font-weight: 500;
     color: #0f172a;
     outline: none;
-    transition: border-color 0.2s ease, background 0.2s ease;
+    transition: all 0.2s ease;
   }
 
   .dt-search-input:focus {
     background: #ffffff;
     border-color: #0f172a;
+    box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08);
   }
 
   .dt-search-btn {
-    height: 46px;
-    padding: 0 24px;
+    height: 48px;
+    padding: 0 30px;
     background: #0f172a;
     color: #ffffff;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     border: none;
     border-radius: 0 99px 99px 0;
@@ -3258,15 +3282,15 @@ body {
   .dt-header-actions {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
   }
 
   .dt-action-btn {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 14px;
-    border-radius: 12px;
+    padding: 10px 16px;
+    border-radius: 14px;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     color: #0f172a;
@@ -3304,25 +3328,25 @@ body {
     align-items: center;
     justify-content: center;
     gap: 20px;
-    padding: 10px 32px;
+    padding: 12px 64px;
     background: #0f172a;
     overflow-x: auto;
   }
 
   .dt-nav-link {
     color: #cbd5e1;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     text-decoration: none;
     white-space: nowrap;
-    padding: 4px 10px;
-    border-radius: 8px;
+    padding: 6px 14px;
+    border-radius: 10px;
     transition: all 0.2s ease;
   }
 
   .dt-nav-link:hover {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
   }
 
   .dt-highlight-link {
@@ -3331,110 +3355,247 @@ body {
     font-weight: 700;
   }
 
-  /* Crisp Desktop Product Grid & Fixed Image Proportions */
+  /* Desktop Split Hero Section (50/50) */
+  .m-hero-banner-frame {
+    display: none !important;
+  }
+
+  .dt-hero-split-container {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 56px;
+    margin: 32px 0 60px 0;
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.18);
+  }
+
+  .dt-hero-content-left {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .dt-hero-pill-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #f472b6;
+    width: fit-content;
+  }
+
+  .dt-hero-title {
+    font-size: 42px;
+    font-weight: 900;
+    line-height: 1.15;
+    color: #ffffff;
+    letter-spacing: -0.8px;
+  }
+
+  .dt-hero-sub {
+    font-size: 16px;
+    color: #cbd5e1;
+    line-height: 1.6;
+    max-width: 520px;
+  }
+
+  .dt-hero-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+  }
+
+  .dt-hero-cta-btn {
+    height: 50px;
+    padding: 0 32px;
+    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 800;
+    border: none;
+    border-radius: 99px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(236, 72, 153, 0.35);
+    transition: transform 0.2s ease;
+  }
+
+  .dt-hero-cta-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .dt-hero-sec-btn {
+    height: 50px;
+    padding: 0 28px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .dt-hero-sec-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .dt-hero-image-right {
+    height: 380px;
+    width: 100%;
+    object-fit: cover;
+    border-radius: 20px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Desktop Category Section (6 Equal Width Cards) */
+  .m-cat-rail-scroll {
+    display: grid !important;
+    grid-template-columns: repeat(6, 1fr) !important;
+    gap: 24px !important;
+    overflow-x: visible !important;
+    padding: 12px 0 24px !important;
+  }
+
+  .m-cat-pill-thumb {
+    width: 100% !important;
+    border-radius: 20px !important;
+    transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+  }
+
+  .m-cat-pill-thumb:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  .m-cat-img-box {
+    height: 130px !important;
+    border-radius: 16px !important;
+  }
+
+  /* Desktop Featured Collections (3 Editorial 16:9 Cards) */
+  .m-featured-cards-scroll {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 24px !important;
+    overflow-x: visible !important;
+  }
+
+  .m-featured-bundle-card {
+    width: 100% !important;
+    height: 220px !important;
+    border-radius: 20px !important;
+    aspect-ratio: 16 / 9 !important;
+  }
+
+  /* Desktop Product Grid (4 Columns, 1:1 Aspect Ratio Images, 24px Gap) */
   .m-product-grid-v2 {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
-    gap: 20px !important;
-    padding: 16px 0 !important;
+    gap: 24px !important;
+    padding: 20px 0 !important;
   }
 
   .m-product-tile-card {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    border-radius: 16px !important;
+    border-radius: 20px !important;
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    transition: transform 0.25s ease, box-shadow 0.25s ease !important;
   }
 
   .m-product-tile-card:hover {
-    transform: translateY(-4px) !important;
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08) !important;
+    transform: translateY(-6px) !important;
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08) !important;
   }
 
+  /* 1:1 Square Image Aspect Ratio */
   .m-tile-img-wrapper {
-    height: 220px !important;
-    min-height: 220px !important;
-    max-height: 220px !important;
     width: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    height: auto !important;
+    min-height: unset !important;
+    max-height: unset !important;
     position: relative !important;
     overflow: hidden !important;
     background: #f8fafc !important;
+    border-radius: 16px 16px 0 0 !important;
   }
 
   .m-tile-img-wrapper img {
-    height: 220px !important;
     width: 100% !important;
+    height: 100% !important;
+    aspect-ratio: 1 / 1 !important;
     object-fit: cover !important;
-    transition: transform 0.3s ease !important;
+    transition: transform 0.35s ease !important;
   }
 
   .m-product-tile-card:hover .m-tile-img-wrapper img {
-    transform: scale(1.05) !important;
+    transform: scale(1.06) !important;
   }
 
   .m-tile-content-box {
-    padding: 14px !important;
+    padding: 20px !important;
     display: flex !important;
     flex-direction: column !important;
     flex: 1 !important;
+    gap: 8px !important;
   }
 
   .m-tile-title {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
+    height: 40px !important;
+    overflow: hidden !important;
+    color: #0f172a !important;
+  }
+
+  .m-tile-curr-price {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+  }
+
+  .m-tile-add-btn {
+    margin-top: 12px !important;
+    height: 44px !important;
     font-size: 13px !important;
     font-weight: 700 !important;
-    line-height: 1.3 !important;
-    height: 36px !important;
-    overflow: hidden !important;
-    margin-bottom: 6px !important;
+    border-radius: 12px !important;
   }
 
-  /* Desktop Hero & Categories */
-  .m-hero-banner-container {
-    height: 340px !important;
-    border-radius: 20px !important;
-    margin: 16px 0 24px 0 !important;
-  }
-
-  .m-cat-rail-scroll {
-    display: grid !important;
-    grid-template-columns: repeat(6, 1fr) !important;
-    gap: 14px !important;
-    overflow-x: visible !important;
-    padding: 12px 0 20px !important;
-  }
-
-  .m-cat-pill-thumb {
-    width: 100% !important;
-    border-radius: 16px !important;
-  }
-
-  .m-cat-img-box {
-    height: 100px !important;
-    border-radius: 14px !important;
-  }
-
-  /* Desktop PDP View Split */
+  /* Desktop Product Detail Page (PDP Split View) */
   .pdp-view-wrapper {
-    max-width: 1100px !important;
-    margin: 20px auto !important;
+    max-width: 1200px !important;
+    margin: 30px auto !important;
     display: grid !important;
-    grid-template-columns: 440px 1fr !important;
-    gap: 36px !important;
+    grid-template-columns: 480px 1fr !important;
+    gap: 48px !important;
     align-items: start !important;
     padding: 0 !important;
   }
 
   .pdp-top-bar {
     grid-column: 1 / -1 !important;
-    margin-bottom: 10px !important;
+    margin-bottom: 12px !important;
   }
 
   .pdp-gallery-frame {
-    height: 440px !important;
-    width: 440px !important;
+    height: 480px !important;
+    width: 480px !important;
+    aspect-ratio: 1 / 1 !important;
     border-radius: 20px !important;
     position: sticky !important;
     top: 90px !important;
@@ -3442,41 +3603,42 @@ body {
   }
 
   .pdp-gallery-frame img {
-    height: 440px !important;
-    width: 440px !important;
+    height: 480px !important;
+    width: 480px !important;
+    aspect-ratio: 1 / 1 !important;
     object-fit: cover !important;
   }
 
   .pdp-card-box {
     border-radius: 20px !important;
-    padding: 24px !important;
+    padding: 32px !important;
   }
 
-  /* Desktop Footer */
+  /* Desktop 4-Column Footer */
   .dt-footer {
     display: block !important;
     background: #0f172a;
     color: #f8fafc;
-    padding: 50px 32px 24px;
-    margin-top: 60px;
-    border-radius: 32px 32px 0 0;
+    padding: 64px 64px 28px;
+    margin-top: 80px;
+    border-radius: 24px 24px 0 0;
   }
 
   .dt-footer-content {
-    max-width: 1200px;
+    max-width: 1320px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: 2fr 1fr 1fr 1.5fr;
-    gap: 40px;
-    padding-bottom: 40px;
+    gap: 48px;
+    padding-bottom: 48px;
     border-bottom: 1px solid #1e293b;
   }
 
   .dt-footer-logo-title {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 900;
     letter-spacing: 1px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
     color: #ffffff;
   }
 
@@ -3484,32 +3646,32 @@ body {
     font-size: 13px;
     color: #94a3b8;
     line-height: 1.6;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
   }
 
   .dt-footer-badge {
     display: inline-block;
     background: #1e293b;
     color: #38bdf8;
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: 8px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     border: 1px solid #334155;
   }
 
   .dt-footer-heading {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
     color: #ffffff;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
   }
 
   .dt-footer-links {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
   }
 
   .dt-footer-links a {
@@ -3527,15 +3689,15 @@ body {
   .dt-footer-contact-item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     font-size: 13px;
     color: #cbd5e1;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
   }
 
   .dt-footer-bottom {
-    max-width: 1200px;
-    margin: 20px auto 0;
+    max-width: 1320px;
+    margin: 24px auto 0;
     display: flex;
     justify-content: space-between;
     font-size: 12px;
