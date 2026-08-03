@@ -14,7 +14,56 @@
 
   <div class="app-container">
 
-    <!-- 1. HEADER (LOGO ADJUSTED WITH SAFE LEFT INSET) -->
+    <!-- DESKTOP TOP HEADER (VISIBLE ONLY ON DESKTOP SCREENS ≥ 992px) -->
+    <header class="dt-header">
+      <div class="dt-header-top">
+        <a href="#" class="dt-header-brand" onclick="switchView('home'); return false;">
+          <img src="logo.png" alt="UNIQUE EXPRESSIONS" class="dt-logo-img">
+        </a>
+
+        <div class="dt-search-container">
+          <i class="ri-search-2-line dt-search-icon"></i>
+          <input type="text" class="dt-search-input" placeholder="Search 200+ Educational Toys, Smart Gadgets, Return Gifts, Handicrafts..." oninput="handleSearchInput(this.value)">
+          <button class="dt-search-btn" onclick="switchView('search')">Search</button>
+        </div>
+
+        <div class="dt-header-actions">
+          <button class="dt-action-btn" onclick="openWishlistDrawer()" title="Wishlist">
+            <i class="ri-heart-3-line"></i>
+            <span>Wishlist</span>
+            <span class="dt-badge-dot id-wishlist-badge">0</span>
+          </button>
+          <button class="dt-action-btn" onclick="openCartDrawer()" title="Cart">
+            <i class="ri-shopping-bag-3-line"></i>
+            <span>My Cart</span>
+            <span class="dt-badge-dot id-cart-badge">0</span>
+          </button>
+          <button class="dt-action-btn" onclick="switchView('profile')" title="Account">
+            <i class="ri-user-3-line"></i>
+            <span>Account</span>
+          </button>
+          <button class="dt-action-btn dt-admin-btn" onclick="openAdminPinModal()" title="Admin Control Panel">
+            <i class="ri-shield-keyhole-line"></i>
+            <span>Admin</span>
+          </button>
+        </div>
+      </div>
+
+      <nav class="dt-nav-bar">
+        <a href="#" class="dt-nav-link" onclick="switchView('home'); return false;">✨ Home</a>
+        <a href="#" class="dt-nav-link" onclick="filterCategory('Toys'); return false;">🧸 Toys</a>
+        <a href="#" class="dt-nav-link" onclick="filterCategory('Gadgets'); return false;">📱 Gadgets</a>
+        <a href="#" class="dt-nav-link" onclick="filterCategory('Handicrafts'); return false;">🎨 Handicrafts</a>
+        <a href="#" class="dt-nav-link" onclick="filterCategory('Stationery'); return false;">✏️ Stationery</a>
+        <a href="#" class="dt-nav-link" onclick="filterCategory('Return Gifts'); return false;">🎁 Return Gifts</a>
+        <a href="#" class="dt-nav-link dt-highlight-link" onclick="switchView('b2b'); return false;">📦 Wholesale GST</a>
+        <a href="#" class="dt-nav-link" onclick="switchView('offers'); return false;">🔥 Special Offers</a>
+        <a href="#" class="dt-nav-link" onclick="switchView('reviews'); return false;">⭐ Reviews</a>
+        <a href="#" class="dt-nav-link" onclick="switchView('storeLocator'); return false;">📍 Visakhapatnam Store</a>
+      </nav>
+    </header>
+
+    <!-- 1. HEADER (MOBILE) -->
     <header class="m-app-header">
       <a href="#" class="m-header-logo-link" onclick="switchView('home'); return false;">
         <img src="logo.png" alt="UNIQUE EXPRESSIONS">
@@ -403,6 +452,51 @@
       <!-- VIEW 23: WHOLESALE B2B BULK PORTAL (ALIAS) -->
       <div class="app-view" id="viewWholesale"></div>
     </main>
+
+    <!-- DESKTOP FOOTER (VISIBLE ONLY ON DESKTOP SCREENS ≥ 992px) -->
+    <footer class="dt-footer">
+      <div class="dt-footer-content">
+        <div class="dt-footer-col">
+          <div class="dt-footer-logo-title">UNIQUE EXPRESSIONS</div>
+          <p class="dt-footer-desc">Visakhapatnam's premier boutique for curated educational toys, smart gadgets, artisan handicrafts, stationery, and bespoke return gift hampers.</p>
+          <div class="dt-footer-badge">Direct Wholesale GSTIN: 37BVTPG7761F1Z1</div>
+        </div>
+
+        <div class="dt-footer-col">
+          <h4 class="dt-footer-heading">Categories</h4>
+          <ul class="dt-footer-links">
+            <li><a href="#" onclick="filterCategory('Toys'); return false;">Educational & Stunt Toys</a></li>
+            <li><a href="#" onclick="filterCategory('Gadgets'); return false;">Smart Electronics & Star Lamps</a></li>
+            <li><a href="#" onclick="filterCategory('Handicrafts'); return false;">Brass Idols & Wooden Crafts</a></li>
+            <li><a href="#" onclick="filterCategory('Stationery'); return false;">Kawaii Pens & Journals</a></li>
+            <li><a href="#" onclick="filterCategory('Return Gifts'); return false;">Party Return Gift Boxes</a></li>
+          </ul>
+        </div>
+
+        <div class="dt-footer-col">
+          <h4 class="dt-footer-heading">Customer Care</h4>
+          <ul class="dt-footer-links">
+            <li><a href="#" onclick="switchView('helpCenter'); return false;">Help Center & FAQ</a></li>
+            <li><a href="#" onclick="switchView('returns'); return false;">Returns & Exchange Portal</a></li>
+            <li><a href="#" onclick="switchView('shipping'); return false;">Shipping & Delivery Terms</a></li>
+            <li><a href="#" onclick="switchView('terms'); return false;">Terms & Privacy Policy</a></li>
+            <li><a href="#" onclick="switchView('storeLocator'); return false;">Visakhapatnam Boutique Location</a></li>
+          </ul>
+        </div>
+
+        <div class="dt-footer-col">
+          <h4 class="dt-footer-heading">Contact Store</h4>
+          <div class="dt-footer-contact-item"><i class="ri-phone-line"></i> +91 8886662334</div>
+          <div class="dt-footer-contact-item"><i class="ri-mail-line"></i> uniqueexpressions@gmail.com</div>
+          <div class="dt-footer-contact-item"><i class="ri-map-pin-line"></i> Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041</div>
+        </div>
+      </div>
+
+      <div class="dt-footer-bottom">
+        <span>© 2026 UNIQUE EXPRESSIONS. All rights reserved. Visakhapatnam, Andhra Pradesh.</span>
+        <span>Secure 256-Bit SSL Encrypted Checkout</span>
+      </div>
+    </footer>
 
     <nav class="m-curved-bottom-nav">
       <a href="#" class="m-nav-tab-link active" id="nav-home" onclick="switchView('home'); return false;"><i class="ri-home-5-fill"></i><span>Home</span></a>
