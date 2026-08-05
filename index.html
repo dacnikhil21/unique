@@ -14,8 +14,27 @@
 
   <div class="app-container">
 
-    <!-- DESKTOP TOP HEADER (VISIBLE ONLY ON DESKTOP SCREENS ≥ 992px) -->
+    <!-- DESKTOP TOP HEADER (3-TIER ARCHITECTURE - VISIBLE ON DESKTOP SCREENS ≥ 1024px) -->
     <header class="dt-header">
+      <!-- Tier 1: Announcement Top Bar -->
+      <div class="dt-top-announcement-bar">
+        <div class="dt-top-announcement-inner">
+          <div class="dt-top-announce-left">
+            <span>⚡ <strong>Free Express Shipping</strong> on orders above ₹999 across India</span>
+            <span class="dt-top-divider">|</span>
+            <span>🏢 Official GSTIN: <code>37BVTPG7761F1Z1</code></span>
+          </div>
+          <div class="dt-top-announce-right">
+            <a href="tel:+918886662334"><i class="ri-phone-line"></i> +91 8886662334</a>
+            <span class="dt-top-divider">|</span>
+            <a href="#" onclick="openWhatsAppChat(); return false;"><i class="ri-whatsapp-line"></i> WhatsApp Support</a>
+            <span class="dt-top-divider">|</span>
+            <a href="#" onclick="switchView('storeLocator'); return false;"><i class="ri-map-pin-line"></i> Visakhapatnam Store</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tier 2: Main Header (Logo + 600px Search Bar + Quick Actions) -->
       <div class="dt-header-top">
         <a href="#" class="dt-header-brand" onclick="switchView('home'); return false;">
           <img src="logo.png" alt="UNIQUE EXPRESSIONS" class="dt-logo-img">
@@ -23,8 +42,21 @@
 
         <div class="dt-search-container">
           <i class="ri-search-2-line dt-search-icon"></i>
-          <input type="text" class="dt-search-input" placeholder="Search 200+ Educational Toys, Smart Gadgets, Return Gifts, Handicrafts..." oninput="handleSearchInput(this.value)">
-          <button class="dt-search-btn" onclick="switchView('search')">Search</button>
+          <input type="text" class="dt-search-input" id="dtSearchInput" placeholder="Search 200+ Educational Toys, Smart Gadgets, Return Gifts, Handicrafts..." oninput="handleSearchInput(this.value)" onfocus="showSearchSuggestions(true)" onblur="setTimeout(() => showSearchSuggestions(false), 200)">
+          <button class="dt-search-btn" onclick="triggerDesktopSearch()">Search</button>
+
+          <!-- Search Dropdown Box -->
+          <div class="dt-search-dropdown-results" id="dtSearchDropdown">
+            <div class="dt-search-section-label">Popular Searches</div>
+            <div class="dt-search-pills">
+              <span onclick="applySearchQuery('360 Stunt Car')">🏎️ 360 Stunt Car</span>
+              <span onclick="applySearchQuery('Drone')">🚁 RC Drone</span>
+              <span onclick="applySearchQuery('Brass Ganesha')">🎨 Brass Ganesha</span>
+              <span onclick="applySearchQuery('Unicorn Pen')">✏️ Kawaii Pen</span>
+              <span onclick="applySearchQuery('Return Gift')">🎁 Return Gifts</span>
+            </div>
+            <div id="dtSearchLiveItems"></div>
+          </div>
         </div>
 
         <div class="dt-header-actions">
@@ -49,16 +81,63 @@
         </div>
       </div>
 
+      <!-- Tier 3: Sticky Navigation Bar with Multi-Column Mega Menu -->
       <nav class="dt-nav-bar">
         <a href="#" class="dt-nav-link" onclick="switchView('home'); return false;">✨ Home</a>
+        
+        <!-- Category Mega Menu Parent -->
+        <div class="dt-mega-menu-parent">
+          <a href="#" class="dt-nav-link" onclick="switchView('categories'); return false;">
+            📦 All Categories <i class="ri-arrow-down-s-line"></i>
+          </a>
+          <div class="dt-mega-dropdown">
+            <div class="dt-mega-grid">
+              <div class="dt-mega-col">
+                <div class="dt-mega-col-title">🧸 Toys Collection</div>
+                <a href="#" onclick="filterCategory('Toys'); return false;">RC 360 Stunt Cars</a>
+                <a href="#" onclick="filterCategory('Toys'); return false;">Plush Teddy Bears</a>
+                <a href="#" onclick="filterCategory('Toys'); return false;">Building Block Sets</a>
+                <a href="#" onclick="filterCategory('Toys'); return false;">Magnetic Board Games</a>
+              </div>
+              <div class="dt-mega-col">
+                <div class="dt-mega-col-title">📱 Smart Gadgets</div>
+                <a href="#" onclick="filterCategory('Gadgets'); return false;">Mini Bluetooth Speakers</a>
+                <a href="#" onclick="filterCategory('Gadgets'); return false;">Astronaut Star Projectors</a>
+                <a href="#" onclick="filterCategory('Gadgets'); return false;">Smart Digital Clocks</a>
+                <a href="#" onclick="filterCategory('Gadgets'); return false;">Rechargeable Desk Fans</a>
+              </div>
+              <div class="dt-mega-col">
+                <div class="dt-mega-col-title">🎨 Handicrafts & Art</div>
+                <a href="#" onclick="filterCategory('Handicrafts'); return false;">Handcrafted Brass Idols</a>
+                <a href="#" onclick="filterCategory('Handicrafts'); return false;">Kondapalli Wooden Dolls</a>
+                <a href="#" onclick="filterCategory('Handicrafts'); return false;">Etikoppaka Rattles</a>
+                <a href="#" onclick="filterCategory('Handicrafts'); return false;">Terracotta Diya Sets</a>
+              </div>
+              <div class="dt-mega-col">
+                <div class="dt-mega-col-title">✏️ Stationery & Gifts</div>
+                <a href="#" onclick="filterCategory('Stationery'); return false;">Kawaii Gel Pen Sets</a>
+                <a href="#" onclick="filterCategory('Stationery'); return false;">Hardbound Journals</a>
+                <a href="#" onclick="filterCategory('Return Gifts'); return false;">Birthday Return Hampers</a>
+                <a href="#" onclick="filterCategory('Return Gifts'); return false;">Plantable Seed Pencils</a>
+              </div>
+              <div class="dt-mega-col dt-mega-banner-col">
+                <div class="dt-mega-promo-box">
+                  <span class="dt-mega-tag">SPECIAL OFFER</span>
+                  <h4>Return Gift Studio</h4>
+                  <p>Customized hampers for birthdays & weddings.</p>
+                  <button onclick="switchView('b2b')">Explore Wholesale →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <a href="#" class="dt-nav-link" onclick="filterCategory('Toys'); return false;">🧸 Toys</a>
         <a href="#" class="dt-nav-link" onclick="filterCategory('Gadgets'); return false;">📱 Gadgets</a>
         <a href="#" class="dt-nav-link" onclick="filterCategory('Handicrafts'); return false;">🎨 Handicrafts</a>
         <a href="#" class="dt-nav-link" onclick="filterCategory('Stationery'); return false;">✏️ Stationery</a>
         <a href="#" class="dt-nav-link" onclick="filterCategory('Return Gifts'); return false;">🎁 Return Gifts</a>
         <a href="#" class="dt-nav-link dt-highlight-link" onclick="switchView('b2b'); return false;">📦 Wholesale GST</a>
-        <a href="#" class="dt-nav-link" onclick="switchView('offers'); return false;">🔥 Special Offers</a>
-        <a href="#" class="dt-nav-link" onclick="switchView('reviews'); return false;">⭐ Reviews</a>
         <a href="#" class="dt-nav-link" onclick="switchView('storeLocator'); return false;">📍 Visakhapatnam Store</a>
       </nav>
     </header>
@@ -93,311 +172,528 @@
     <main id="appMainContainer">
       <!-- VIEW 1: HOME FEED -->
       <div class="app-view active-view" id="viewHome">
-        <!-- 4. QUICK CATEGORIES -->
-        <div class="m-section-header">
-          <h3 class="m-section-title">Explore Categories</h3>
-          <span class="m-section-sublink" onclick="switchView('categories')">200+ Items →</span>
-        </div>
 
-        <div class="m-cat-rail-scroll no-scrollbar" id="mCatRailContainer">
-          <div class="m-cat-pill-thumb active-cat" id="mCat-All" onclick="filterCategory('All')">
-            <div class="m-cat-img-box">
-              <img src="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop" alt="All">
-            </div>
-            <div class="m-cat-overlay-text">
-              <span class="m-cat-name-label">✨ All Items</span>
-              <span class="m-cat-count-label">200+ SKUs</span>
-            </div>
+        <!-- MOBILE HOME VIEW (0–1023px) - 100% UNTOUCHED & LOCKED -->
+        <div id="mobileHomeView">
+          <!-- 4. QUICK CATEGORIES (MOBILE) -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">Explore Categories</h3>
+            <span class="m-section-sublink" onclick="switchView('categories')">240+ Items →</span>
           </div>
-          <div class="m-cat-pill-thumb" id="mCat-Toys" onclick="filterCategory('Toys')">
-            <div class="m-cat-img-box">
-              <img src="https://images.unsplash.com/photo-1559454403-b8fb88521f11?q=80&w=400&auto=format&fit=crop" alt="Toys">
-            </div>
-            <div class="m-cat-overlay-text">
-              <span class="m-cat-name-label">🧸 Kids Toys</span>
-              <span class="m-cat-count-label">40+ SKUs</span>
-            </div>
-          </div>
-          <div class="m-cat-pill-thumb" id="mCat-Gadgets" onclick="filterCategory('Gadgets')">
-            <div class="m-cat-img-box">
-              <img src="https://images.unsplash.com/photo-1545454675-3531b543be5d?q=80&w=400&auto=format&fit=crop" alt="Gadgets">
-            </div>
-            <div class="m-cat-overlay-text">
-              <span class="m-cat-name-label">📱 Gadgets</span>
-              <span class="m-cat-count-label">40+ SKUs</span>
-            </div>
-          </div>
-          <div class="m-cat-pill-thumb" id="mCat-Handicrafts" onclick="filterCategory('Handicrafts')">
-            <div class="m-cat-img-box">
-              <img src="https://images.unsplash.com/photo-1606293926075-69a00dbfde81?q=80&w=400&auto=format&fit=crop" alt="Handicrafts">
-            </div>
-            <div class="m-cat-overlay-text">
-              <span class="m-cat-name-label">🎨 Crafts</span>
-              <span class="m-cat-count-label">40+ SKUs</span>
-            </div>
-          </div>
-          <div class="m-cat-pill-thumb" id="mCat-Stationery" onclick="filterCategory('Stationery')">
-            <div class="m-cat-img-box">
-              <img src="https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?q=80&w=400&auto=format&fit=crop" alt="Stationery">
-            </div>
-            <div class="m-cat-overlay-text">
-              <span class="m-cat-name-label">✏️ Stationery</span>
-              <span class="m-cat-count-label">40+ SKUs</span>
-            </div>
-          </div>
-          <div class="m-cat-pill-thumb" id="mCat-Return Gifts" onclick="filterCategory('Return Gifts')">
-            <div class="m-cat-img-box">
-              <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=400&auto=format&fit=crop" alt="Return Gifts">
-            </div>
-            <div class="m-cat-overlay-text">
-              <span class="m-cat-name-label">🎁 Party Gifts</span>
-              <span class="m-cat-count-label">40+ SKUs</span>
-            </div>
-          </div>
-        </div>
 
-        <!-- 5. FEATURED COLLECTIONS -->
-        <div class="m-section-header">
-          <h3 class="m-section-title">Featured Collections</h3>
-          <span class="m-section-sublink">Swipe →</span>
-        </div>
-
-        <div class="m-featured-cards-scroll no-scrollbar">
-          <div class="m-featured-bundle-card" onclick="filterCategory('Return Gifts')">
-            <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=600&auto=format&fit=crop" alt="Return Gifts">
-            <div class="m-featured-card-overlay">
-              <span class="m-featured-tag">BESTSELLER BUNDLE</span>
-              <h4 class="m-featured-title">Return Gift Studio</h4>
+          <div class="m-cat-rail-scroll no-scrollbar" id="mCatRailContainer">
+            <div class="m-cat-pill-thumb active-cat" id="mCat-All" onclick="filterCategory('All')">
+              <div class="m-cat-img-box">
+                <img src="assets/banners/rc_toys_banner.png" alt="All">
+              </div>
+              <div class="m-cat-overlay-text">
+                <span class="m-cat-name-label">✨ All Items</span>
+                <span class="m-cat-count-label">240+ SKUs</span>
+              </div>
+            </div>
+            <div class="m-cat-pill-thumb" id="mCat-RC-Toys" onclick="filterCategory('RC Toys')">
+              <div class="m-cat-img-box">
+                <img src="assets/banners/rc_toys_banner.png" alt="RC Toys">
+              </div>
+              <div class="m-cat-overlay-text">
+                <span class="m-cat-name-label">🚗 RC Toys</span>
+                <span class="m-cat-count-label">13+ SKUs</span>
+              </div>
+            </div>
+            <div class="m-cat-pill-thumb" id="mCat-Educational" onclick="filterCategory('Educational Toys')">
+              <div class="m-cat-img-box">
+                <img src="assets/banners/educational_banner.png" alt="Educational Toys">
+              </div>
+              <div class="m-cat-overlay-text">
+                <span class="m-cat-name-label">🧩 Educational</span>
+                <span class="m-cat-count-label">30+ SKUs</span>
+              </div>
+            </div>
+            <div class="m-cat-pill-thumb" id="mCat-Handicrafts" onclick="filterCategory('Handicrafts')">
+              <div class="m-cat-img-box">
+                <img src="assets/banners/handicrafts_banner.png" alt="Handicrafts">
+              </div>
+              <div class="m-cat-overlay-text">
+                <span class="m-cat-name-label">🏺 Crafts</span>
+                <span class="m-cat-count-label">30+ SKUs</span>
+              </div>
+            </div>
+            <div class="m-cat-pill-thumb" id="mCat-Stationery" onclick="filterCategory('Stationary')">
+              <div class="m-cat-img-box">
+                <img src="assets/banners/stationery_banner.png" alt="Stationary">
+              </div>
+              <div class="m-cat-overlay-text">
+                <span class="m-cat-name-label">📝 Stationary</span>
+                <span class="m-cat-count-label">30+ SKUs</span>
+              </div>
+            </div>
+            <div class="m-cat-pill-thumb" id="mCat-Return-Gifts" onclick="filterCategory('Return Gifts')">
+              <div class="m-cat-img-box">
+                <img src="assets/banners/return_gifts_banner.png" alt="Return Gifts">
+              </div>
+              <div class="m-cat-overlay-text">
+                <span class="m-cat-name-label">🎁 Party Gifts</span>
+                <span class="m-cat-count-label">14+ SKUs</span>
+              </div>
             </div>
           </div>
-          <div class="m-featured-bundle-card" onclick="filterCategory('Toys')">
-            <img src="https://images.unsplash.com/photo-1587654780291-39c9404d746b?q=80&w=600&auto=format&fit=crop" alt="STEM Toys">
-            <div class="m-featured-card-overlay">
-              <span class="m-featured-tag">LEARNING & PLAY</span>
-              <h4 class="m-featured-title">STEM Educational Kit</h4>
+
+          <!-- 5. FEATURED COLLECTIONS (MOBILE) -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">Featured Collections</h3>
+            <span class="m-section-sublink">Swipe →</span>
+          </div>
+
+          <div class="m-featured-cards-scroll no-scrollbar">
+            <div class="m-featured-bundle-card" onclick="filterCategory('RC Toys')">
+              <img src="assets/banners/rc_toys_banner.png" alt="RC Racing Cars">
+              <div class="m-featured-card-overlay">
+                <span class="m-featured-tag">POPULAR & TRENDING</span>
+                <h4 class="m-featured-title">High-Speed RC & Flying Toys</h4>
+              </div>
+            </div>
+            <div class="m-featured-bundle-card" onclick="filterCategory('Educational Toys')">
+              <img src="assets/banners/educational_banner.png" alt="Educational Toys">
+              <div class="m-featured-card-overlay">
+                <span class="m-featured-tag">BRAIN & CREATIVITY</span>
+                <h4 class="m-featured-title">Educational & STEM Kits</h4>
+              </div>
+            </div>
+            <div class="m-featured-bundle-card" onclick="filterCategory('Handicrafts')">
+              <img src="assets/banners/handicrafts_banner.png" alt="Traditional Handicrafts">
+              <div class="m-featured-card-overlay">
+                <span class="m-featured-tag">ARTISAN CRAFTS</span>
+                <h4 class="m-featured-title">Handicrafts & Decor</h4>
+              </div>
+            </div>
+            <div class="m-featured-bundle-card" onclick="filterCategory('Stationary')">
+              <img src="assets/banners/stationery_banner.png" alt="Fancy Stationery">
+              <div class="m-featured-card-overlay">
+                <span class="m-featured-tag">BOUTIQUE IMPORTS</span>
+                <h4 class="m-featured-title">Cute Fancy Stationery</h4>
+              </div>
+            </div>
+            <div class="m-featured-bundle-card" onclick="filterCategory('Return Gifts')">
+              <img src="assets/banners/return_gifts_banner.png" alt="Return Gift Studio">
+              <div class="m-featured-card-overlay">
+                <span class="m-featured-tag">BESTSELLER BUNDLE</span>
+                <h4 class="m-featured-title">Return Gift Studio</h4>
+              </div>
             </div>
           </div>
-          <div class="m-featured-bundle-card" onclick="filterCategory('Handicrafts')">
-            <img src="https://images.unsplash.com/photo-1606293926075-69a00dbfde81?q=80&w=600&auto=format&fit=crop" alt="Handicrafts">
-            <div class="m-featured-card-overlay">
-              <span class="m-featured-tag">ARTISAN CRAFTS</span>
-              <h4 class="m-featured-title">Brass & Wooden Decor</h4>
+
+          <!-- 6. HERO BANNER CAROUSEL -->
+          <div class="m-hero-banner-frame">
+            <img src="assets/banners/return_gifts_banner.png" id="mHeroImg" alt="Hero Showcase">
+            <div class="m-hero-vignette"></div>
+            <div class="m-hero-banner-body">
+              <span class="m-hero-badge-pill">✨ BOUTIQUE LIFESTYLE COLLECTION</span>
+              <h1 class="m-hero-h1-heading" id="mHeroHeading">Discover Extraordinary Toys & Gifts</h1>
+              <p class="m-hero-sub-text" id="mHeroSub">Curated Educational Toys, Smart Gadgets, Artisan Handicrafts, Stationery & Bespoke Return Gift Hampers.</p>
+              <button class="m-hero-cta-button" onclick="switchView('categories')">Explore Collection →</button>
+            </div>
+          </div>
+          <div class="m-hero-dots-row">
+            <div class="m-dot-item active" id="mDot0" onclick="setHeroSlide(0)"></div>
+            <div class="m-dot-item" id="mDot1" onclick="setHeroSlide(1)"></div>
+            <div class="m-dot-item" id="mDot2" onclick="setHeroSlide(2)"></div>
+          </div>
+
+          <!-- 7. SHOP BY STORE CATEGORIES (MOBILE) -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">Shop By Store Categories</h3>
+            <span class="m-section-sublink" onclick="switchView('categories')">View All →</span>
+          </div>
+
+          <div class="m-occasion-scroll-row no-scrollbar">
+            <div class="m-occasion-chip-card" onclick="filterCategory('RC Toys')">
+              <div class="m-occasion-emoji">🚗</div>
+              <div class="m-occasion-label">RC Toys</div>
+            </div>
+            <div class="m-occasion-chip-card" onclick="filterCategory('RC Flying Toys')">
+              <div class="m-occasion-emoji">🛸</div>
+              <div class="m-occasion-label">Flying Toys</div>
+            </div>
+            <div class="m-occasion-chip-card" onclick="filterCategory('Educational Toys')">
+              <div class="m-occasion-emoji">🧩</div>
+              <div class="m-occasion-label">Educational</div>
+            </div>
+            <div class="m-occasion-chip-card" onclick="filterCategory('Handicrafts')">
+              <div class="m-occasion-emoji">🏺</div>
+              <div class="m-occasion-label">Handicrafts</div>
+            </div>
+            <div class="m-occasion-chip-card" onclick="filterCategory('Stationary')">
+              <div class="m-occasion-emoji">📝</div>
+              <div class="m-occasion-label">Stationary</div>
+            </div>
+            <div class="m-occasion-chip-card" onclick="filterCategory('Return Gifts')">
+              <div class="m-occasion-emoji">🎁</div>
+              <div class="m-occasion-label">Return Gifts</div>
+            </div>
+            <div class="m-occasion-chip-card" onclick="filterCategory('Standard Toys')">
+              <div class="m-occasion-emoji">🧸</div>
+              <div class="m-occasion-label">Standard Toys</div>
+            </div>
+            <div class="m-occasion-chip-card" onclick="filterCategory('Combos')">
+              <div class="m-occasion-emoji">🎀</div>
+              <div class="m-occasion-label">Combos</div>
+            </div>
+            <div class="m-occasion-chip-card" onclick="filterCategory('Gifts &amp; Gadgets')">
+              <div class="m-occasion-emoji">🎮</div>
+              <div class="m-occasion-label">Gifts &amp; Gadgets</div>
+            </div>
+            <div class="m-occasion-chip-card" onclick="filterCategory('Kids Footwear')">
+              <div class="m-occasion-emoji">👟</div>
+              <div class="m-occasion-label">Kids Footwear</div>
+            </div>
+          </div>
+
+          <!-- 8. FLASH SALE CARD -->
+          <div class="m-flash-sale-box" onclick="switchView('offers')">
+            <div>
+              <span style="font-weight:800; font-size:12px; color:#ff6b35;">⚡ FLASH SALE URGENCY</span>
+              <span style="display:block; font-size:10px; color:#cbd5e1; margin-top:2px;">Extra 10% off coupon <strong>UNIQUE10</strong></span>
+            </div>
+            <span class="m-timer-badge" id="mFlashTimer">04 : 28 : 42</span>
+          </div>
+
+          <!-- 9. TRENDING PRODUCTS (2-COLUMN GRID) -->
+          <div class="m-section-header">
+            <h3 class="m-section-title" id="mCategoryHeading">🔥 Trending Collections</h3>
+            <span class="m-section-sublink" onclick="switchView('categories')">View All →</span>
+          </div>
+
+          <div class="m-product-grid-2col" id="mobileProductGrid">
+            <!-- Injected via app.js -->
+          </div>
+
+          <!-- 10. RECENTLY VIEWED -->
+          <div class="m-section-header" id="recentlyViewedHeader" style="display:none;">
+            <h3 class="m-section-title">🕒 Recently Viewed</h3>
+          </div>
+          <div class="m-horizontal-product-rail no-scrollbar" id="recentlyViewedRail"></div>
+
+          <!-- 11. BEST SELLERS -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">🏆 Best Sellers</h3>
+            <span class="m-section-sublink">Top Rated</span>
+          </div>
+          <div class="m-horizontal-product-rail no-scrollbar" id="bestSellersRail"></div>
+
+          <!-- 12. RECOMMENDED FOR YOU -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">✨ Recommended For You</h3>
+          </div>
+          <div class="m-horizontal-product-rail no-scrollbar" id="recommendedRail"></div>
+
+          <!-- 13. NEW ARRIVALS -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">🆕 New Arrivals</h3>
+          </div>
+          <div class="m-horizontal-product-rail no-scrollbar" id="newArrivalsRail"></div>
+
+          <!-- 14. WHOLESALE COLLECTION & B2B PORTAL -->
+          <div class="m-wholesale-b2b-card" onclick="switchView('b2b')">
+            <h3 class="m-wholesale-h3">📦 Wholesale Partner Portal</h3>
+            <p class="m-wholesale-desc">Official GST Billing (GSTIN: <strong>37BVTPG7761F1Z1</strong>). Low minimum order thresholds for schools, store owners & event planners.</p>
+            <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="event.stopPropagation(); switchView('b2b')">Open B2B Bulk Calculator →</button>
+          </div>
+
+          <!-- 15. WHY UNIQUE EXPRESSIONS -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">Why Unique Expressions</h3>
+          </div>
+          <div class="m-guarantee-cards-row no-scrollbar">
+            <div class="m-guarantee-box">
+              <div class="m-guarantee-icon"><i data-feather="check-circle"></i></div>
+              <div class="m-guarantee-title">100% Genuine</div>
+            </div>
+            <div class="m-guarantee-box">
+              <div class="m-guarantee-icon"><i data-feather="truck"></i></div>
+              <div class="m-guarantee-title">Same Day Delivery</div>
+            </div>
+            <div class="m-guarantee-box">
+              <div class="m-guarantee-icon"><i data-feather="gift"></i></div>
+              <div class="m-guarantee-title">Premium Wrapping</div>
+            </div>
+            <div class="m-guarantee-box">
+              <div class="m-guarantee-icon"><i data-feather="file-text"></i></div>
+              <div class="m-guarantee-title">GST Invoice</div>
+            </div>
+          </div>
+
+          <!-- 16. CUSTOMER LOVE -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">Customer Love</h3>
+          </div>
+          <div class="m-reviews-scroll-row no-scrollbar">
+            <div class="m-review-bubble-card">
+              <div style="color:var(--func-gold); font-size:12px; margin-bottom:6px;">★★★★★</div>
+              <p style="font-size:12px; color:#cbd5e1; margin-bottom:8px;">"Ordered 50 return gift hampers for my daughter's birthday. Exceptional quality and prompt same-day delivery in Madhurawada!"</p>
+              <div style="font-size:11px; font-weight:700; color:#fff;">Sowmya Rao • Vizag Buyer</div>
+            </div>
+            <div class="m-review-bubble-card">
+              <div style="color:var(--func-gold); font-size:12px; margin-bottom:6px;">★★★★★</div>
+              <p style="font-size:12px; color:#cbd5e1; margin-bottom:8px;">"The seamless mobile app experience made ordering school stationery so convenient. Best boutique store!"</p>
+              <div style="font-size:11px; font-weight:700; color:#fff;">K. V. Raman • Administrator</div>
+            </div>
+          </div>
+
+          <!-- 17. INSTAGRAM GALLERY -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">Follow @UniqueExpressions</h3>
+          </div>
+          <div class="m-insta-grid-scroll no-scrollbar">
+            <img src="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop" alt="Insta 1">
+            <img src="https://images.unsplash.com/photo-1587654780291-39c9404d746b?q=80&w=400&auto=format&fit=crop" alt="Insta 2">
+            <img src="https://images.unsplash.com/photo-1606293926075-69a00dbfde81?q=80&w=400&auto=format&fit=crop" alt="Insta 3">
+            <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=400&auto=format&fit=crop" alt="Insta 4">
+          </div>
+
+          <!-- 18. VIP NEWSLETTER GLASS CARD -->
+          <div class="m-newsletter-glass-card">
+            <h3 style="font-size:18px; font-weight:800; color:#fff; margin-bottom:6px;">Join UNIQUE VIP Club</h3>
+            <p style="font-size:11px; color:#94a3b8; margin-bottom:14px;">Receive exclusive festive catalogs, new return gift alerts & wholesale discounts.</p>
+            <input type="email" placeholder="Enter email address..." style="width:100%; padding:10px 16px; border-radius:99px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.08); color:#fff; font-size:12px; outline:none; margin-bottom:10px;">
+            <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="alert('Subscribed to VIP updates!')">Join VIP Club</button>
+          </div>
+
+          <!-- 19. FOOTER -->
+          <footer class="m-app-footer">
+            <img src="logo.png" class="m-footer-brand-logo" alt="Logo Footer">
+            <p class="m-footer-text-p">
+              UNIQUE EXPRESSIONS is a luxury e-commerce boutique for kids toys, educational games, smart gadgets, handicrafts, and return gift hampers in Visakhapatnam.
+            </p>
+
+            <span class="m-footer-gst-badge">GSTIN: 37BVTPG7761F1Z1</span>
+
+            <h4 class="m-footer-section-title">Store Address</h4>
+            <p class="m-footer-text-p">
+              <strong>Owner:</strong> G MOUNIKA DURGA<br>
+              2nd floor LIG 347, 2-115/9/1, near Shivalayam,<br>
+              Midhilapuri VUDA Colony, Madhurawada,<br>
+              Visakhapatnam - 530041<br>
+              📞 +91 8886662334
+            </p>
+
+            <h4 class="m-footer-section-title">Store Customer Service & Info</h4>
+            <ul class="m-footer-links-list">
+              <li><a href="#" onclick="switchView('reviews'); return false;">⭐ Customer Reviews & Ratings</a></li>
+              <li><a href="#" onclick="switchView('returns'); return false;">🔄 Returns & Exchange Portal</a></li>
+              <li><a href="#" onclick="switchView('helpCenter'); return false;">❓ Help Center & Support</a></li>
+              <li><a href="#" onclick="switchView('storeLocator'); return false;">📍 Visakhapatnam Store Locator</a></li>
+              <li><a href="#" onclick="switchView('b2b'); return false;">📦 Wholesale B2B Bulk Orders</a></li>
+              <li><a href="#" onclick="switchView('offers'); return false;">🏷️ Deals & Promo Coupons</a></li>
+              <li><a href="#" onclick="switchView('about'); return false;">About Unique Expressions</a></li>
+              <li><a href="#" onclick="switchView('faq'); return false;">Frequently Asked Questions (FAQ)</a></li>
+              <li><a href="#" onclick="switchView('shipping'); return false;">Refund & Shipping Policy</a></li>
+              <li><a href="#" onclick="switchView('terms'); return false;">Terms & Conditions</a></li>
+              <li><a href="#" onclick="switchView('privacy'); return false;">Privacy Policy</a></li>
+              <li><a href="#" onclick="openWhatsAppChat(); return false;">WhatsApp Customer Support</a></li>
+              <li><a href="#" onclick="switchView('admin'); return false;">Admin Portal Dashboard</a></li>
+            </ul>
+
+            <div style="border-top:1px solid rgba(255,255,255,0.08); margin-top:20px; padding-top:16px; font-size:11px; color:#64748b; text-align:center;">
+              © 2026 UNIQUE EXPRESSIONS. Madhurawada, Visakhapatnam. All Rights Reserved.
+            </div>
+          </footer>
+        </div>
+
+        <!-- DEDICATED DESKTOP HOME VIEW (≥ 1024px) -->
+        <div id="desktopHomeView">
+          <!-- 1. Split Desktop Hero -->
+          <div class="dt-hero-split-container">
+            <div class="dt-hero-content-left">
+              <span class="dt-hero-pill-badge">✨ BOUTIQUE LIFESTYLE COLLECTION</span>
+              <h1 class="dt-hero-title">Discover Extraordinary Toys & Gifts</h1>
+              <p class="dt-hero-sub">Curated Educational Toys, Smart Gadgets, Artisan Handicrafts, Stationery & Bespoke Return Gift Hampers in Visakhapatnam.</p>
+              <div class="dt-hero-actions">
+                <button class="dt-hero-cta-btn" onclick="switchView('categories')">Explore Collection →</button>
+                <button class="dt-hero-sec-btn" onclick="switchView('b2b')">Wholesale GST Billing</button>
+              </div>
+            </div>
+            <img src="hero_lifestyle.png" class="dt-hero-image-right" alt="Unique Expressions Collection">
+          </div>
+
+          <!-- 2. Desktop Category Section (6 Equal Width Cards) -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">Explore Categories</h3>
+            <span class="m-section-sublink" onclick="switchView('categories')">200+ Items Available →</span>
+          </div>
+
+          <div class="dt-category-grid">
+            <div class="dt-category-card" onclick="filterCategory('RC Toys')">
+              <img src="assets/banners/rc_toys_banner.png" alt="RC Toys" style="object-fit:cover;">
+              <div class="dt-category-overlay">
+                <h3>🚗 RC Toys</h3>
+                <p>High-Speed Cars & Buggies</p>
+              </div>
+            </div>
+            <div class="dt-category-card" onclick="filterCategory('Educational Toys')">
+              <img src="assets/banners/educational_banner.png" alt="Educational Toys" style="object-fit:cover;">
+              <div class="dt-category-overlay">
+                <h3>🧩 Educational Toys</h3>
+                <p>STEM Kits & Learning Games</p>
+              </div>
+            </div>
+            <div class="dt-category-card" onclick="filterCategory('Handicrafts')">
+              <img src="assets/banners/handicrafts_banner.png" alt="Handicrafts" style="object-fit:cover;">
+              <div class="dt-category-overlay">
+                <h3>🏺 Handicrafts</h3>
+                <p>Artisan Decor & Wooden Craft</p>
+              </div>
+            </div>
+            <div class="dt-category-card" onclick="filterCategory('Stationary')">
+              <img src="assets/banners/stationery_banner.png" alt="Stationary" style="object-fit:cover;">
+              <div class="dt-category-overlay">
+                <h3>📝 Fancy Stationary</h3>
+                <p>Cute Pens, Stamps & Diaries</p>
+              </div>
+            </div>
+            <div class="dt-category-card" onclick="filterCategory('Return Gifts')">
+              <img src="assets/banners/return_gifts_banner.png" alt="Return Gifts" style="object-fit:cover;">
+              <div class="dt-category-overlay">
+                <h3>🎁 Return Gifts</h3>
+                <p>Party Hampers & Favors</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2.5 Desktop Shop By Category Grid -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">🎉 Shop By Store Categories</h3>
+          </div>
+
+          <div class="dt-occasion-grid">
+            <div class="dt-occasion-card" onclick="filterCategory('RC Toys')">
+              <span class="dt-occ-icon">🚗</span>
+              <span class="dt-occ-title">RC Toys</span>
+            </div>
+            <div class="dt-occasion-card" onclick="filterCategory('RC Flying Toys')">
+              <span class="dt-occ-icon">🛸</span>
+              <span class="dt-occ-title">RC Flying Toys</span>
+            </div>
+            <div class="dt-occasion-card" onclick="filterCategory('Educational Toys')">
+              <span class="dt-occ-icon">🧩</span>
+              <span class="dt-occ-title">Educational</span>
+            </div>
+            <div class="dt-occasion-card" onclick="filterCategory('Handicrafts')">
+              <span class="dt-occ-icon">🏺</span>
+              <span class="dt-occ-title">Handicrafts</span>
+            </div>
+            <div class="dt-occasion-card" onclick="filterCategory('Stationary')">
+              <span class="dt-occ-icon">📝</span>
+              <span class="dt-occ-title">Stationary</span>
+            </div>
+            <div class="dt-occasion-card" onclick="filterCategory('Return Gifts')">
+              <span class="dt-occ-icon">🎁</span>
+              <span class="dt-occ-title">Return Gifts</span>
+            </div>
+          </div>
+
+          <!-- Desktop Flash Sale Promo Bar -->
+          <div class="dt-flash-sale-bar">
+            <div style="display:flex; align-items:center; gap:14px;">
+              <span class="dt-flash-tag">⚡ FLASH SALE</span>
+              <span style="font-weight:700; font-size:14px;">Extra 10% OFF all Return Gift Hampers & Kids Toys! Use Code <strong>UNIQUE10</strong></span>
+            </div>
+            <div class="dt-flash-timer">
+              <span>Limited Time Offer Ends In:</span>
+              <div class="dt-timer-box">04 : 28 : 42</div>
+            </div>
+          </div>
+
+          <!-- 3. Desktop Featured Collections (3 Editorial 16:9 Cards matching real products) -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">Featured Editorial Collections</h3>
+          </div>
+
+          <div class="dt-featured-grid">
+            <div class="dt-featured-card" onclick="filterCategory('RC Toys')">
+              <img src="assets/banners/rc_toys_banner.png" alt="RC Racing Cars" style="object-fit:cover;">
+              <div class="dt-featured-overlay">
+                <span class="dt-tag-badge">POPULAR & TRENDING</span>
+                <h3>High-Speed RC & Flying Toys</h3>
+              </div>
+            </div>
+            <div class="dt-featured-card" onclick="filterCategory('Educational Toys')">
+              <img src="assets/banners/educational_banner.png" alt="Educational & STEM Toys" style="object-fit:cover;">
+              <div class="dt-featured-overlay">
+                <span class="dt-tag-badge">BRAIN & CREATIVITY</span>
+                <h3>Educational & STEM Learning Kits</h3>
+              </div>
+            </div>
+            <div class="dt-featured-card" onclick="filterCategory('Handicrafts')">
+              <img src="assets/banners/handicrafts_banner.png" alt="Handicrafts & Stationery" style="object-fit:cover;">
+              <div class="dt-featured-overlay">
+                <span class="dt-tag-badge">ARTISAN & BOUTIQUE</span>
+                <h3>Handicrafts & Fancy Stationery</h3>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Desktop Product Catalog Grid (4-Columns 1:1 Aspect Ratio Images) -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">🔥 Trending Collections</h3>
+            <span class="m-section-sublink" onclick="switchView('categories')">View All Products →</span>
+          </div>
+
+          <div class="dt-product-grid" id="desktopProductGrid">
+            <!-- Injected dynamically in app.js -->
+          </div>
+
+          <!-- 5. Desktop Why Unique Expressions (4 Full-Width Cards) -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">Why Unique Expressions</h3>
+          </div>
+
+          <div class="dt-features-grid">
+            <div class="dt-feature-card">
+              <div class="dt-feature-icon"><i class="ri-checkbox-circle-line"></i></div>
+              <h3>100% Genuine Products</h3>
+              <p>Direct authentic items sourced from verified craftsmen and manufacturers.</p>
+            </div>
+            <div class="dt-feature-card">
+              <div class="dt-feature-icon"><i class="ri-truck-line"></i></div>
+              <h3>Same Day Delivery</h3>
+              <p>Express local dispatch across Visakhapatnam & Madhurawada boutique area.</p>
+            </div>
+            <div class="dt-feature-card">
+              <div class="dt-feature-icon"><i class="ri-gift-line"></i></div>
+              <h3>Premium Wrapping</h3>
+              <p>Bespoke festive gift boxes and luxury hamper styling for any occasion.</p>
+            </div>
+            <div class="dt-feature-card">
+              <div class="dt-feature-icon"><i class="ri-file-text-line"></i></div>
+              <h3>GST Tax Invoices</h3>
+              <p>Official GSTIN invoices for corporate orders, schools & wholesale partners.</p>
+            </div>
+          </div>
+
+          <!-- 6. Desktop Customer Testimonials (3 Full-Width Reviews) -->
+          <div class="m-section-header">
+            <h3 class="m-section-title">Customer Love & Reviews</h3>
+          </div>
+
+          <div class="dt-reviews-grid">
+            <div class="dt-review-card">
+              <div class="dt-review-stars">★★★★★</div>
+              <p>"Ordered 50 return gift hampers for my daughter's birthday. Exceptional quality and prompt same-day delivery in Madhurawada!"</p>
+              <div class="dt-review-author">Sowmya Rao • Vizag Buyer</div>
+            </div>
+            <div class="dt-review-card">
+              <div class="dt-review-stars">★★★★★</div>
+              <p>"The seamless store experience made ordering school stationery so convenient. Best boutique store in Visakhapatnam!"</p>
+              <div class="dt-review-author">K. V. Raman • Administrator</div>
+            </div>
+            <div class="dt-review-card">
+              <div class="dt-review-stars">★★★★★</div>
+              <p>"Authentic brass idols and wooden handicrafts! GST invoices were issued quickly for our corporate gift order."</p>
+              <div class="dt-review-author">Nirmala Devi • Corporate Client</div>
             </div>
           </div>
         </div>
 
-        <!-- DESKTOP HERO SECTION (SPLIT LAYOUT 50/50 - VISIBLE ONLY ON DESKTOP SCREENS ≥ 1024px) -->
-        <div class="dt-hero-split-container">
-          <div class="dt-hero-content-left">
-            <span class="dt-hero-pill-badge">✨ BOUTIQUE LIFESTYLE COLLECTION</span>
-            <h1 class="dt-hero-title">Discover Extraordinary Toys & Gifts</h1>
-            <p class="dt-hero-sub">Curated Educational Toys, Smart Gadgets, Artisan Handicrafts, Stationery & Bespoke Return Gift Hampers in Visakhapatnam.</p>
-            <div class="dt-hero-actions">
-              <button class="dt-hero-cta-btn" onclick="switchView('categories')">Explore Collection →</button>
-              <button class="dt-hero-sec-btn" onclick="switchView('b2b')">Wholesale GST Billing</button>
-            </div>
-          </div>
-          <img src="hero_lifestyle.png" class="dt-hero-image-right" alt="Unique Expressions Collection">
-        </div>
-
-        <!-- 6. HERO BANNER CAROUSEL (MOBILE ONLY) -->
-        <div class="m-hero-banner-frame">
-          <img src="hero_lifestyle.png" id="mHeroImg" alt="Hero Showcase">
-          <div class="m-hero-vignette"></div>
-          <div class="m-hero-banner-body">
-            <span class="m-hero-badge-pill">✨ BOUTIQUE LIFESTYLE COLLECTION</span>
-            <h1 class="m-hero-h1-heading" id="mHeroHeading">Discover Extraordinary Toys & Gifts</h1>
-            <p class="m-hero-sub-text" id="mHeroSub">Curated Educational Toys, Smart Gadgets, Artisan Handicrafts, Stationery & Bespoke Return Gift Hampers.</p>
-            <button class="m-hero-cta-button" onclick="switchView('categories')">Explore Collection →</button>
-          </div>
-        </div>
-        <div class="m-hero-dots-row">
-          <div class="m-dot-item active" id="mDot0" onclick="setHeroSlide(0)"></div>
-          <div class="m-dot-item" id="mDot1" onclick="setHeroSlide(1)"></div>
-          <div class="m-dot-item" id="mDot2" onclick="setHeroSlide(2)"></div>
-        </div>
-
-        <!-- 7. SHOP BY OCCASION -->
-        <div class="m-section-header">
-          <h3 class="m-section-title">Shop By Occasion</h3>
-        </div>
-
-        <div class="m-occasion-scroll-row no-scrollbar">
-          <div class="m-occasion-chip-card" onclick="filterCategory('Return Gifts')">
-            <div class="m-occasion-emoji">🎂</div>
-            <div class="m-occasion-label">Birthday</div>
-          </div>
-          <div class="m-occasion-chip-card" onclick="filterCategory('Stationery')">
-            <div class="m-occasion-emoji">🎒</div>
-            <div class="m-occasion-label">School</div>
-          </div>
-          <div class="m-occasion-chip-card" onclick="filterCategory('Handicrafts')">
-            <div class="m-occasion-emoji">💼</div>
-            <div class="m-occasion-label">Corporate</div>
-          </div>
-          <div class="m-occasion-chip-card" onclick="filterCategory('Handicrafts')">
-            <div class="m-occasion-emoji">🪔</div>
-            <div class="m-occasion-label">Festival</div>
-          </div>
-          <div class="m-occasion-chip-card" onclick="filterCategory('Toys')">
-            <div class="m-occasion-emoji">🍼</div>
-            <div class="m-occasion-label">Baby Shower</div>
-          </div>
-          <div class="m-occasion-chip-card" onclick="filterCategory('Handicrafts')">
-            <div class="m-occasion-emoji">💍</div>
-            <div class="m-occasion-label">Wedding</div>
-          </div>
-        </div>
-
-        <!-- 8. FLASH SALE CARD -->
-        <div class="m-flash-sale-box" onclick="switchView('offers')">
-          <div>
-            <span style="font-weight:800; font-size:12px; color:#ff6b35;">⚡ FLASH SALE URGENCY</span>
-            <span style="display:block; font-size:10px; color:#cbd5e1; margin-top:2px;">Extra 10% off coupon <strong>UNIQUE10</strong></span>
-          </div>
-          <span class="m-timer-badge" id="mFlashTimer">04 : 28 : 42</span>
-        </div>
-
-        <!-- 9. TRENDING PRODUCTS (2-COLUMN GRID) -->
-        <div class="m-section-header">
-          <h3 class="m-section-title" id="mCategoryHeading">🔥 Trending Collections</h3>
-          <span class="m-section-sublink" onclick="switchView('categories')">View All →</span>
-        </div>
-
-        <div class="m-product-grid-2col" id="mobileProductGrid">
-          <!-- Injected via app.js -->
-        </div>
-
-        <!-- 10. RECENTLY VIEWED -->
-        <div class="m-section-header" id="recentlyViewedHeader" style="display:none;">
-          <h3 class="m-section-title">🕒 Recently Viewed</h3>
-        </div>
-        <div class="m-horizontal-product-rail no-scrollbar" id="recentlyViewedRail"></div>
-
-        <!-- 11. BEST SELLERS -->
-        <div class="m-section-header">
-          <h3 class="m-section-title">🏆 Best Sellers</h3>
-          <span class="m-section-sublink">Top Rated</span>
-        </div>
-        <div class="m-horizontal-product-rail no-scrollbar" id="bestSellersRail"></div>
-
-        <!-- 12. RECOMMENDED FOR YOU -->
-        <div class="m-section-header">
-          <h3 class="m-section-title">✨ Recommended For You</h3>
-        </div>
-        <div class="m-horizontal-product-rail no-scrollbar" id="recommendedRail"></div>
-
-        <!-- 13. NEW ARRIVALS -->
-        <div class="m-section-header">
-          <h3 class="m-section-title">🆕 New Arrivals</h3>
-        </div>
-        <div class="m-horizontal-product-rail no-scrollbar" id="newArrivalsRail"></div>
-
-        <!-- 14. WHOLESALE COLLECTION & B2B PORTAL -->
-        <div class="m-wholesale-b2b-card" onclick="switchView('b2b')">
-          <h3 class="m-wholesale-h3">📦 Wholesale Partner Portal</h3>
-          <p class="m-wholesale-desc">Official GST Billing (GSTIN: <strong>37BVTPG7761F1Z1</strong>). Low minimum order thresholds for schools, store owners & event planners.</p>
-          <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="event.stopPropagation(); switchView('b2b')">Open B2B Bulk Calculator →</button>
-        </div>
-
-        <!-- 15. WHY UNIQUE EXPRESSIONS -->
-        <div class="m-section-header">
-          <h3 class="m-section-title">Why Unique Expressions</h3>
-        </div>
-        <div class="m-guarantee-cards-row no-scrollbar">
-          <div class="m-guarantee-box">
-            <div class="m-guarantee-icon"><i data-feather="check-circle"></i></div>
-            <div class="m-guarantee-title">100% Genuine</div>
-          </div>
-          <div class="m-guarantee-box">
-            <div class="m-guarantee-icon"><i data-feather="truck"></i></div>
-            <div class="m-guarantee-title">Same Day Delivery</div>
-          </div>
-          <div class="m-guarantee-box">
-            <div class="m-guarantee-icon"><i data-feather="gift"></i></div>
-            <div class="m-guarantee-title">Premium Wrapping</div>
-          </div>
-          <div class="m-guarantee-box">
-            <div class="m-guarantee-icon"><i data-feather="file-text"></i></div>
-            <div class="m-guarantee-title">GST Invoice</div>
-          </div>
-        </div>
-
-        <!-- 16. CUSTOMER LOVE -->
-        <div class="m-section-header">
-          <h3 class="m-section-title">Customer Love</h3>
-        </div>
-        <div class="m-reviews-scroll-row no-scrollbar">
-          <div class="m-review-bubble-card">
-            <div style="color:var(--func-gold); font-size:12px; margin-bottom:6px;">★★★★★</div>
-            <p style="font-size:12px; color:#cbd5e1; margin-bottom:8px;">"Ordered 50 return gift hampers for my daughter's birthday. Exceptional quality and prompt same-day delivery in Madhurawada!"</p>
-            <div style="font-size:11px; font-weight:700; color:#fff;">Sowmya Rao • Vizag Buyer</div>
-          </div>
-          <div class="m-review-bubble-card">
-            <div style="color:var(--func-gold); font-size:12px; margin-bottom:6px;">★★★★★</div>
-            <p style="font-size:12px; color:#cbd5e1; margin-bottom:8px;">"The seamless mobile app experience made ordering school stationery so convenient. Best boutique store!"</p>
-            <div style="font-size:11px; font-weight:700; color:#fff;">K. V. Raman • Administrator</div>
-          </div>
-        </div>
-
-        <!-- 17. INSTAGRAM GALLERY -->
-        <div class="m-section-header">
-          <h3 class="m-section-title">Follow @UniqueExpressions</h3>
-        </div>
-        <div class="m-insta-grid-scroll no-scrollbar">
-          <img src="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop" alt="Insta 1">
-          <img src="https://images.unsplash.com/photo-1587654780291-39c9404d746b?q=80&w=400&auto=format&fit=crop" alt="Insta 2">
-          <img src="https://images.unsplash.com/photo-1606293926075-69a00dbfde81?q=80&w=400&auto=format&fit=crop" alt="Insta 3">
-          <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=400&auto=format&fit=crop" alt="Insta 4">
-        </div>
-
-        <!-- 18. VIP NEWSLETTER GLASS CARD -->
-        <div class="m-newsletter-glass-card">
-          <h3 style="font-size:18px; font-weight:800; color:#fff; margin-bottom:6px;">Join UNIQUE VIP Club</h3>
-          <p style="font-size:11px; color:#94a3b8; margin-bottom:14px;">Receive exclusive festive catalogs, new return gift alerts & wholesale discounts.</p>
-          <input type="email" placeholder="Enter email address..." style="width:100%; padding:10px 16px; border-radius:99px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.08); color:#fff; font-size:12px; outline:none; margin-bottom:10px;">
-          <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="alert('Subscribed to VIP updates!')">Join VIP Club</button>
-        </div>
-
-        <!-- 19. FOOTER -->
-        <footer class="m-app-footer">
-          <img src="logo.png" class="m-footer-brand-logo" alt="Logo Footer">
-          <p class="m-footer-text-p">
-            UNIQUE EXPRESSIONS is a luxury e-commerce boutique for kids toys, educational games, smart gadgets, handicrafts, and return gift hampers in Visakhapatnam.
-          </p>
-
-          <span class="m-footer-gst-badge">GSTIN: 37BVTPG7761F1Z1</span>
-
-          <h4 class="m-footer-section-title">Store Address</h4>
-          <p class="m-footer-text-p">
-            <strong>Owner:</strong> G MOUNIKA DURGA<br>
-            2nd floor LIG 347, 2-115/9/1, near Shivalayam,<br>
-            Midhilapuri VUDA Colony, Madhurawada,<br>
-            Visakhapatnam - 530041<br>
-            📞 +91 8886662334
-          </p>
-
-          <h4 class="m-footer-section-title">Store Customer Service & Info</h4>
-          <ul class="m-footer-links-list">
-            <li><a href="#" onclick="switchView('reviews'); return false;">⭐ Customer Reviews & Ratings</a></li>
-            <li><a href="#" onclick="switchView('returns'); return false;">🔄 Returns & Exchange Portal</a></li>
-            <li><a href="#" onclick="switchView('helpCenter'); return false;">❓ Help Center & Support</a></li>
-            <li><a href="#" onclick="switchView('storeLocator'); return false;">📍 Visakhapatnam Store Locator</a></li>
-            <li><a href="#" onclick="switchView('b2b'); return false;">📦 Wholesale B2B Bulk Orders</a></li>
-            <li><a href="#" onclick="switchView('offers'); return false;">🏷️ Deals & Promo Coupons</a></li>
-            <li><a href="#" onclick="switchView('about'); return false;">About Unique Expressions</a></li>
-            <li><a href="#" onclick="switchView('faq'); return false;">Frequently Asked Questions (FAQ)</a></li>
-            <li><a href="#" onclick="switchView('shipping'); return false;">Refund & Shipping Policy</a></li>
-            <li><a href="#" onclick="switchView('terms'); return false;">Terms & Conditions</a></li>
-            <li><a href="#" onclick="switchView('privacy'); return false;">Privacy Policy</a></li>
-            <li><a href="#" onclick="openWhatsAppChat(); return false;">WhatsApp Customer Support</a></li>
-            <li><a href="#" onclick="switchView('admin'); return false;">Admin Portal Dashboard</a></li>
-          </ul>
-
-          <div style="border-top:1px solid rgba(255,255,255,0.08); margin-top:20px; padding-top:16px; font-size:11px; color:#64748b; text-align:center;">
-            © 2026 UNIQUE EXPRESSIONS. Madhurawada, Visakhapatnam. All Rights Reserved.
-          </div>
-        </footer>
       </div>
 
       <!-- VIEW 2: DEDICATED CATEGORIES BROWSER -->
@@ -479,11 +775,13 @@
         <div class="dt-footer-col">
           <h4 class="dt-footer-heading">Categories</h4>
           <ul class="dt-footer-links">
-            <li><a href="#" onclick="filterCategory('Toys'); return false;">Educational & Stunt Toys</a></li>
-            <li><a href="#" onclick="filterCategory('Gadgets'); return false;">Smart Electronics & Star Lamps</a></li>
-            <li><a href="#" onclick="filterCategory('Handicrafts'); return false;">Brass Idols & Wooden Crafts</a></li>
-            <li><a href="#" onclick="filterCategory('Stationery'); return false;">Kawaii Pens & Journals</a></li>
+            <li><a href="#" onclick="filterCategory('RC Toys'); return false;">RC Stunt Cars & Vehicles</a></li>
+            <li><a href="#" onclick="filterCategory('RC Flying Toys'); return false;">RC Flying Toys & Drones</a></li>
+            <li><a href="#" onclick="filterCategory('Educational Toys'); return false;">Educational & STEM Toys</a></li>
+            <li><a href="#" onclick="filterCategory('Handicrafts'); return false;">Brass Idols & Handicrafts</a></li>
+            <li><a href="#" onclick="filterCategory('Stationary'); return false;">Kawaii Pens & Stationery</a></li>
             <li><a href="#" onclick="filterCategory('Return Gifts'); return false;">Party Return Gift Boxes</a></li>
+            <li><a href="#" onclick="switchView('categories'); return false;">View All Categories →</a></li>
           </ul>
         </div>
 
@@ -501,7 +799,7 @@
         <div class="dt-footer-col">
           <h4 class="dt-footer-heading">Contact Store</h4>
           <div class="dt-footer-contact-item"><i class="ri-phone-line"></i> +91 8886662334</div>
-          <div class="dt-footer-contact-item"><i class="ri-mail-line"></i> uniqueexpressions@gmail.com</div>
+          <div class="dt-footer-contact-item"><i class="ri-mail-line"></i> uniqueexpressions.in@gmail.com</div>
           <div class="dt-footer-contact-item"><i class="ri-map-pin-line"></i> Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041</div>
         </div>
       </div>
@@ -807,7 +1105,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Contact Person</label>
-        <input type="text" id="samplePerson" class="form-input" value="G Mounika Durga">
+        <input type="text" id="samplePerson" class="form-input" value="Swaroop Sandy">
       </div>
       <div class="form-group">
         <label class="form-label">Phone Number</label>
@@ -823,6 +1121,17 @@
         </select>
       </div>
       <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="submitSampleKitRequest()">Request Sample Box →</button>
+    </div>
+  </div>
+
+  <!-- Quick View Product Modal -->
+  <div class="drawer-backdrop" id="quickViewModalBackdrop" onclick="closeQuickViewModal()">
+    <div class="modal-window" style="max-width:720px; border-radius:24px; padding:24px;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <span style="font-size:11px; font-weight:800; text-transform:uppercase; color:#ec4899;">Quick Product Preview</span>
+        <button onclick="closeQuickViewModal()" style="font-size:20px; font-weight:800; background:none; border:none; cursor:pointer;">✕</button>
+      </div>
+      <div id="quickViewContent"></div>
     </div>
   </div>
 
