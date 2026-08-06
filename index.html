@@ -182,16 +182,7 @@
           </div>
 
           <div class="m-cat-rail-scroll no-scrollbar" id="mCatRailContainer">
-            <div class="m-cat-pill-thumb active-cat" id="mCat-All" onclick="filterCategory('All')">
-              <div class="m-cat-img-box">
-                <img src="assets/banners/rc_toys_banner.png" alt="All">
-              </div>
-              <div class="m-cat-overlay-text">
-                <span class="m-cat-name-label">✨ All Items</span>
-                <span class="m-cat-count-label">240+ SKUs</span>
-              </div>
-            </div>
-            <div class="m-cat-pill-thumb" id="mCat-RC-Toys" onclick="filterCategory('RC Toys')">
+            <div class="m-cat-pill-thumb active-cat" id="mCat-RC-Toys" onclick="filterCategory('RC Toys')">
               <div class="m-cat-img-box">
                 <img src="assets/banners/rc_toys_banner.png" alt="RC Toys">
               </div>
@@ -234,6 +225,15 @@
               <div class="m-cat-overlay-text">
                 <span class="m-cat-name-label">🎁 Party Gifts</span>
                 <span class="m-cat-count-label">14+ SKUs</span>
+              </div>
+            </div>
+            <div class="m-cat-pill-thumb" id="mCat-All" onclick="filterCategory('All')">
+              <div class="m-cat-img-box">
+                <img src="assets/banners/rc_toys_banner.png" alt="All">
+              </div>
+              <div class="m-cat-overlay-text">
+                <span class="m-cat-name-label">✨ All Items</span>
+                <span class="m-cat-count-label">240+ SKUs</span>
               </div>
             </div>
           </div>
@@ -428,14 +428,14 @@
           </div>
           <div class="m-reviews-scroll-row no-scrollbar">
             <div class="m-review-bubble-card">
-              <div style="color:var(--func-gold); font-size:12px; margin-bottom:6px;">★★★★★</div>
-              <p style="font-size:12px; color:#cbd5e1; margin-bottom:8px;">"Ordered 50 return gift hampers for my daughter's birthday. Exceptional quality and prompt same-day delivery in Madhurawada!"</p>
-              <div style="font-size:11px; font-weight:700; color:#fff;">Sowmya Rao • Vizag Buyer</div>
+              <div style="color:#f59e0b; font-size:12px; margin-bottom:6px;">★★★★★</div>
+              <p style="font-size:12px; color:#334155; margin-bottom:8px; line-height:1.4;">"Ordered 50 return gift hampers for my daughter's birthday. Exceptional quality and prompt same-day delivery in Madhurawada!"</p>
+              <div style="font-size:11px; font-weight:700; color:#0f172a;">Sowmya Rao • Vizag Buyer</div>
             </div>
             <div class="m-review-bubble-card">
-              <div style="color:var(--func-gold); font-size:12px; margin-bottom:6px;">★★★★★</div>
-              <p style="font-size:12px; color:#cbd5e1; margin-bottom:8px;">"The seamless mobile app experience made ordering school stationery so convenient. Best boutique store!"</p>
-              <div style="font-size:11px; font-weight:700; color:#fff;">K. V. Raman • Administrator</div>
+              <div style="color:#f59e0b; font-size:12px; margin-bottom:6px;">★★★★★</div>
+              <p style="font-size:12px; color:#334155; margin-bottom:8px; line-height:1.4;">"The seamless mobile app experience made ordering school stationery so convenient. Best boutique store!"</p>
+              <div style="font-size:11px; font-weight:700; color:#0f172a;">K. V. Raman • Administrator</div>
             </div>
           </div>
 
@@ -1128,7 +1128,7 @@
   <div class="drawer-backdrop" id="quickViewModalBackdrop" onclick="closeQuickViewModal()">
     <div class="modal-window" style="max-width:720px; border-radius:24px; padding:24px;" onclick="event.stopPropagation()">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <span style="font-size:11px; font-weight:800; text-transform:uppercase; color:#ec4899;">Quick Product Preview</span>
+        <span style="font-size:11px; font-weight:800; text-transform:uppercase; color:#0f172a;">Quick Product Preview</span>
         <button onclick="closeQuickViewModal()" style="font-size:20px; font-weight:800; background:none; border:none; cursor:pointer;">✕</button>
       </div>
       <div id="quickViewContent"></div>
@@ -1194,6 +1194,143 @@
         <label for="admModalInStock" style="font-size:12px; font-weight:700; color:#334155; cursor:pointer;">In Stock (Available for Purchase)</label>
       </div>
       <button class="m-hero-cta-button" style="width:100%; justify-content:center; margin-top:12px;" onclick="saveAdminProductFromModal()">Save Product Details →</button>
+    </div>
+  </div>
+
+  <!-- World-Class Customer Authentication & Login Modal -->
+  <div class="drawer-backdrop" id="userAuthModalBackdrop" onclick="closeUserAuthModal()">
+    <div class="modal-window" style="max-width:440px; padding:0; overflow:hidden; border-radius:24px; border:1px solid #e2e8f0; box-shadow:0 20px 45px rgba(15, 23, 42, 0.25);" onclick="event.stopPropagation()">
+      <!-- Header Banner -->
+      <div style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding:24px 20px; text-align:center; position:relative; color:#ffffff;">
+        <button onclick="closeUserAuthModal()" style="position:absolute; top:14px; right:16px; font-size:18px; font-weight:800; color:#94a3b8; background:none; border:none; cursor:pointer;">✕</button>
+        <div style="width:48px; height:48px; background:rgba(255,255,255,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 10px auto; border:1px solid rgba(255,255,255,0.2);">
+          <i class="ri-user-star-fill" style="font-size:24px; color:#f59e0b;"></i>
+        </div>
+        <h3 style="font-size:18px; font-weight:800; margin:0 0 4px 0; letter-spacing:-0.01em;">UNIQUE EXPRESSIONS</h3>
+        <p style="font-size:12px; color:#cbd5e1; margin:0;">Unlock VIP Offers, Order Tracking & Express Checkout</p>
+      </div>
+
+      <!-- Auth Tab Switcher -->
+      <div style="display:flex; border-bottom:1px solid #e2e8f0; background:#f8fafc;">
+        <button id="authTabBtnLogin" class="auth-tab-btn active" onclick="switchAuthTab('login')" style="flex:1; padding:12px; font-size:13px; font-weight:800; border:none; background:#ffffff; color:#0f172a; cursor:pointer; border-bottom:2px solid #0f172a; transition:all 0.2s ease;">
+          🔑 Customer Login
+        </button>
+        <button id="authTabBtnSignup" class="auth-tab-btn" onclick="switchAuthTab('signup')" style="flex:1; padding:12px; font-size:13px; font-weight:700; border:none; background:#f8fafc; color:#64748b; cursor:pointer; transition:all 0.2s ease;">
+          ✨ New Registration
+        </button>
+        <button id="authTabBtnOtp" class="auth-tab-btn" onclick="switchAuthTab('otp')" style="flex:1; padding:12px; font-size:13px; font-weight:700; border:none; background:#f8fafc; color:#64748b; cursor:pointer; transition:all 0.2s ease;">
+          💬 WhatsApp OTP
+        </button>
+      </div>
+
+      <!-- Body Content Area -->
+      <div style="padding:20px;">
+        <!-- TAB 1: LOGIN FORM -->
+        <div id="authTabContentLogin" style="display:block;">
+          <form onsubmit="handleUserLogin(event)">
+            <div class="form-group" style="margin-bottom:14px;">
+              <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569;">Mobile Number or Email</label>
+              <div style="position:relative;">
+                <i class="ri-mail-line" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>
+                <input type="text" id="authLoginId" class="form-input" style="padding-left:38px; height:42px; font-size:13px;" placeholder="e.g. +91 8886662334 or email" required>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569; margin:0;">Password</label>
+                <a href="#" onclick="showToast('Password reset link sent to your registered email/phone!', 'info'); return false;" style="font-size:11px; color:#2563eb; font-weight:700; text-decoration:none;">Forgot?</a>
+              </div>
+              <div style="position:relative;">
+                <i class="ri-lock-2-line" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>
+                <input type="password" id="authLoginPassword" class="form-input" style="padding-left:38px; padding-right:38px; height:42px; font-size:13px;" placeholder="••••••••" required>
+                <i class="ri-eye-off-line" id="toggleAuthPassIcon" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px; cursor:pointer;" onclick="toggleAuthPasswordVisibility()"></i>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+              <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:#475569; cursor:pointer;">
+                <input type="checkbox" id="authRememberMe" checked> Keep me logged in
+              </label>
+              <span style="font-size:11px; color:#16a34a; font-weight:700;">🟢 256-Bit Encrypted</span>
+            </div>
+            <button type="submit" class="m-hero-cta-button" style="width:100%; justify-content:center; height:46px; font-size:14px; background:#0f172a; color:#fff; border-radius:12px;">
+              Login to Account &rarr;
+            </button>
+          </form>
+
+          <div style="display:flex; align-items:center; gap:10px; margin:16px 0;">
+            <div style="flex:1; height:1px; background:#e2e8f0;"></div>
+            <span style="font-size:11px; color:#94a3b8; font-weight:700;">OR EASY CONNECT</span>
+            <div style="flex:1; height:1px; background:#e2e8f0;"></div>
+          </div>
+
+          <button onclick="switchAuthTab('otp')" style="width:100%; height:44px; display:flex; align-items:center; justify-content:center; gap:8px; background:#25D366; color:#ffffff; font-weight:800; font-size:13px; border:none; border-radius:12px; cursor:pointer; box-shadow:0 4px 12px rgba(37, 211, 102, 0.25);">
+            <i class="ri-whatsapp-fill" style="font-size:18px;"></i> Instant WhatsApp OTP Login
+          </button>
+        </div>
+
+        <!-- TAB 2: SIGNUP FORM -->
+        <div id="authTabContentSignup" style="display:none;">
+          <form onsubmit="handleUserSignup(event)">
+            <div class="form-group" style="margin-bottom:12px;">
+              <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569;">Full Name</label>
+              <div style="position:relative;">
+                <i class="ri-user-3-line" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>
+                <input type="text" id="authSignupName" class="form-input" style="padding-left:38px; height:40px; font-size:12.5px;" placeholder="e.g. G Mounika Durga" required>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+              <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569;">Mobile Number (WhatsApp)</label>
+              <div style="position:relative;">
+                <i class="ri-phone-line" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>
+                <input type="tel" id="authSignupPhone" class="form-input" style="padding-left:38px; height:40px; font-size:12.5px;" placeholder="+91 9876543210" required>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+              <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569;">Email Address</label>
+              <div style="position:relative;">
+                <i class="ri-mail-line" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>
+                <input type="email" id="authSignupEmail" class="form-input" style="padding-left:38px; height:40px; font-size:12.5px;" placeholder="name@domain.com" required>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+              <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569;">Create Password</label>
+              <div style="position:relative;">
+                <i class="ri-lock-2-line" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>
+                <input type="password" id="authSignupPassword" class="form-input" style="padding-left:38px; height:40px; font-size:12.5px;" placeholder="Min 6 characters" required>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:16px;">
+              <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569;">Visakhapatnam Delivery Pincode</label>
+              <input type="text" id="authSignupPincode" class="form-input" style="height:40px; font-size:12.5px;" value="530041" placeholder="530041">
+            </div>
+            <button type="submit" class="m-hero-cta-button" style="width:100%; justify-content:center; height:46px; font-size:14px; background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#ffffff; border-radius:12px;">
+              Create Account & Claim VIP 10% Discount &rarr;
+            </button>
+          </form>
+        </div>
+
+        <!-- TAB 3: WHATSAPP OTP LOGIN -->
+        <div id="authTabContentOtp" style="display:none; text-align:center;">
+          <div style="margin-bottom:16px;">
+            <span style="font-size:12px; color:#64748b;">Enter your 10-digit registered mobile number to receive a 4-digit OTP via WhatsApp.</span>
+          </div>
+          <div class="form-group" style="margin-bottom:16px;">
+            <input type="tel" id="authOtpMobileInput" class="form-input" style="text-align:center; height:44px; font-size:15px; font-weight:800; letter-spacing:1px;" placeholder="+91 8886662334" value="+91 8886662334">
+          </div>
+          <div id="otpInputRow" style="display:none; justify-content:center; gap:10px; margin-bottom:18px;">
+            <input type="text" maxlength="1" class="otp-box-input" id="otpBox1" style="width:48px; height:52px; text-align:center; font-size:22px; font-weight:900; border:2px solid #cbd5e1; border-radius:12px; background:#fff;" onkeyup="focusNextOtp(1)">
+            <input type="text" maxlength="1" class="otp-box-input" id="otpBox2" style="width:48px; height:52px; text-align:center; font-size:22px; font-weight:900; border:2px solid #cbd5e1; border-radius:12px; background:#fff;" onkeyup="focusNextOtp(2)">
+            <input type="text" maxlength="1" class="otp-box-input" id="otpBox3" style="width:48px; height:52px; text-align:center; font-size:22px; font-weight:900; border:2px solid #cbd5e1; border-radius:12px; background:#fff;" onkeyup="focusNextOtp(3)">
+            <input type="text" maxlength="1" class="otp-box-input" id="otpBox4" style="width:48px; height:52px; text-align:center; font-size:22px; font-weight:900; border:2px solid #cbd5e1; border-radius:12px; background:#fff;" onkeyup="focusNextOtp(4)">
+          </div>
+          <button id="sendOtpSubmitBtn" class="m-hero-cta-button" style="width:100%; justify-content:center; height:46px; font-size:14px; background:#25D366; color:#fff; border-radius:12px;" onclick="handleSendOtpCode()">
+            Send WhatsApp OTP Code &rarr;
+          </button>
+          <div id="otpTimerText" style="font-size:11.5px; color:#64748b; margin-top:12px; display:none;">
+            OTP sent to your number! Didn't receive? <a href="#" onclick="handleSendOtpCode(); return false;" style="color:#2563eb; font-weight:700;">Resend OTP</a>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

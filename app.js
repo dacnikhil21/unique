@@ -5470,6 +5470,11 @@ document.addEventListener('DOMContentLoaded', async () => {
    SPA ROUTER ENGINE
    ========================================================================== */
 function switchView(viewName, params = {}, skipHistory = false) {
+  if (viewName === 'admin' && typeof apIsAuthenticated !== 'undefined' && !apIsAuthenticated) {
+    openAdminPinModal();
+    return;
+  }
+
   currentView = viewName;
 
   // ── Push a history entry so Android Back navigates through screens ──────────
@@ -5741,7 +5746,7 @@ function createDesktopTileHTML(product, index = 0) {
         <img src="${product.image}" loading="lazy" alt="${product.title}" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop'">
         <span class="dt-discount-badge">-${product.discount}%</span>
         <button class="dt-wishlist-btn" onclick="event.stopPropagation(); toggleWishlist('${product.id}', this)" title="Add to Wishlist">
-          <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="${isWishlisted ? 'color:#ec4899;' : ''}"></i>
+          <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="${isWishlisted ? 'color:#0f172a;' : ''}"></i>
         </button>
         <button onclick="event.stopPropagation(); openQuickViewModal('${product.id}')" style="position:absolute; bottom:10px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.85); color:#fff; border:none; padding:6px 14px; border-radius:99px; font-size:11px; font-weight:700; cursor:pointer; backdrop-filter:blur(4px); transition:all 0.2s ease;">
           👁️ Quick View
@@ -5783,7 +5788,7 @@ function openQuickViewModal(productId) {
           <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:12px;">
             <span style="font-size:22px; font-weight:900; color:#0f172a;">₹${product.price}</span>
             <span style="font-size:14px; color:#94a3b8; text-decoration:line-through;">₹${product.originalPrice}</span>
-            <span style="font-size:11px; font-weight:800; color:#ec4899;">${product.discount}% OFF</span>
+            <span style="font-size:11px; font-weight:800; color:#0f172a;">${product.discount}% OFF</span>
           </div>
           <p style="font-size:12px; color:#475569; line-height:1.5; margin-bottom:16px;">${product.description}</p>
           <div style="display:flex; gap:10px;">
@@ -5846,11 +5851,20 @@ function createMobileTileHTML(product, index = 0) {
 function createMiniProductHTML(product, index = 0) {
   const effectivePrice = getEffectivePrice(product.price);
   const delaySec = (index * 0.04).toFixed(2);
+  const titleText = String(product.title || '').replace(/"/g, '&quot;');
   return `
     <div class="m-mini-product-card" style="animation: fadeInUp 0.4s ease backwards; animation-delay: ${delaySec}s;" onclick="openProductPage('${product.id}')">
-      <img src="${product.image}" loading="lazy">
-      <div class="m-mini-title">${product.title}</div>
-      <div class="m-mini-price">₹${effectivePrice}</div>
+      <div style="position:relative; width:100%; aspect-ratio:1/1; overflow:hidden; border-radius:10px; background:#f8fafc;">
+        <img src="${product.image}" loading="lazy" alt="${titleText}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop'">
+        ${product.discount ? `<span style="position:absolute; top:6px; left:6px; background:#ff5500; color:#fff; font-size:8.5px; font-weight:800; padding:2px 6px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.15);">${product.discount}% OFF</span>` : ''}
+      </div>
+      <div class="m-mini-title" title="${titleText}">${product.title}</div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:4px;">
+        <div class="m-mini-price">₹${effectivePrice}</div>
+        <button onclick="event.stopPropagation(); quickAddToCart('${product.id}')" style="background:#0f172a; color:#ffffff; border:none; width:26px; height:26px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; box-shadow:0 2px 6px rgba(15,23,42,0.2);" title="Quick Add">
+          <i class="ri-add-line"></i>
+        </button>
+      </div>
     </div>
   `;
 }
@@ -5879,7 +5893,7 @@ function buildVideoSectionHTML(product) {
 
   return `
     <div style="margin-top: 12px;">
-      <a href="${videoUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #6366f1; background: #f5f3ff; border: 1px solid #ddd6fe; padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; width: 100%; box-sizing: border-box; transition: background 0.2s;" onmouseover="this.style.background='#ede9fe'" onmouseout="this.style.background='#f5f3ff'">
+      <a href="${videoUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #0f172a; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; width: 100%; box-sizing: border-box; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
         🎥 View Product Demonstration →
       </a>
     </div>
@@ -5902,6 +5916,40 @@ function playPDPInlineVideo(containerId, embedUrl) {
    ========================================================================== */
 
 function renderPDPView(productId) {
+  const pForLd = ALL_PRODUCTS.find(item => String(item.id) === String(productId));
+  if (pForLd) injectProductJsonLd(pForLd);
+
+function injectProductJsonLd(product) {
+  try {
+    let schemaScript = document.getElementById('productJsonLdScript');
+    if (!schemaScript) {
+      schemaScript = document.createElement('script');
+      schemaScript.id = 'productJsonLdScript';
+      schemaScript.type = 'application/ld+json';
+      document.head.appendChild(schemaScript);
+    }
+    const effectivePrice = getEffectivePrice(product.price);
+    schemaScript.textContent = JSON.stringify({
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": product.title,
+      "image": [product.image],
+      "description": product.description || `${product.title} offered by UNIQUE EXPRESSIONS, Visakhapatnam.`,
+      "sku": product.sku || `UE-SKU-${product.id}`,
+      "brand": { "@type": "Brand", "name": "UNIQUE EXPRESSIONS" },
+      "offers": {
+        "@type": "Offer",
+        "url": window.location.href,
+        "priceCurrency": "INR",
+        "price": effectivePrice,
+        "itemCondition": "https://schema.org/NewCondition",
+        "availability": "https://schema.org/InStock",
+        "seller": { "@type": "Organization", "name": "UNIQUE EXPRESSIONS" }
+      }
+    });
+  } catch (e) {}
+}
+
   if (!productId && ALL_PRODUCTS.length > 0) productId = ALL_PRODUCTS[0].id;
   let product = ALL_PRODUCTS.find(p => String(p.id) === String(productId) || String(p.id).trim() === String(productId).trim() || p.id == productId);
   if (!product && ALL_PRODUCTS.length > 0) {
@@ -5973,11 +6021,11 @@ function renderPDPDesktop(product) {
         <!-- LEFT COLUMN (55%): Gallery & Thumbnails Below Main Image -->
         <div class="pdp-dt-gallery-side">
           <div class="pdp-dt-main-img-box" id="pdpMainBoxDesktop" onclick="openPDPModalLightbox(${JSON.stringify(images).replace(/"/g, '&quot;')}, 0)">
-            <span style="position: absolute; top: 16px; left: 16px; background: #ec4899; color: #fff; font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 99px; z-index: 2;">
+            <span style="position: absolute; top: 16px; left: 16px; background: #0f172a; color: #fff; font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 99px; z-index: 2;">
               🔥 ${discountPct}% OFF
             </span>
             <button style="position: absolute; top: 16px; right: 16px; background: #ffffff; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; z-index: 2; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08);" onclick="event.stopPropagation(); toggleWishlist('${product.id}', this)" title="Add to Wishlist">
-              <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="color: ${isWishlisted ? '#ec4899' : '#94a3b8'};"></i>
+              <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="color: ${isWishlisted ? '#0f172a' : '#94a3b8'};"></i>
             </button>
             
             <img src="${images[0]}" id="pdpMainImage" alt="${product.title}" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=800'">
@@ -5994,7 +6042,7 @@ function renderPDPDesktop(product) {
 
         <!-- RIGHT COLUMN (45%): Purchase Panel -->
         <div class="pdp-dt-buy-panel">
-          <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #ec4899; letter-spacing: 0.8px; display: block; margin-bottom: 4px;">UNIQUE EXPRESSIONS BOUTIQUE</span>
+          <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #0f172a; letter-spacing: 0.8px; display: block; margin-bottom: 4px;">UNIQUE EXPRESSIONS BOUTIQUE</span>
           <h1 style="font-size: 24px; font-weight: 900; color: #0f172a; line-height: 1.25; margin: 0 0 10px 0;">${product.title}</h1>
 
           <!-- Rating & Stock Status -->
@@ -6013,7 +6061,7 @@ function renderPDPDesktop(product) {
             <div style="display: flex; align-items: baseline; gap: 10px;">
               <span style="font-size: 30px; font-weight: 900; color: #0f172a;">₹${effectivePrice}</span>
               <span style="font-size: 15px; color: #94a3b8; text-decoration: line-through;">M.R.P.: ₹${product.originalPrice || (effectivePrice + saveAmount)}</span>
-              <span style="background: #ec4899; color: #fff; font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 99px;">${discountPct}% OFF</span>
+              <span style="background: #0f172a; color: #fff; font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 99px;">${discountPct}% OFF</span>
             </div>
             <div style="font-size: 12px; color: #10b981; font-weight: 700; margin-top: 4px;">Inclusive of all taxes • You save ₹${saveAmount}!</div>
           </div>
@@ -6053,7 +6101,7 @@ function renderPDPDesktop(product) {
 
           <!-- ONLY TWO PRIMARY ACTION BUTTONS -->
           <div style="display: flex; gap: 10px;">
-            <button style="flex: 1; height: 48px; font-size: 14.5px; font-weight: 800; background: linear-gradient(135deg, #8f4ff8 0%, #6366f1 100%); color: #ffffff; border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="addPdpToCart(false)">
+            <button style="flex: 1; height: 48px; font-size: 14.5px; font-weight: 800; background: linear-gradient(135deg, #0f172a 0%, #0f172a 100%); color: #ffffff; border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="addPdpToCart(false)">
               🛒 Add to Cart
             </button>
             <button style="flex: 1; height: 48px; font-size: 14.5px; font-weight: 900; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 6px 18px rgba(245, 158, 11, 0.3); display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="addPdpToCart(true)">
@@ -6136,7 +6184,7 @@ function renderPDPDesktop(product) {
                 <div style="font-size: 12.5px; font-weight: 700; color: #0f172a; line-height: 1.3; margin-bottom: 4px; overflow: hidden; max-height: 2.6em;">${p.title}</div>
                 <div style="display: flex; align-items: baseline; justify-content: space-between;">
                   <span style="font-size: 14px; font-weight: 800; color: #0f172a;">₹${getEffectivePrice(p.price)}</span>
-                  <span style="font-size: 11px; color: #ec4899; font-weight: 800;">${p.discount || 20}% OFF</span>
+                  <span style="font-size: 11px; color: #0f172a; font-weight: 800;">${p.discount || 20}% OFF</span>
                 </div>
               </div>
             `).join('')}
@@ -6184,13 +6232,13 @@ function renderPDPMobile(product) {
         <button style="background: none; border: none; font-size: 22px; cursor: pointer; color: #0f172a;" onclick="switchView('home')">←</button>
         <span style="font-size: 13px; font-weight: 800; color: #0f172a; flex: 1; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 10px;">${product.title}</span>
         <button style="background: none; border: none; font-size: 22px; cursor: pointer;" onclick="toggleWishlist('${product.id}', this)">
-          <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="color: ${isWishlisted ? '#ec4899' : '#94a3b8'};"></i>
+          <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="color: ${isWishlisted ? '#0f172a' : '#94a3b8'};"></i>
         </button>
       </div>
 
       <!-- Mobile Touch Slider Hero -->
       <div class="pdp-mb-hero-slider" id="pdpMbHeroSlider">
-        <span style="position: absolute; top: 12px; left: 12px; background: #ec4899; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 99px; z-index: 5;">
+        <span style="position: absolute; top: 12px; left: 12px; background: #0f172a; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 99px; z-index: 5;">
           🔥 ${discountPct}% OFF
         </span>
         <div class="pdp-mb-slider-track" id="pdpMbSliderTrack">
@@ -6203,7 +6251,7 @@ function renderPDPMobile(product) {
 
       <!-- Title & Rating Block -->
       <div class="pdp-section-card">
-        <span style="font-size: 10px; font-weight: 800; color: #ec4899; text-transform: uppercase; letter-spacing: 0.5px;">UNIQUE EXPRESSIONS BOUTIQUE</span>
+        <span style="font-size: 10px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">UNIQUE EXPRESSIONS BOUTIQUE</span>
         <h1 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 4px 0 10px 0; line-height: 1.35;">${product.title}</h1>
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="background: #ecfdf5; color: #10b981; font-weight: 800; padding: 3px 10px; border-radius: 99px; font-size: 12px;">★ ${product.rating || '4.9'} / 5.0</span>
@@ -6350,7 +6398,7 @@ function renderPDPMobile(product) {
 
       <!-- Always-Visible Mobile Sticky Bottom Bar -->
       <div class="pdp-mb-sticky-bar">
-        <button class="pdp-cta-add-cart" style="flex: 1; height: 46px; font-size: 14px; font-weight: 800; background: linear-gradient(135deg, #8f4ff8 0%, #6366f1 100%); color: #fff; border: none; border-radius: 12px; cursor: pointer;" onclick="addPdpToCart(false)">🛒 Add to Cart</button>
+        <button class="pdp-cta-add-cart" style="flex: 1; height: 46px; font-size: 14px; font-weight: 800; background: linear-gradient(135deg, #0f172a 0%, #0f172a 100%); color: #fff; border: none; border-radius: 12px; cursor: pointer;" onclick="addPdpToCart(false)">🛒 Add to Cart</button>
         <button class="pdp-cta-buy-now" style="flex: 1; height: 46px; font-size: 14px; font-weight: 900; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; border: none; border-radius: 12px; cursor: pointer;" onclick="addPdpToCart(true)">⚡ BUY NOW</button>
       </div>
     </div>
@@ -6500,6 +6548,36 @@ const SUBCATEGORIES_MAP = {
 /* ==========================================================================
    1. FINISH CATEGORIES DIRECTORY VIEW
    ========================================================================== */
+function getCategoryThumb(catName) {
+  const name = String(catName).toLowerCase();
+  if (name.includes('flying') || name.includes('drone') || name.includes('helicopter')) return 'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?w=300&auto=format&fit=crop';
+  if (name.includes('rc') || name.includes('car')) return 'assets/banners/rc_toys_banner.png';
+  if (name.includes('educational') || name.includes('stem')) return 'assets/banners/educational_banner.png';
+  if (name.includes('footwear') || name.includes('shoe')) return 'https://images.unsplash.com/photo-1514989940723-e8e51635b782?w=300&auto=format&fit=crop';
+  if (name.includes('combo')) return 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=300&auto=format&fit=crop';
+  if (name.includes('gadget')) return 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=300&auto=format&fit=crop';
+  if (name.includes('handi') || name.includes('craft')) return 'assets/banners/handicrafts_banner.png';
+  if (name.includes('stat')) return 'assets/banners/stationery_banner.png';
+  if (name.includes('arriv')) return 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=300&auto=format&fit=crop';
+  if (name.includes('return') || name.includes('party')) return 'assets/banners/return_gifts_banner.png';
+  if (name.includes('toy')) return 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?w=300&auto=format&fit=crop';
+  return 'assets/banners/return_gifts_banner.png';
+}
+
+function filterCategoryCircle(catName, btnEl) {
+  document.querySelectorAll('.m-cat-circle-item').forEach(el => el.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+
+  if (catName === 'All') {
+    document.querySelectorAll('.cat-directory-card-item').forEach(card => card.style.display = 'block');
+  } else {
+    document.querySelectorAll('.cat-directory-card-item').forEach(card => {
+      const cardCat = card.getAttribute('data-category');
+      card.style.display = (cardCat === catName) ? 'block' : 'none';
+    });
+  }
+}
+
 function renderCategoriesView() {
   const container = document.getElementById('viewCategories');
   if (!container) return;
@@ -6523,57 +6601,63 @@ function renderCategoriesView() {
 
   container.innerHTML = `
     <div class="${isDesktop ? 'checkout-container' : ''}">
-      ${!isDesktop ? `
-        <div class="m-view-header-bar">
-          <button class="m-back-btn" onclick="switchView('home')">← Home</button>
-          <span class="m-view-title">Boutique Categories</span>
-          <div></div>
-        </div>
-      ` : `
+      ${isDesktop ? `
         <div class="dt-breadcrumb-strip">
           <a href="#" onclick="switchView('home'); return false;">Home</a>
           <i class="ri-arrow-right-s-line"></i>
           <span>All Store Categories</span>
         </div>
-      `}
+      ` : ''}
 
-      <!-- Category Directory Header Banner -->
-      <div style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#ffffff; padding:${isDesktop ? '28px 32px' : '20px'}; border-radius:24px; margin-bottom:24px; position:relative; overflow:hidden;">
-        <div style="max-width:600px; position:relative; z-index:2;">
-          <span style="background:rgba(236,72,153,0.2); color:#f472b6; font-size:11px; font-weight:800; padding:4px 12px; border-radius:99px; text-transform:uppercase; letter-spacing:0.5px;">UNIQUE EXPRESSIONS DIRECTORY</span>
-          <h1 style="font-size:${isDesktop ? '28px' : '20px'}; font-weight:900; margin:8px 0 6px 0;">Official Store Categories</h1>
-          <p style="font-size:${isDesktop ? '14px' : '12px'}; opacity:0.85; margin:0 0 16px 0; line-height:1.5;">Explore 240+ authentic boutique products across 11 official store categories in Visakhapatnam.</p>
-        </div>
+      <!-- Premium Circular Category Navigation Strip -->
+      <div class="m-cat-circle-scroll-row no-scrollbar">
+        ${categoriesList.map(cat => {
+          const thumbImg = getCategoryThumb(cat);
+          return `
+            <button onclick="filterCategoryCircle('${cat.replace(/'/g, "\\'")}', this)" class="m-cat-circle-item">
+              <div class="m-cat-circle-avatar">
+                <img src="${thumbImg}" alt="${cat}" onerror="this.src='assets/banners/return_gifts_banner.png'">
+              </div>
+              <span class="m-cat-circle-label">${cat}</span>
+            </button>
+          `;
+        }).join('')}
+        <button onclick="filterCategoryCircle('All', this)" class="m-cat-circle-item">
+          <div class="m-cat-circle-avatar" style="background:#0f172a; color:#ffffff;">
+            <i class="ri-apps-2-fill" style="font-size:22px;"></i>
+          </div>
+          <span class="m-cat-circle-label">All Items</span>
+        </button>
       </div>
 
       <!-- Organized Categories List -->
-      <div style="display:flex; flex-direction:column; gap:28px;">
-        ${categoriesList.map(cat => {
+      <div style="display:flex; flex-direction:column; gap:20px; margin-bottom:40px;" id="catDirectoryContainer">
+        ${categoriesList.map((cat, idx) => {
           const prods = ALL_PRODUCTS.filter(p => p.category === cat);
           const bannerImg = getBannerForCat(cat);
           return `
-            <div style="background:#ffffff; border-radius:20px; border:1px solid #e2e8f0; padding:${isDesktop ? '24px' : '16px'}; box-shadow:0 2px 10px rgba(0,0,0,0.03); overflow:hidden;">
-              <div style="display:flex; flex-direction:${isDesktop ? 'row' : 'column'}; align-items:${isDesktop ? 'center' : 'stretch'}; gap:16px; margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid #f1f5f9;">
+            <div class="cat-directory-card-item" data-category="${cat.replace(/"/g, '&quot;')}" id="catSection_${idx}" style="background:#ffffff; border-radius:20px; border:1px solid #e2e8f0; padding:${isDesktop ? '24px' : '16px'}; box-shadow:0 4px 16px rgba(0,0,0,0.04); overflow:hidden;">
+              <div style="display:flex; flex-direction:${isDesktop ? 'row' : 'column'}; align-items:${isDesktop ? 'center' : 'stretch'}; gap:14px; margin-bottom:14px;">
                 <img src="${bannerImg}" class="cat-card-full-banner" alt="${cat} Banner">
                 <div style="flex:1;">
-                  <div style="display:flex; align-items:center; justify-content:space-between;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
                     <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;">${cat}</h2>
-                    <span style="background:#fdf2f8; color:#ec4899; font-size:12px; font-weight:800; padding:4px 12px; border-radius:99px;">${prods.length} Products</span>
+                    <span style="background:#f1f5f9; color:#0f172a; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:99px; border:1px solid #cbd5e1;">${prods.length} Products</span>
                   </div>
-                  <p style="font-size:12.5px; color:#64748b; margin:4px 0 0 0;">Curated ${cat} collection — same-day dispatch in Visakhapatnam.</p>
+                  <p style="font-size:12.5px; color:#64748b; margin:0;">Curated ${cat} collection — same-day dispatch in Visakhapatnam.</p>
                 </div>
-                <button class="m-hero-cta-button" style="padding:8px 18px; font-size:13px; min-height:40px; justify-content:center; width:${isDesktop ? 'auto' : '100%'};" onclick="filterCategory('${cat}')">
-                  Explore (${prods.length}) &rarr;
+                <button class="m-hero-cta-button" style="padding:10px 18px; font-size:13px; min-height:42px; justify-content:center; background:#0f172a; color:#fff; border-radius:12px; width:${isDesktop ? 'auto' : '100%'};" onclick="filterCategory('${cat}')">
+                  Explore Category &rarr;
                 </button>
               </div>
-              <div style="display:grid; grid-template-columns:repeat(${isDesktop ? '4' : '2'}, 1fr); gap:12px;">
+              <div style="display:grid; grid-template-columns:repeat(${isDesktop ? '4' : '2'}, 1fr); gap:10px; padding-top:12px; border-top:1px solid #f1f5f9;">
                 ${prods.slice(0, 4).map(p => `
-                  <div style="background:#f8fafc; border-radius:14px; padding:12px; border:1px solid #e2e8f0; cursor:pointer;" onclick="switchView('pdp', {productId: '${p.id}'})">
-                    <img src="${p.image}" style="width:100%; height:110px; object-fit:contain; border-radius:10px; background:#fff; padding:6px; margin-bottom:8px;">
-                    <div style="font-size:12.5px; font-weight:700; color:#0f172a; line-height:1.3; margin-bottom:6px; overflow:hidden; max-height:2.6em;">${p.title}</div>
+                  <div style="background:#f8fafc; border-radius:14px; padding:10px; border:1px solid #e2e8f0; cursor:pointer;" onclick="switchView('pdp', {productId: '${p.id}'})">
+                    <img src="${p.image}" style="width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:10px; background:#fff; margin-bottom:6px;">
+                    <div style="font-size:11.5px; font-weight:700; color:#0f172a; line-height:1.3; margin-bottom:4px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; height:28px;">${p.title}</div>
                     <div style="display:flex; align-items:baseline; justify-content:space-between;">
-                      <span style="font-size:14px; font-weight:800; color:#0f172a;">&#x20B9;${p.price}</span>
-                      <span style="font-size:11px; color:#94a3b8; text-decoration:line-through;">&#x20B9;${p.originalPrice}</span>
+                      <span style="font-size:13px; font-weight:800; color:#0f172a;">&#x20B9;${p.price}</span>
+                      <span style="font-size:10.5px; color:#94a3b8; text-decoration:line-through;">&#x20B9;${p.originalPrice}</span>
                     </div>
                   </div>
                 `).join('')}
@@ -6925,7 +7009,7 @@ function execLiveSearch(query) {
 }
 
 function openVoiceSearchModal() {
-  alert('🎤 Voice Search Activated! Listening for product name...');
+  showToast('🎤 Voice Search Activated! Listening for product name...', 'info');
   setSearchTerm('Stunt Car');
 }
 
@@ -6957,9 +7041,9 @@ function renderCheckoutView() {
                 <img src="${item.image}" style="width:36px; height:36px; border-radius:6px; object-fit:cover;">
                 <div style="flex:1;">
                   <div style="font-weight:700; color:#0f172a;">${item.title}</div>
-                  <div style="font-size:10px; color:#64748b;">Qty: ${item.qty} × ₹${item.price}</div>
+                  <div style="font-size:10px; color:#64748b;">Qty: ${item.quantity} × ₹${item.price}</div>
                 </div>
-                <div style="font-weight:800; color:#0f172a;">₹${item.qty * item.price}</div>
+                <div style="font-weight:800; color:#0f172a;">₹${item.quantity * item.price}</div>
               </div>
             `).join('')}
           </div>
@@ -7077,10 +7161,10 @@ function applyCheckoutCoupon() {
   const val = input.value.trim().toUpperCase();
   if (val === 'UNIQUE10') {
     appliedCouponCode = 'UNIQUE10';
-    alert('🎉 Coupon UNIQUE10 Applied! You get 10% Extra Discount.');
+    showApToast('🎉 Coupon UNIQUE10 Applied! You get 10% Extra Discount.', 'info');
     renderCheckoutView();
   } else {
-    alert('❌ Invalid Coupon Code! Try UNIQUE10');
+    showToast('❌ Invalid Coupon Code! Try UNIQUE10', 'info');
   }
 }
 
@@ -7105,14 +7189,14 @@ function placeOrderFinal(grandTotal) {
   const address = addressInput ? addressInput.value.trim() : '';
 
   if (!name || !phone) {
-    alert('⚠️ Please enter your Full Name and Mobile / WhatsApp Number to proceed!');
+    showApToast('⚠️ Please enter your Full Name and Mobile / WhatsApp Number to proceed!', 'info');
     if (!name && nameInput) nameInput.focus();
     else if (!phone && phoneInput) phoneInput.focus();
     return;
   }
 
   if (cart.length === 0) {
-    alert('Your cart is empty! Please add items before placing an order.');
+    showToast('Your cart is empty! Please add items before placing an order.', 'info');
     return;
   }
 
@@ -7171,8 +7255,8 @@ function placeOrderFinal(grandTotal) {
           <div style="font-size:11px; font-weight:800; color:#334155; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Order Summary:</div>
           ${orderRecord.items.map(item => `
             <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:#334155;">
-              <span>${item.title} (x${item.qty})</span>
-              <span style="font-weight:700; color:#0f172a;">₹${item.qty * item.price}</span>
+              <span>${item.title} (x${item.quantity})</span>
+              <span style="font-weight:700; color:#0f172a;">₹${item.quantity * item.price}</span>
             </div>
           `).join('')}
           <div style="border-top:1px dashed #cbd5e1; margin-top:8px; padding-top:6px; display:flex; justify-content:space-between; font-size:13px; font-weight:800; color:#0f172a;">
@@ -7210,7 +7294,7 @@ function renderOffersView() {
         <span class="m-featured-tag" style="color:#fef08a;">FESTIVE SPECIAL</span>
         <h2 style="font-size:20px; font-weight:800; margin:4px 0;">Extra 10% Off Everything</h2>
         <p style="font-size:11px; opacity:0.9; margin-bottom:12px;">Use promo code UNIQUE10 at checkout on any order above ₹299.</p>
-        <button class="m-hero-cta-button" style="background:#fff; color:#0f172a;" onclick="appliedCouponCode='UNIQUE10'; alert('Coupon UNIQUE10 copied! Applied automatically at checkout.'); switchView('checkout');">
+        <button class="m-hero-cta-button" style="background:#fff; color:#0f172a;" onclick="appliedCouponCode='UNIQUE10'; showApToast('Coupon UNIQUE10 copied! Applied automatically at checkout.', 'info'); switchView('checkout');">
           Apply Coupon UNIQUE10 →
         </button>
       </div>
@@ -7279,7 +7363,7 @@ function moveWishlistToCart() {
   wishlist = [];
   localStorage.setItem('ue_wishlist', JSON.stringify(wishlist));
   saveCart();
-  alert('✅ All wishlist items moved to cart!');
+  showToast('✅ All wishlist items moved to cart!', 'info');
   renderWishlistView();
 }
 
@@ -7528,7 +7612,7 @@ function saveAddressFromModal() {
   const isDefault = document.getElementById('addrIsDefault')?.checked;
 
   if (!name || !phone || !street || !area || !pincode) {
-    alert('Please fill in all address fields!');
+    showToast('Please fill in all address fields!', 'info');
     return;
   }
 
@@ -7657,9 +7741,9 @@ function renderOrderDetailsView(orderId) {
               <img src="${item.image}" style="width:50px; height:50px; border-radius:10px; object-fit:cover;">
               <div style="flex:1;">
                 <h5 style="font-size:12px; font-weight:700; color:#0f172a;">${item.title}</h5>
-                <div style="font-size:11px; color:#64748b;">Qty: ${item.qty} × ₹${item.price}</div>
+                <div style="font-size:11px; color:#64748b;">Qty: ${item.quantity} × ₹${item.price}</div>
               </div>
-              <strong style="font-size:12px; color:#0f172a;">₹${item.qty * item.price}</strong>
+              <strong style="font-size:12px; color:#0f172a;">₹${item.quantity * item.price}</strong>
             </div>
           `).join('')}
         </div>
@@ -7706,11 +7790,11 @@ function reorderItems(orderId) {
   if (!order) return;
   order.items.forEach(item => {
     const existing = cart.find(i => i.id === item.id);
-    if (existing) existing.qty += item.qty;
-    else cart.push({ ...item, qty: item.qty });
+    if (existing) existing.qty += item.quantity;
+    else cart.push({ ...item, qty: item.quantity });
   });
   saveCart();
-  alert(`✅ Items from Order #${orderId} re-added to your cart!`);
+  showToast(`✅ Items from Order #${orderId} re-added to your cart!`, 'info');
   openCartDrawer();
 }
 
@@ -7738,7 +7822,7 @@ function saveUserProfile() {
   const city = document.getElementById('profEditCity')?.value;
 
   if (!name || !phone) {
-    alert('Please enter your name and phone number!');
+    showToast('Please enter your name and phone number!', 'info');
     return;
   }
 
@@ -7791,9 +7875,9 @@ function openInvoiceModal(orderId) {
             ${order.items.map(item => `
               <tr style="border-bottom:1px solid #e2e8f0;">
                 <td style="padding:4px;">${item.title}</td>
-                <td style="padding:4px; text-align:center;">${item.qty}</td>
+                <td style="padding:4px; text-align:center;">${item.quantity}</td>
                 <td style="padding:4px; text-align:right;">₹${item.price}</td>
-                <td style="padding:4px; text-align:right;">₹${item.qty * item.price}</td>
+                <td style="padding:4px; text-align:right;">₹${item.quantity * item.price}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -7913,9 +7997,9 @@ async function handleAdminImageUpload(input) {
     const uploadedUrl = await uploadToCloudinary(file);
     const hiddenUrl = document.getElementById('peImgUrl');
     if (hiddenUrl) hiddenUrl.value = uploadedUrl;
-    alert('Image uploaded successfully!');
+    showToast('Image uploaded successfully!', 'info');
   } catch (err) {
-    alert('Cloudinary upload error: ' + err);
+    showToast('Cloudinary upload error: ' + err, 'info');
   }
 }
 
@@ -8366,7 +8450,7 @@ function viewApOrderDetail(orderId) {
     grandTotal: 1299,
     status: 'Processing'
   };
-  alert(`📦 Order Details for ${o.orderId}:\nCustomer: ${o.name || o.customerName}\nPhone: ${o.phone}\nAddress: ${o.address}\nTotal Amount: ₹${o.grandTotal || o.totalAmount}\nStatus: ${o.status}`);
+  showToast(`📦 Order Details for ${o.orderId}:\nCustomer: ${o.name || o.customerName}\nPhone: ${o.phone}\nAddress: ${o.address}\nTotal Amount: ₹${o.grandTotal || o.totalAmount}\nStatus: ${o.status}`, 'info');
 }
 
 function viewApOrderInvoice(orderId) {
@@ -9174,7 +9258,7 @@ function saveApCategoryForm(catId = null) {
   const isVisible = document.getElementById('apFormCatVisible').checked;
 
   if (!name) {
-    alert('Please enter a category name.');
+    showToast('Please enter a category name.', 'info');
     return;
   }
 
@@ -9406,7 +9490,7 @@ function saveApBannerForm(idx = null) {
   const img = document.getElementById('apFormBannerImg').value.trim();
 
   if (!title) {
-    alert('Please enter a banner title.');
+    showToast('Please enter a banner title.', 'info');
     return;
   }
 
@@ -9970,7 +10054,7 @@ async function handleModalImageUpload(input) {
     if (previewImg) previewImg.src = uploadedUrl;
     if (previewText) previewText.innerText = uploadedUrl;
   } catch (err) {
-    alert('Cloudinary upload failed: ' + err);
+    showToast('Cloudinary upload failed: ' + err, 'info');
     if (previewBox) previewBox.style.display = 'none';
   }
 }
@@ -9993,7 +10077,7 @@ async function handleBannerImageUpload(input) {
     if (hiddenUrl) hiddenUrl.value = uploadedUrl;
     if (previewImg) previewImg.src = uploadedUrl;
   } catch (err) {
-    alert('Banner upload error: ' + err);
+    showToast('Banner upload error: ' + err, 'info');
     if (previewBox) previewBox.style.display = 'none';
   }
 }
@@ -10010,7 +10094,7 @@ async function saveAdminProductFromModal() {
   const inStock = document.getElementById('admModalInStock')?.checked;
 
   if (!title || !price) {
-    alert('Please enter product title and price.');
+    showToast('Please enter product title and price.', 'info');
     return;
   }
 
@@ -10032,7 +10116,7 @@ async function saveAdminProductFromModal() {
 
       localStorage.setItem('ue_products', JSON.stringify(ALL_PRODUCTS));
       sbAdminUpdateProduct(p).catch(err => console.warn('[UE] Edit sync failed:', err));
-      alert(`✅ Product #${productId} updated successfully!`);
+      showApToast(`✅ Product #${productId} updated successfully!`, 'info');
     }
   } else {
     // New Mode
@@ -10055,7 +10139,7 @@ async function saveAdminProductFromModal() {
 
     ALL_PRODUCTS.unshift(newProd);
     localStorage.setItem('ue_products', JSON.stringify(ALL_PRODUCTS));
-    alert(`✅ Product "${title}" published to store & Supabase!`);
+    showApToast(`✅ Product "${title}" published to store & Supabase!`, 'info');
   }
 
   closeAdminProductModal();
@@ -10086,11 +10170,11 @@ async function adminDeleteProduct(id) {
 
 function adminAddNewCategory() {
   const catName = document.getElementById('admCatNameInput')?.value.trim();
-  if (!catName) { alert('Please enter category name!'); return; }
-  if (CATEGORIES.includes(catName)) { alert('Category already exists!'); return; }
+  if (!catName) { showToast('Please enter category name!', 'info'); return; }
+  if (CATEGORIES.includes(catName)) { showApToast('Category already exists!', 'info'); return; }
 
   CATEGORIES.push(catName);
-  alert(`✅ Category "${catName}" added!`);
+  showApToast(`✅ Category "${catName}" added!`, 'info');
   switchAdminTab('categories');
   renderAllSections();
 }
@@ -10101,10 +10185,10 @@ function adminAddNewBanner() {
   const sub = document.getElementById('admBannerSub')?.value.trim() || 'Curated items in Visakhapatnam';
   const imgUrl = document.getElementById('admBannerImgUrl')?.value || 'hero_lifestyle.png';
 
-  if (!title) { alert('Please enter slide title!'); return; }
+  if (!title) { showToast('Please enter slide title!', 'info'); return; }
 
   HERO_SLIDES.unshift({ img: imgUrl, badge, title, sub });
-  alert('✅ Hero banner carousel slide added!');
+  showToast('✅ Hero banner carousel slide added!', 'info');
   switchAdminTab('banners');
   startHeroCarousel();
 }
@@ -10122,13 +10206,13 @@ function adminUpdateOrderStatus(orderId, newStatus) {
   if (o) {
     o.status = newStatus;
     localStorage.setItem('ue_orders', JSON.stringify(userOrders));
-    alert(`Order ${orderId} updated to "${newStatus}"!`);
+    showToast(`Order ${orderId} updated to "${newStatus}"!`, 'info');
     switchAdminTab('orders');
   }
 }
 
 function adminSaveStoreSettings() {
-  alert('✅ Store settings updated successfully!');
+  showToast('✅ Store settings updated successfully!', 'info');
 }
 
 /* ==========================================================================
@@ -10235,7 +10319,7 @@ function renderDrawerCartItems() {
         </button>
         <div class="cart-qty-pill-box" style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:3px 8px; border-radius:99px; border:1px solid #cbd5e1;">
           <button onclick="updateCartQty(${idx}, -1)" style="width:20px; height:20px; border-radius:50%; border:none; background:#ffffff; font-weight:800; font-size:12px; cursor:pointer; color:#0f172a; box-shadow:0 1px 3px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; outline:none;">-</button>
-          <span style="font-size:12px; font-weight:800; color:#0f172a; min-width:14px; text-align:center;">${item.qty}</span>
+          <span style="font-size:12px; font-weight:800; color:#0f172a; min-width:14px; text-align:center;">${item.quantity}</span>
           <button onclick="updateCartQty(${idx}, 1)" style="width:20px; height:20px; border-radius:50%; border:none; background:#ffffff; font-weight:800; font-size:12px; cursor:pointer; color:#0f172a; box-shadow:0 1px 3px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; outline:none;">+</button>
         </div>
       </div>
@@ -10360,7 +10444,7 @@ function verifyAdminPin() {
     closeAdminPinModal();
     switchView('admin');
   } else {
-    alert('❌ Incorrect PIN! Try 1234');
+    showToast('❌ Incorrect PIN! Try 1234', 'info');
   }
 }
 
@@ -10478,10 +10562,10 @@ function submitB2BQuoteRequest() {
   const biz = document.getElementById('b2bBizName')?.value.trim();
   const phone = document.getElementById('b2bPhone')?.value.trim();
   if (!biz || !phone) {
-    alert('Please enter your Business Name and Contact Phone Number.');
+    showToast('Please enter your Business Name and Contact Phone Number.', 'info');
     return;
   }
-  alert(`Thank you! Your GST Wholesale Inquiry for "${biz}" has been received. Owner Swaroop Sandy will send your official quotation via WhatsApp (+91 8886662334).`);
+  showApToast(`Thank you! Your GST Wholesale Inquiry for "${biz}" has been received. Owner Swaroop Sandy will send your official quotation via WhatsApp (+91 8886662334, 'info');.`);
 }
 
 /* 1. ABOUT US PAGE */
@@ -10844,7 +10928,7 @@ async function handleReviewPhotoUpload(input) {
     if (previewImg) previewImg.src = uploadedUrl;
     if (urlText) urlText.innerText = uploadedUrl;
   } catch (err) {
-    alert('Photo upload error: ' + err);
+    showToast('Photo upload error: ' + err, 'info');
     if (previewBox) previewBox.style.display = 'none';
   }
 }
@@ -10858,7 +10942,7 @@ async function submitCustomerReview() {
   const customPhoto = document.getElementById('revPhotoUrl')?.value;
 
   if (!title || !comment) {
-    alert('Please enter a review headline and comment.');
+    showToast('Please enter a review headline and comment.', 'info');
     return;
   }
 
@@ -10887,7 +10971,7 @@ async function submitCustomerReview() {
   sbInsertReview(newRev).catch(err => console.warn('[UE] Review sync failed:', err));
 
   closeWriteReviewModal();
-  alert('Thank you! Your verified customer review has been submitted.');
+  showToast('Thank you! Your verified customer review has been submitted.', 'info');
   if (currentView === 'reviews') renderReviewsView();
 }
 
@@ -11015,7 +11099,7 @@ async function submitReturnRequest() {
   // Sync to Supabase (non-blocking)
   sbInsertReturn(returnObj).catch(err => console.warn('[UE] Return sync failed:', err));
 
-  alert(`Return request submitted! Your Return ID is ${returnObj.returnId}. Our team will schedule pickup within 24 hours.`);
+  showToast(`Return request submitted! Your Return ID is ${returnObj.returnId}. Our team will schedule pickup within 24 hours.`, 'info');
   renderReturnsView();
 }
 
@@ -11134,7 +11218,7 @@ async function submitSupportTicket() {
   const msg = document.getElementById('ticketMessage').value.trim();
 
   if (!subj || !msg) {
-    alert('Please enter a subject and message.');
+    showToast('Please enter a subject and message.', 'info');
     return;
   }
 
@@ -11155,7 +11239,7 @@ async function submitSupportTicket() {
   sbInsertTicket(ticketObj).catch(err => console.warn('[UE] Ticket sync failed:', err));
 
   closeRaiseTicketModal();
-  alert(`Support Ticket #${ticketObj.ticketId} created! Our store representative will contact you via WhatsApp/Phone.`);
+  showApToast(`Support Ticket #${ticketObj.ticketId} created! Our store representative will contact you via WhatsApp/Phone.`, 'info');
   renderHelpCenterView();
 }
 
@@ -11271,9 +11355,9 @@ function renderOffersView() {
 
 function copyCouponCode(code) {
   navigator.clipboard.writeText(code).then(() => {
-    alert(`Coupon code "${code}" copied to clipboard! Paste it at checkout for instant discounts.`);
+    showToast(`Coupon code "${code}" copied to clipboard! Paste it at checkout for instant discounts.`, 'info');
   }).catch(() => {
-    alert(`Coupon code: ${code}`);
+    showToast(`Coupon code: ${code}`, 'info');
   });
 }
 
@@ -11291,11 +11375,11 @@ function submitSampleKitRequest() {
   const biz = document.getElementById('sampleBizName').value.trim();
   const phone = document.getElementById('samplePhone').value.trim();
   if (!biz || !phone) {
-    alert('Please enter your Business/School Name and Contact Phone Number.');
+    showToast('Please enter your Business/School Name and Contact Phone Number.', 'info');
     return;
   }
   closeSampleKitModal();
-  alert('Thank you! Your Wholesale Sample Kit request has been registered. Our representative Swaroop Sandy will contact you within 24 hours.');
+  showToast('Thank you! Your Wholesale Sample Kit request has been registered. Our representative Swaroop Sandy will contact you within 24 hours.', 'info');
 }
 
 /* ==========================================================================
@@ -11383,11 +11467,11 @@ function openApProductModal(editId = null) {
               <input type="text" id="apFormFbt" class="ap-search-input" style="width:100%;" value="${p ? (Array.isArray(p.boughtTogether) ? p.boughtTogether.join(', ') : '') : ''}" placeholder="e.g. 101, 102">
             </div>
 
-            <div style="border:1.5px dashed #6366f1; border-radius:14px; padding:14px; background:#f5f3ff;">
-              <label style="font-size:11px; font-weight:700; color:#6366f1; display:block; margin-bottom:4px;">🎬 YouTube / Instagram Video URL <span style="color:#94a3b8; font-weight:500;">(Optional)</span></label>
+            <div style="border:1.5px dashed #0f172a; border-radius:14px; padding:14px; background:#f8fafc;">
+              <label style="font-size:11px; font-weight:700; color:#0f172a; display:block; margin-bottom:4px;">🎬 YouTube / Instagram Video URL <span style="color:#94a3b8; font-weight:500;">(Optional)</span></label>
               <input type="text" id="apFormVideoUrl" class="ap-search-input" style="width:100%;" value="${p ? (p.videoUrl || '') : ''}" placeholder="https://youtube.com/watch?v=... or https://instagram.com/reel/..." oninput="updateApVideoPreview(this.value)">
               <div id="apVideoPreview" style="margin-top:6px; display:${p && p.videoUrl ? 'block' : 'none'};">
-                <a href="${p ? (p.videoUrl || '#') : '#'}" target="_blank" id="apVideoLink" style="font-size:11px; color:#6366f1; font-weight:700; text-decoration:none;">▶ Preview Video Link →</a>
+                <a href="${p ? (p.videoUrl || '#') : '#'}" target="_blank" id="apVideoLink" style="font-size:11px; color:#0f172a; font-weight:700; text-decoration:none;">▶ Preview Video Link →</a>
               </div>
             </div>
 
@@ -11453,7 +11537,7 @@ function saveApProductForm(editId = null) {
   const boughtTogether = rawFbt;
 
   if (!title) {
-    alert('Please enter a product title.');
+    showToast('Please enter a product title.', 'info');
     return;
   }
 
@@ -11576,6 +11660,176 @@ function initImageZoom(imgId, resultId) {
     result.style.backgroundSize = `${rect.width * 2.5}px ${rect.height * 2.5}px`;
     result.style.backgroundPosition = `${fx}% ${fy}%`;
   }
+}
+
+// 5. Frequently Bought Together (FBT) Cart Handler
+function addFbtComboToCart(mainProdId, bundleProdIds) {
+  const allIds = [mainProdId, ...bundleProdIds];
+  allIds.forEach(id => {
+    const prod = ALL_PRODUCTS.find(p => String(p.id) === String(id));
+    if (prod) {
+      const existing = cart.find(i => String(i.id) === String(id));
+      if (existing) existing.quantity = (existing.quantity || 1) + 1;
+      else cart.push({ ...prod, price: getEffectivePrice(prod.price), quantity: 1 });
+    }
+  });
+  saveCart();
+  openCartDrawer();
+}
+
+/* ==========================================================================
+   CUSTOMER AUTHENTICATION & LOGIN MODAL HANDLERS
+   ========================================================================== */
+function openUserAuthModal(defaultTab = 'login') {
+  const backdrop = document.getElementById('userAuthModalBackdrop');
+  if (backdrop) {
+    backdrop.classList.add('active');
+    switchAuthTab(defaultTab);
+  }
+}
+
+function closeUserAuthModal() {
+  const backdrop = document.getElementById('userAuthModalBackdrop');
+  if (backdrop) backdrop.classList.remove('active');
+}
+
+function switchAuthTab(tab) {
+  const loginBtn = document.getElementById('authTabBtnLogin');
+  const signupBtn = document.getElementById('authTabBtnSignup');
+  const otpBtn = document.getElementById('authTabBtnOtp');
+
+  const loginContent = document.getElementById('authTabContentLogin');
+  const signupContent = document.getElementById('authTabContentSignup');
+  const otpContent = document.getElementById('authTabContentOtp');
+
+  [loginBtn, signupBtn, otpBtn].forEach(b => {
+    if (b) {
+      b.style.background = '#f8fafc';
+      b.style.color = '#64748b';
+      b.style.borderBottom = 'none';
+      b.style.fontWeight = '700';
+    }
+  });
+
+  [loginContent, signupContent, otpContent].forEach(c => {
+    if (c) c.style.display = 'none';
+  });
+
+  if (tab === 'login') {
+    if (loginBtn) { loginBtn.style.background = '#fff'; loginBtn.style.color = '#0f172a'; loginBtn.style.borderBottom = '2px solid #0f172a'; loginBtn.style.fontWeight = '800'; }
+    if (loginContent) loginContent.style.display = 'block';
+  } else if (tab === 'signup') {
+    if (signupBtn) { signupBtn.style.background = '#fff'; signupBtn.style.color = '#0f172a'; signupBtn.style.borderBottom = '2px solid #0f172a'; signupBtn.style.fontWeight = '800'; }
+    if (signupContent) signupContent.style.display = 'block';
+  } else if (tab === 'otp') {
+    if (otpBtn) { otpBtn.style.background = '#fff'; otpBtn.style.color = '#0f172a'; otpBtn.style.borderBottom = '2px solid #0f172a'; otpBtn.style.fontWeight = '800'; }
+    if (otpContent) otpContent.style.display = 'block';
+  }
+}
+
+function toggleAuthPasswordVisibility() {
+  const input = document.getElementById('authLoginPassword');
+  const icon = document.getElementById('toggleAuthPassIcon');
+  if (!input || !icon) return;
+
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'ri-eye-line';
+  } else {
+    input.type = 'password';
+    icon.className = 'ri-eye-off-line';
+  }
+}
+
+function handleUserLogin(e) {
+  if (e) e.preventDefault();
+  const id = document.getElementById('authLoginId')?.value.trim();
+  const pass = document.getElementById('authLoginPassword')?.value.trim();
+
+  if (!id || !pass) {
+    showToast('Please enter your email/phone and password.', 'info');
+    return;
+  }
+
+  // Set user profile state
+  userProfile.name = id.includes('@') ? id.split('@')[0] : 'G Mounika Durga';
+  userProfile.email = id.includes('@') ? id : 'uniqueexpressions@gmail.com';
+  userProfile.phone = !id.includes('@') ? id : '+91 8886662334';
+  
+  localStorage.setItem('ue_user_session_v1', JSON.stringify({ isLoggedIn: true, profile: userProfile }));
+  closeUserAuthModal();
+  showToast(`Welcome back, ${userProfile.name}! VIP Account active.`, 'success');
+  
+  if (currentView === 'profile') renderProfileView();
+}
+
+function handleUserSignup(e) {
+  if (e) e.preventDefault();
+  const name = document.getElementById('authSignupName')?.value.trim();
+  const phone = document.getElementById('authSignupPhone')?.value.trim();
+  const email = document.getElementById('authSignupEmail')?.value.trim();
+  const city = 'Visakhapatnam';
+
+  if (!name || !phone || !email) {
+    showToast('Please complete all required registration fields.', 'info');
+    return;
+  }
+
+  userProfile.name = name;
+  userProfile.phone = phone;
+  userProfile.email = email;
+  userProfile.city = city;
+
+  localStorage.setItem('ue_user_session_v1', JSON.stringify({ isLoggedIn: true, profile: userProfile }));
+  closeUserAuthModal();
+  showToast(`Registration Successful! Welcome to UNIQUE EXPRESSIONS, ${name}!`, 'success');
+
+  if (currentView === 'profile') renderProfileView();
+}
+
+function handleSendOtpCode() {
+  const row = document.getElementById('otpInputRow');
+  const timer = document.getElementById('otpTimerText');
+  const btn = document.getElementById('sendOtpSubmitBtn');
+
+  if (row) {
+    if (row.style.display === 'none') {
+      row.style.display = 'flex';
+      if (timer) timer.style.display = 'block';
+      if (btn) {
+        btn.innerText = 'Verify 4-Digit OTP Code →';
+        btn.onclick = handleVerifyOtpCode;
+      }
+      showToast('WhatsApp OTP Sent to +91 8886662334! Code: 1 2 3 4', 'info');
+    }
+  }
+}
+
+function focusNextOtp(idx) {
+  const cur = document.getElementById(`otpBox${idx}`);
+  if (cur && cur.value.length === 1 && idx < 4) {
+    const nxt = document.getElementById(`otpBox${idx + 1}`);
+    if (nxt) nxt.focus();
+  }
+}
+
+function handleVerifyOtpCode() {
+  const o1 = document.getElementById('otpBox1')?.value.trim();
+  const o2 = document.getElementById('otpBox2')?.value.trim();
+  const o3 = document.getElementById('otpBox3')?.value.trim();
+  const o4 = document.getElementById('otpBox4')?.value.trim();
+  const otp = `${o1}${o2}${o3}${o4}`;
+
+  if (otp.length < 4) {
+    showToast('Please enter complete 4-digit OTP code.', 'info');
+    return;
+  }
+
+  localStorage.setItem('ue_user_session_v1', JSON.stringify({ isLoggedIn: true, profile: userProfile }));
+  closeUserAuthModal();
+  showToast('WhatsApp OTP Verified! Logged in as G Mounika Durga.', 'success');
+
+  if (currentView === 'profile') renderProfileView();
 }
 
 // 3. Native Lightbox / Fullscreen Viewer

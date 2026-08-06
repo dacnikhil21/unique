@@ -2,7 +2,24 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 5000;
+// Load Environment Variables from .env file
+const envPath = path.join(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  envContent.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+      const idx = trimmed.indexOf('=');
+      const key = trimmed.slice(0, idx).trim();
+      const val = trimmed.slice(idx + 1).trim().replace(/^["']|["']$/g, '');
+      if (key && val && !process.env[key]) {
+        process.env[key] = val;
+      }
+    }
+  });
+}
+
+const PORT = process.env.PORT || 5000;
 const PUBLIC_DIR = __dirname;
 
 const MIME_TYPES = {
@@ -19,10 +36,10 @@ const MIME_TYPES = {
 };
 
 const CLOUDINARY_CONFIG = {
-  cloud_name: 'oqj0unl4',
-  api_key: '392727691414539',
-  api_secret: 'lz4eGHf-j5Auu7__KTgNl2Ur6vg',
-  folder: 'unique_expressions'
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'oqj0unl4',
+  api_key: process.env.CLOUDINARY_API_KEY || '392727691414539',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'lz4eGHf-j5Auu7__KTgNl2Ur6vg',
+  folder: process.env.CLOUDINARY_FOLDER || 'unique_expressions'
 };
 
 const server = http.createServer((req, res) => {
@@ -39,13 +56,23 @@ const server = http.createServer((req, res) => {
   // Handle Cloudinary Upload API Endpoint
   if (req.method === 'POST' && req.url === '/api/upload') {
     let body = '';
-    req.on('data', chunk => { body += chunk.toString(); });
+    let isTooLarge = false;
+    req.on('data', chunk => {
+      body += chunk.toString();
+      if (body.length > 10 * 1024 * 1024) {
+        isTooLarge = true;
+      }
+    });
     req.on('end', () => {
+      if (isTooLarge) {
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'Payload too large. Maximum file size is 10MB.' }));
+      }
       try {
         const payload = JSON.parse(body);
-        if (!payload.file) {
+        if (!payload.file || (!payload.file.startsWith('http') && !/^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(payload.file))) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify({ error: 'Missing image file payload' }));
+          return res.end(JSON.stringify({ error: 'Invalid image payload. Only valid PNG, JPEG, WEBP, or GIF images are allowed.' }));
         }
 
         const timestamp = Math.floor(Date.now() / 1000);

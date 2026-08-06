@@ -1,0 +1,7 @@
+.env
+node_modules/
+scratch/
+amalgam.json
+script_*.json
+site_dump.html
+extracted_*.json
