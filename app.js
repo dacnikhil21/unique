@@ -7409,6 +7409,7 @@ function handleProfilePageLogin(e) {
   };
 
   localStorage.setItem('ue_user_session_v2', JSON.stringify({ isLoggedIn: true, profile: userProfile }));
+  if (typeof sbInsertProfile === 'function') sbInsertProfile(userProfile);
   showToast(`Welcome back, ${userProfile.name}! Logged in successfully.`, 'success');
   renderProfileView();
 }

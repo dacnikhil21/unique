@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    UNIQUE EXPRESSIONS — SUPABASE CLIENT CONFIGURATION & DATABASE HELPERS
    Project: sfcxpvvqxldhdkvfyhgj
    ========================================================================== */
@@ -345,6 +345,34 @@ async function sbGetTickets() {
   } catch (err) {
     console.warn('[Supabase] getTickets failed:', err.message);
     return null;
+  }
+}
+
+/* ─────────────────────────────── CUSTOMER PROFILES ─────────────────────── */
+
+async function sbInsertProfile(profile) {
+  try {
+    const { error } = await _supabase.from('profiles').upsert({
+      email: profile.email || `${Date.now()}@customer.com`,
+      name: profile.name,
+      phone: profile.phone || '',
+      city: profile.city || 'Visakhapatnam',
+      address: profile.address || '',
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'email' });
+    if (error) {
+      await _supabase.from('customers').upsert({
+        email: profile.email || `${Date.now()}@customer.com`,
+        name: profile.name,
+        phone: profile.phone || '',
+        city: profile.city || 'Visakhapatnam'
+      }, { onConflict: 'email' });
+    }
+    console.log('[Supabase] Profile for ' + profile.name + ' saved to Supabase');
+    return true;
+  } catch (err) {
+    console.warn('[Supabase] insertProfile note:', err.message);
+    return false;
   }
 }
 
