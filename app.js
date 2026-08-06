@@ -5171,16 +5171,8 @@ let cart = JSON.parse(localStorage.getItem('ue_cart') || '[]');
 let wishlist = JSON.parse(localStorage.getItem('ue_wishlist') || '[]');
 let recentlyViewed = JSON.parse(localStorage.getItem('ue_recently_viewed') || '[]');
 
-let userProfile = JSON.parse(localStorage.getItem('ue_user_profile_v2') || JSON.stringify({
-  name: "Swaroop Sandy",
-  email: "uniqueexpressions.in@gmail.com",
-  phone: "+91 8886662334",
-  city: "Visakhapatnam",
-  address: "Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam – 530041, Andhra Pradesh",
-  instagram: "@uniqueexpressions.in",
-  youtube: "@UNIQUEEXPRESSIONS-25",
-  totalSavings: 1450
-}));
+let userSession = JSON.parse(localStorage.getItem('ue_user_session_v2') || 'null');
+let userProfile = (userSession && userSession.isLoggedIn) ? userSession.profile : null;
 
 let userAddresses = JSON.parse(localStorage.getItem('ue_addresses') || JSON.stringify([
   {
@@ -7379,8 +7371,193 @@ function clearWishlist() {
 /* ==========================================================================
    USER PROFILE & CUSTOMER PORTAL VIEW
    ========================================================================== */
+function switchProfileAuthTab(tab) {
+  const loginBtn = document.getElementById('profAuthTabLogin');
+  const regBtn = document.getElementById('profAuthTabRegister');
+  const loginBox = document.getElementById('profAuthBoxLogin');
+  const regBox = document.getElementById('profAuthBoxRegister');
+
+  if (tab === 'login') {
+    if (loginBtn) { loginBtn.style.background = '#ffffff'; loginBtn.style.color = '#0f172a'; loginBtn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'; loginBtn.style.fontWeight = '800'; }
+    if (regBtn) { regBtn.style.background = 'transparent'; regBtn.style.color = '#64748b'; regBtn.style.boxShadow = 'none'; regBtn.style.fontWeight = '700'; }
+    if (loginBox) loginBox.style.display = 'block';
+    if (regBox) regBox.style.display = 'none';
+  } else {
+    if (regBtn) { regBtn.style.background = '#ffffff'; regBtn.style.color = '#0f172a'; regBtn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'; regBtn.style.fontWeight = '800'; }
+    if (loginBtn) { loginBtn.style.background = 'transparent'; loginBtn.style.color = '#64748b'; loginBtn.style.boxShadow = 'none'; loginBtn.style.fontWeight = '700'; }
+    if (regBox) regBox.style.display = 'block';
+    if (loginBox) loginBox.style.display = 'none';
+  }
+}
+
+function handleProfilePageLogin(e) {
+  if (e) e.preventDefault();
+  const input = document.getElementById('profLoginInput')?.value.trim();
+  const pass = document.getElementById('profPassInput')?.value.trim();
+
+  if (!input || !pass) {
+    showToast('Please enter your mobile number/email and password.', 'info');
+    return;
+  }
+
+  userProfile = {
+    name: input.includes('@') ? input.split('@')[0] : 'G Mounika Durga',
+    email: input.includes('@') ? input : 'customer@uniqueexpressions.in',
+    phone: !input.includes('@') ? input : '+91 8886662334',
+    city: 'Visakhapatnam',
+    address: 'Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam – 530041'
+  };
+
+  localStorage.setItem('ue_user_session_v2', JSON.stringify({ isLoggedIn: true, profile: userProfile }));
+  showToast(`Welcome back, ${userProfile.name}! Logged in successfully.`, 'success');
+  renderProfileView();
+}
+
+function handleProfilePageRegister(e) {
+  if (e) e.preventDefault();
+  const name = document.getElementById('regFullName')?.value.trim();
+  const phone = document.getElementById('regMobile')?.value.trim();
+  const email = document.getElementById('regEmail')?.value.trim();
+
+  if (!name || !phone || !email) {
+    showToast('Please enter your name, phone number, and email.', 'info');
+    return;
+  }
+
+  userProfile = {
+    name: name,
+    email: email,
+    phone: phone,
+    city: 'Visakhapatnam',
+    address: 'Visakhapatnam, Andhra Pradesh'
+  };
+
+  localStorage.setItem('ue_user_session_v2', JSON.stringify({ isLoggedIn: true, profile: userProfile }));
+  showToast(`Registration Successful! Welcome ${name}!`, 'success');
+  renderProfileView();
+}
+
+function handleProfileWhatsAppOtp() {
+  const phone = prompt('Enter your 10-digit mobile number for WhatsApp OTP:', '+91 8886662334');
+  if (phone) {
+    const otp = prompt('WhatsApp OTP code sent! Enter 4-digit OTP:', '1234');
+    if (otp) {
+      userProfile = {
+        name: 'G Mounika Durga',
+        email: 'customer@uniqueexpressions.in',
+        phone: phone,
+        city: 'Visakhapatnam',
+        address: 'Visakhapatnam, Andhra Pradesh'
+      };
+      localStorage.setItem('ue_user_session_v2', JSON.stringify({ isLoggedIn: true, profile: userProfile }));
+      showToast('WhatsApp OTP Verified! Logged in successfully.', 'success');
+      renderProfileView();
+    }
+  }
+}
+
+function handleUserLogout() {
+  userProfile = null;
+  localStorage.removeItem('ue_user_session_v2');
+  showToast('Logged out of your account successfully.', 'info');
+  renderProfileView();
+}
+
 function renderProfileView() {
   const container = document.getElementById('viewProfile');
+  if (!container) return;
+
+  // 1. IF NOT LOGGED IN: SHOW CUSTOMER LOGIN & REGISTRATION PAGE
+  if (!userProfile) {
+    container.innerHTML = `
+      <div class="m-view-header-bar">
+        <button class="m-back-btn" onclick="switchView('home')">← Store</button>
+        <span class="m-view-title">Customer Account Portal</span>
+        <div style="width:32px;"></div>
+      </div>
+
+      <div class="checkout-container" style="max-width:460px; margin:0 auto; padding:16px;">
+        <div style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius:20px; padding:24px 20px; text-align:center; color:#ffffff; margin-bottom:20px; box-shadow:0 10px 25px rgba(15, 23, 42, 0.2);">
+          <div style="width:52px; height:52px; background:rgba(255,255,255,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px auto; border:1px solid rgba(255,255,255,0.2);">
+            <i class="ri-user-heart-fill" style="font-size:26px; color:#f59e0b;"></i>
+          </div>
+          <h2 style="font-size:20px; font-weight:800; margin:0 0 6px 0;">UNIQUE EXPRESSIONS</h2>
+          <p style="font-size:12px; color:#cbd5e1; margin:0;">Login or Create Account to track orders, save wishlist & claim VIP 10% Off</p>
+        </div>
+
+        <div style="display:flex; border-radius:14px; background:#f1f5f9; padding:4px; margin-bottom:20px;">
+          <button id="profAuthTabLogin" onclick="switchProfileAuthTab('login')" style="flex:1; padding:10px; border-radius:10px; font-size:13px; font-weight:800; border:none; background:#ffffff; color:#0f172a; box-shadow:0 2px 8px rgba(0,0,0,0.06); cursor:pointer;">
+            🔑 Customer Login
+          </button>
+          <button id="profAuthTabRegister" onclick="switchProfileAuthTab('register')" style="flex:1; padding:10px; border-radius:10px; font-size:13px; font-weight:700; border:none; background:transparent; color:#64748b; cursor:pointer;">
+            ✨ Create Account
+          </button>
+        </div>
+
+        <div id="profAuthBoxLogin" style="background:#ffffff; border-radius:18px; border:1px solid #e2e8f0; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.04);">
+          <form onsubmit="handleProfilePageLogin(event)">
+            <div class="form-group" style="margin-bottom:14px;">
+              <label class="form-label" style="font-size:12px; font-weight:800; color:#475569;">Mobile Number or Email</label>
+              <div style="position:relative;">
+                <i class="ri-phone-line" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>
+                <input type="text" id="profLoginInput" class="form-input" style="padding-left:38px; height:44px; font-size:13.5px;" placeholder="+91 9876543210 or email" required>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label class="form-label" style="font-size:12px; font-weight:800; color:#475569; margin:0;">Password</label>
+                <a href="#" onclick="showToast('Password reset link sent to your mobile/email!', 'info'); return false;" style="font-size:11px; color:#2563eb; font-weight:700; text-decoration:none;">Forgot?</a>
+              </div>
+              <div style="position:relative;">
+                <i class="ri-lock-2-line" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>
+                <input type="password" id="profPassInput" class="form-input" style="padding-left:38px; height:44px; font-size:13.5px;" placeholder="••••••••" required>
+              </div>
+            </div>
+            <button type="submit" class="m-hero-cta-button" style="width:100%; justify-content:center; height:46px; font-size:14px; background:#0f172a; color:#fff; border-radius:12px;">
+              Login to My Account &rarr;
+            </button>
+          </form>
+
+          <div style="display:flex; align-items:center; gap:10px; margin:16px 0;">
+            <div style="flex:1; height:1px; background:#e2e8f0;"></div>
+            <span style="font-size:11px; color:#94a3b8; font-weight:700;">OR CONNECT VIA WHATSAPP</span>
+            <div style="flex:1; height:1px; background:#e2e8f0;"></div>
+          </div>
+
+          <button onclick="handleProfileWhatsAppOtp()" style="width:100%; height:46px; display:flex; align-items:center; justify-content:center; gap:8px; background:#25D366; color:#ffffff; font-weight:800; font-size:13.5px; border:none; border-radius:12px; cursor:pointer; box-shadow:0 4px 12px rgba(37,211,102,0.25);">
+            <i class="ri-whatsapp-fill" style="font-size:20px;"></i> Instant WhatsApp OTP Login
+          </button>
+        </div>
+
+        <div id="profAuthBoxRegister" style="display:none; background:#ffffff; border-radius:18px; border:1px solid #e2e8f0; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.04);">
+          <form onsubmit="handleProfilePageRegister(event)">
+            <div class="form-group" style="margin-bottom:12px;">
+              <label class="form-label" style="font-size:12px; font-weight:800; color:#475569;">Full Name</label>
+              <input type="text" id="regFullName" class="form-input" style="height:42px; font-size:13px;" placeholder="e.g. G Mounika Durga" required>
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+              <label class="form-label" style="font-size:12px; font-weight:800; color:#475569;">Mobile Number (WhatsApp)</label>
+              <input type="tel" id="regMobile" class="form-input" style="height:42px; font-size:13px;" placeholder="+91 9876543210" required>
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+              <label class="form-label" style="font-size:12px; font-weight:800; color:#475569;">Email Address</label>
+              <input type="email" id="regEmail" class="form-input" style="height:42px; font-size:13px;" placeholder="name@domain.com" required>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+              <label class="form-label" style="font-size:12px; font-weight:800; color:#475569;">Create Password</label>
+              <input type="password" id="regPass" class="form-input" style="height:42px; font-size:13px;" placeholder="Min 6 characters" required>
+            </div>
+            <button type="submit" class="m-hero-cta-button" style="width:100%; justify-content:center; height:46px; font-size:14px; background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#fff; border-radius:12px;">
+              Create Account & Claim VIP 10% Off &rarr;
+            </button>
+          </form>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  // 2. IF LOGGED IN: SHOW AUTHENTICATED CUSTOMER PROFILE
   const defaultAddress = userAddresses.find(a => a.isDefault) || userAddresses[0];
 
   container.innerHTML = `
@@ -7391,7 +7568,6 @@ function renderProfileView() {
     </div>
 
     <div class="checkout-container">
-      <!-- Profile User Header Card -->
       <div class="profile-user-card">
         <div style="display:flex; align-items:center; justify-content:space-between;">
           <div style="display:flex; align-items:center; gap:14px;">
@@ -7403,35 +7579,35 @@ function renderProfileView() {
                 <h3 style="font-size:16px; font-weight:800; color:#0f172a;">${userProfile.name}</h3>
                 <span class="profile-vip-pill">✨ VIP</span>
               </div>
-              <p style="font-size:11px; color:#64748b; margin-top:2px;">📞 ${userProfile.phone} • ${userProfile.city}</p>
-              <p style="font-size:10px; color:#94a3b8;">✉️ ${userProfile.email}</p>
+              <p style="font-size:11px; color:#64748b; margin-top:2px;">📞 ${userProfile.phone || '+91 8886662334'} • ${userProfile.city || 'Visakhapatnam'}</p>
+              <p style="font-size:10px; color:#94a3b8;">✉️ ${userProfile.email || 'customer@uniqueexpressions.in'}</p>
             </div>
           </div>
         </div>
 
-        <!-- Quick Stats Grid -->
-        <div class="profile-stats-grid">
-          <div class="profile-stat-box" onclick="switchView('orderDetails')">
-            <div class="profile-stat-num">${userOrders.length}</div>
+        <div class="profile-stats-row">
+          <div class="profile-stat-box">
+            <div class="profile-stat-val">${userOrders.length}</div>
             <div class="profile-stat-label">Total Orders</div>
           </div>
-          <div class="profile-stat-box" onclick="switchView('wishlist')">
-            <div class="profile-stat-num">${wishlist.length}</div>
+          <div class="profile-stat-box">
+            <div class="profile-stat-val">${wishlist.length}</div>
             <div class="profile-stat-label">Saved Items</div>
           </div>
-          <div class="profile-stat-box" onclick="switchView('addresses')">
-            <div class="profile-stat-num">${userAddresses.length}</div>
+          <div class="profile-stat-box">
+            <div class="profile-stat-val">${userAddresses.length}</div>
             <div class="profile-stat-label">Addresses</div>
           </div>
         </div>
       </div>
 
-      <!-- Quick Action Menu Tiles -->
-      <h4 style="font-size:12px; font-weight:800; color:#334155; margin-bottom:8px;">MY ACCOUNT & SHOPPING</h4>
+      <div style="margin-bottom:14px;">
+        <h4 style="font-size:12px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">My Account & Shopping</h4>
+      </div>
 
-      <div class="profile-menu-tile" onclick="switchView('orderDetails')">
+      <div class="profile-menu-tile" onclick="switchView('orders')">
         <div class="profile-menu-left">
-          <div class="profile-menu-icon"><i class="ri-shopping-bag-3-line"></i></div>
+          <div class="profile-menu-icon"><i class="ri-shopping-bag-line"></i></div>
           <div>
             <div class="profile-menu-title">Order History & Live Tracking</div>
             <div class="profile-menu-sub">Track active dispatches & past orders (${userOrders.length})</div>
@@ -7445,7 +7621,7 @@ function renderProfileView() {
           <div class="profile-menu-icon"><i class="ri-map-pin-line"></i></div>
           <div>
             <div class="profile-menu-title">Saved Address Book</div>
-            <div class="profile-menu-sub">${defaultAddress ? defaultAddress.area + ' (' + defaultAddress.pincode + ')' : 'Manage delivery addresses'}</div>
+            <div class="profile-menu-sub">${defaultAddress ? defaultAddress.street + ', ' + defaultAddress.city : 'Manage shipping addresses'}</div>
           </div>
         </div>
         <span style="font-size:12px; color:#94a3b8;">→</span>
@@ -7473,19 +7649,6 @@ function renderProfileView() {
         <span style="font-size:12px; color:#94a3b8;">→</span>
       </div>
 
-      ${userOrders.length > 0 ? `
-        <div class="profile-menu-tile" onclick="openInvoiceModal('${userOrders[0].orderId}')">
-          <div class="profile-menu-left">
-            <div class="profile-menu-icon"><i class="ri-file-text-line"></i></div>
-            <div>
-              <div class="profile-menu-title">Printable GST Invoice</div>
-              <div class="profile-menu-sub">Official Tax Invoice for Order #${userOrders[0].orderId}</div>
-            </div>
-          </div>
-          <span style="font-size:12px; color:#94a3b8;">→</span>
-        </div>
-      ` : ''}
-
       <div class="profile-menu-tile" onclick="openWhatsAppChat()">
         <div class="profile-menu-left">
           <div class="profile-menu-icon" style="background:#dcfce7; color:#16a34a;"><i class="ri-whatsapp-line"></i></div>
@@ -7497,13 +7660,15 @@ function renderProfileView() {
         <span style="font-size:12px; color:#94a3b8;">→</span>
       </div>
 
-      <div class="checkout-card" style="text-align:center; margin-top:14px;">
-        <h4 style="font-size:12px; font-weight:800; color:#334155; margin-bottom:4px;">Store Management Portal</h4>
-        <button class="m-hero-cta-button" style="width:100%; justify-content:center; min-height:44px;" onclick="openAdminPinModal()">🔐 Open Store Admin System →</button>
+      <div style="margin-top:20px; margin-bottom:30px;">
+        <button class="m-hero-cta-button" style="width:100%; justify-content:center; min-height:44px; background:#f1f5f9; color:#dc2626; border:1px solid #cbd5e1; box-shadow:none; font-weight:800;" onclick="handleUserLogout()">
+          🚪 Log Out of Account
+        </button>
       </div>
     </div>
   `;
 }
+
 
 /* ==========================================================================
    SAVED ADDRESS BOOK VIEW
