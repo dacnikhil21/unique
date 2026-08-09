@@ -187,7 +187,14 @@
           </div>
 
           <div class="m-cat-rail-scroll no-scrollbar" id="mCatRailContainer">
-            <!-- Rendered dynamically via renderCategoryBar() -->
+            <div class="m-cat-pill-thumb" onclick="filterCategory('RC Toys')">
+              <div class="m-cat-img-box"><img src="https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?w=400&auto=format&fit=crop" alt="RC Toys"></div>
+              <div class="m-cat-overlay-text"><span class="m-cat-name-label">RC Toys</span><span class="m-cat-count-label">Loading…</span></div>
+            </div>
+            <div class="m-cat-pill-thumb" onclick="filterCategory('Educational Toys')">
+              <div class="m-cat-img-box"><img src="https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400&auto=format&fit=crop" alt="Educational"></div>
+              <div class="m-cat-overlay-text"><span class="m-cat-name-label">Educational</span><span class="m-cat-count-label">Loading…</span></div>
+            </div>
           </div>
 
           <!-- 5. FEATURED COLLECTIONS (MOBILE) -->
@@ -474,7 +481,26 @@
           </div>
 
           <div class="dt-category-grid" id="dtCategoryGrid">
-            <!-- Rendered dynamically from admin categories via renderCategoryBar() -->
+            <div class="dt-category-card" onclick="filterCategory('RC Toys')">
+              <img src="https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?w=600&auto=format&fit=crop" alt="RC Toys" style="object-fit:cover;">
+              <div class="dt-category-overlay"><h3>RC Toys</h3><p>Loading categories…</p></div>
+            </div>
+            <div class="dt-category-card" onclick="filterCategory('Educational Toys')">
+              <img src="https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&auto=format&fit=crop" alt="Educational Toys" style="object-fit:cover;">
+              <div class="dt-category-overlay"><h3>Educational Toys</h3><p>Loading categories…</p></div>
+            </div>
+            <div class="dt-category-card" onclick="filterCategory('Handicrafts')">
+              <img src="https://images.unsplash.com/photo-1606293926075-69a00dbfde81?w=600&auto=format&fit=crop" alt="Handicrafts" style="object-fit:cover;">
+              <div class="dt-category-overlay"><h3>Handicrafts</h3><p>Loading categories…</p></div>
+            </div>
+            <div class="dt-category-card" onclick="filterCategory('Stationary')">
+              <img src="https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=600&auto=format&fit=crop" alt="Stationary" style="object-fit:cover;">
+              <div class="dt-category-overlay"><h3>Stationary</h3><p>Loading categories…</p></div>
+            </div>
+            <div class="dt-category-card" onclick="filterCategory('Return Gifts')">
+              <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600&auto=format&fit=crop" alt="Return Gifts" style="object-fit:cover;">
+              <div class="dt-category-overlay"><h3>Return Gifts</h3><p>Loading categories…</p></div>
+            </div>
           </div>
 
           <!-- 2.5 Desktop Shop By Category Grid -->
@@ -1257,7 +1283,7 @@
   <!-- Supabase config & DB helpers -->
   <script src="supabase.js?v=1.0"></script>
   <!-- Main App -->
-  <script src="app.js?v=5.6"></script>
+  <script src="app.js?v=5.7"></script>
   <script>
     if (window.feather) feather.replace();
     if (window.lucide) lucide.createIcons();

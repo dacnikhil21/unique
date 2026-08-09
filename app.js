@@ -104,7 +104,13 @@ let HERO_SLIDES = JSON.parse(localStorage.getItem('ue_hero_slides_v7')) || [
 let currentHeroIndex = 0;
 let heroTimer = null;
 
-let CATEGORIES_DATA = JSON.parse(localStorage.getItem('ue_categories_data_v5')) || [
+let CATEGORIES_DATA = (() => {
+  try {
+    const stored = JSON.parse(localStorage.getItem('ue_categories_data_v5'));
+    if (Array.isArray(stored) && stored.length > 0) return stored;
+  } catch (e) { /* use defaults below */ }
+  return null;
+})() || [
   {
     "id": "-OlMg9x5rg2whiy_qnz7",
     "name": "RC Toys",
@@ -286,9 +292,13 @@ function resolveCategoryImage(c, index = 0) {
   const name = typeof c === 'string' ? c : c.name;
   const catObj = typeof c === 'object' ? c : { name };
 
-  // Best source: real product photo from this category
-  if (typeof ALL_PRODUCTS !== 'undefined' && ALL_PRODUCTS.length) {
-    const inCat = ALL_PRODUCTS.filter(p => p.category === name && p.image && !String(p.image).startsWith('data:'));
+  // Best source: real product photo from this category (safe before ALL_PRODUCTS init)
+  let products = [];
+  try {
+    if (ALL_PRODUCTS && ALL_PRODUCTS.length) products = ALL_PRODUCTS;
+  } catch (e) { /* ALL_PRODUCTS not initialized yet */ }
+  if (products.length) {
+    const inCat = products.filter(p => p.category === name && p.image && !String(p.image).startsWith('data:'));
     if (inCat.length) {
       const pick = inCat.find(p => p.isFeatured) || inCat[0];
       return pick.image;
@@ -327,13 +337,12 @@ function normalizeCategoriesData() {
   }
 }
 
-normalizeCategoriesData();
+// Do NOT call normalizeCategoriesData() here — ALL_PRODUCTS is not defined yet (crashes the app)
 
 // Re-normalize after products load so each category uses its own product photo
 function refreshCategoryImagesFromCatalog() {
-  if (localStorage.getItem('ue_cat_img_refresh') === 'v4') return;
   normalizeCategoriesData();
-  localStorage.setItem('ue_cat_img_refresh', 'v4');
+  localStorage.setItem('ue_cat_img_refresh', 'v5');
 }
 localStorage.setItem('ue_categories_data_v4', JSON.stringify(CATEGORIES_DATA));
 localStorage.setItem('ue_hero_slides_v7', JSON.stringify(HERO_SLIDES));
@@ -5801,10 +5810,24 @@ function renderAllSections() {
   if (window.lucide) lucide.createIcons();
 }
 
+function getVisibleCategories() {
+  if (Array.isArray(CATEGORIES_DATA) && CATEGORIES_DATA.length > 0) {
+    return CATEGORIES_DATA
+      .filter(c => c.isVisible !== false)
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  }
+  const names = [...new Set((ALL_PRODUCTS || []).map(p => p.category).filter(Boolean))];
+  return names.map((name, i) => ({
+    id: i + 1,
+    name,
+    description: `${name} collection at UNIQUE EXPRESSIONS`,
+    isVisible: true,
+    sortOrder: i + 1
+  }));
+}
+
 function renderCategoryBar() {
-  const visibleCats = (CATEGORIES_DATA || [])
-    .filter(c => c.isVisible !== false)
-    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  const visibleCats = getVisibleCategories();
 
   if (visibleCats.length === 0) return;
 
