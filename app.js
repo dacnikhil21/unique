@@ -5143,8 +5143,9 @@ localStorage.setItem('ue_reviews_v5', JSON.stringify(STORE_REVIEWS));
 function syncStorefrontState() {
   localStorage.setItem('ue_products_v9', JSON.stringify(ALL_PRODUCTS));
   localStorage.setItem('ue_products_v8', JSON.stringify(ALL_PRODUCTS));
-  localStorage.setItem('ue_categories_data_v3', JSON.stringify(CATEGORIES_DATA));
+  localStorage.setItem('ue_categories_data_v5', JSON.stringify(CATEGORIES_DATA));
   localStorage.setItem('ue_categories_v5', JSON.stringify(CATEGORIES));
+  localStorage.setItem('ue_hero_slides_v7', JSON.stringify(HERO_SLIDES));
   localStorage.setItem('ue_hero_slides_v6', JSON.stringify(HERO_SLIDES));
   localStorage.setItem('ue_store_settings_v5', JSON.stringify(STORE_SETTINGS));
   localStorage.setItem('ue_customers_v5', JSON.stringify(STORE_CUSTOMERS));
@@ -5376,6 +5377,29 @@ window.addEventListener('popstate', (e) => {
   }
 });
 
+function mergeProductsFromSupabase(sbProds) {
+  if (!sbProds || sbProds.length === 0) return ALL_PRODUCTS;
+  const merged = ALL_PRODUCTS.map(local => {
+    const sb = sbProds.find(p => String(p.id) === String(local.id));
+    if (!sb) return local;
+    return {
+      ...local,
+      ...sb,
+      image: sb.image || local.image,
+      images: local.images || (sb.image ? [sb.image] : []),
+      stockQty: local.stockQty ?? 12,
+      sku: local.sku || sb.sku,
+      isFeatured: local.isFeatured ?? false
+    };
+  });
+  sbProds.forEach(sb => {
+    if (!merged.some(p => String(p.id) === String(sb.id))) {
+      merged.push(enhanceProductSchema([sb])[0]);
+    }
+  });
+  return merged;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   // Legacy /admin pathname → hash route (avoids 404 on static hosts)
   if (window.location.pathname === '/admin' || window.location.pathname === '/admin/') {
@@ -5403,13 +5427,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const connected = await sbPing();
     if (!connected) return;
 
-    // 1. Load products from Supabase
+    // 1. Load products from Supabase — merge, never wipe local catalog
     const sbProds = await sbGetProducts();
     if (sbProds && sbProds.length > 0) {
-      ALL_PRODUCTS = sbProds;
+      ALL_PRODUCTS = mergeProductsFromSupabase(sbProds);
       localStorage.setItem('ue_products_v9', JSON.stringify(ALL_PRODUCTS));
       localStorage.setItem('ue_products_v8', JSON.stringify(ALL_PRODUCTS));
       renderAllSections();
+      const localOnly = ALL_PRODUCTS.filter(p => !sbProds.some(sb => String(sb.id) === String(p.id)));
+      if (localOnly.length > 0) {
+        sbSeedProducts(localOnly).catch(err => console.warn('[UE] Background product seed failed:', err.message));
+      }
     } else if (ALL_PRODUCTS.length > 0) {
       // Seed Supabase with local products on first run
       await sbSeedProducts(ALL_PRODUCTS);
@@ -5664,6 +5692,7 @@ function getEffectivePrice(basePrice) {
 function renderAllSections() {
   renderMobileGrid();
   renderDesktopGrid();
+  renderCategoryBar();
   renderRecentlyViewed();
   renderBestSellers();
   renderRecommended();
@@ -5671,6 +5700,50 @@ function renderAllSections() {
   updateActiveCategoryThumbnails();
   if (window.feather) feather.replace();
   if (window.lucide) lucide.createIcons();
+}
+
+function renderCategoryBar() {
+  const visibleCats = (CATEGORIES_DATA || [])
+    .filter(c => c.isVisible !== false)
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+  if (visibleCats.length === 0) return;
+
+  const countFor = (name) => ALL_PRODUCTS.filter(p => p.category === name).length;
+  const imgFor = (c) => c.image || getCategoryThumb(c.name);
+  const esc = (s) => String(s).replace(/'/g, "\\'");
+
+  const mobileRail = document.getElementById('mCatRailContainer');
+  if (mobileRail) {
+    mobileRail.innerHTML = visibleCats.map(c => {
+      const safeId = c.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+      const count = countFor(c.name);
+      return `
+        <div class="m-cat-pill-thumb" id="mCat-${safeId}" onclick="filterCategory('${esc(c.name)}')">
+          <div class="m-cat-img-box">
+            <img src="${imgFor(c)}" alt="${c.name}" onerror="this.src='assets/banners/return_gifts_banner.png'">
+          </div>
+          <div class="m-cat-overlay-text">
+            <span class="m-cat-name-label">${c.name}</span>
+            <span class="m-cat-count-label">${count > 0 ? count + '+ SKUs' : 'New'}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  const desktopGrid = document.querySelector('#desktopHomeView .dt-category-grid');
+  if (desktopGrid) {
+    desktopGrid.innerHTML = visibleCats.slice(0, 8).map(c => `
+      <div class="dt-category-card" onclick="filterCategory('${esc(c.name)}')">
+        <img src="${imgFor(c)}" alt="${c.name}" style="object-fit:cover;" onerror="this.src='assets/banners/return_gifts_banner.png'">
+        <div class="dt-category-overlay">
+          <h3>${c.name}</h3>
+          <p>${c.description || 'Browse collection'}</p>
+        </div>
+      </div>
+    `).join('');
+  }
 }
 
 function renderMobileGrid() {
@@ -9459,7 +9532,7 @@ function saveApCategoryForm(catId = null) {
 
   const subcategories = subStr ? subStr.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-  let c = typeof catId === 'number' ? CATEGORIES_DATA.find(item => item.id === catId) : null;
+  let c = catId != null ? CATEGORIES_DATA.find(item => String(item.id) === String(catId)) : null;
   if (c) {
     const oldName = c.name;
     c.name = name;
