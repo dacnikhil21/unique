@@ -10,6 +10,17 @@ try {
   localStorage.removeItem('ue_products_v9');
 }
 
+function safeParseStorage(key, fallback = null) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw);
+  } catch (e) {
+    console.warn('[UE] Corrupt localStorage cleared:', key);
+    try { localStorage.removeItem(key); } catch (_) { /* quota */ }
+    return fallback;
+  }
+}
 
 // ── Production Schema Migrator & Enhancer ────────────────────────
 function enhanceProductSchema(products) {
@@ -68,7 +79,7 @@ function enhanceProductSchema(products) {
    UNIQUE EXPRESSIONS - WORLD-CLASS HERO BANNER & MOBILE APP LOGIC
    ========================================================================== */
 
-let HERO_SLIDES = JSON.parse(localStorage.getItem('ue_hero_slides_v7')) || [
+let HERO_SLIDES = safeParseStorage('ue_hero_slides_v7') || [
   {
     id: 1,
     img: "https://d1h96izmtdkx5o.cloudfront.net/-OPHhEadGd1W2rTwlBbq.jpg?v=5",
@@ -417,7 +428,7 @@ function generateSeedProducts() {
   }));
 }
 
-let ALL_PRODUCTS = enhanceProductSchema(JSON.parse(localStorage.getItem('ue_products_v9')) || [
+let ALL_PRODUCTS = enhanceProductSchema(safeParseStorage('ue_products_v9') || [
   {
     "id": "-Opqr9zjYihHIsQMkg4_",
     "title": "RC Police NEED FOR SPPED Racing",
@@ -5598,6 +5609,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /* ==========================================================================
+   ADMIN SESSION STATE (must exist before switchView references apIsAuthenticated)
+   ========================================================================== */
+let apActiveTab = 'dashboard';
+let apIsAuthenticated = sessionStorage.getItem('ue_admin_auth') === '1';
+let apSearchQuery = '';
+let apCategoryFilter = 'All';
+let apStatusFilter = 'All';
+
+/* ==========================================================================
    SPA ROUTER ENGINE
    ========================================================================== */
 function switchView(viewName, params = {}, skipHistory = false) {
@@ -7891,6 +7911,17 @@ function renderProfileView() {
         <span style="font-size:12px; color:#94a3b8;">→</span>
       </div>
 
+      <div class="profile-menu-tile" onclick="openAdminPinModal()">
+        <div class="profile-menu-left">
+          <div class="profile-menu-icon" style="background:#fce7f3; color:#9d174d;"><i class="ri-shield-keyhole-line"></i></div>
+          <div>
+            <div class="profile-menu-title">Admin Control Panel</div>
+            <div class="profile-menu-sub">Store inventory, orders &amp; CMS (PIN required)</div>
+          </div>
+        </div>
+        <span style="font-size:12px; color:#94a3b8;">→</span>
+      </div>
+
       <div style="margin-top:20px; margin-bottom:30px;">
         <button class="m-hero-cta-button" style="width:100%; justify-content:center; min-height:44px; background:#f1f5f9; color:#dc2626; border:1px solid #cbd5e1; box-shadow:none; font-weight:800;" onclick="handleUserLogout()">
           🚪 Log Out of Account
@@ -8402,11 +8433,6 @@ async function handleAdminImageUpload(input) {
 /* ==========================================================================
    PRODUCTION-GRADE ADMIN PANEL ENGINE (.ap-*)
    ========================================================================== */
-let apActiveTab = 'dashboard';
-let apIsAuthenticated = sessionStorage.getItem('ue_admin_auth') === '1';
-let apSearchQuery = '';
-let apCategoryFilter = 'All';
-let apStatusFilter = 'All';
 
 function showToast(message, type = 'info') {
   if (typeof showApToast === 'function') {
@@ -10845,13 +10871,23 @@ function handleSearchInput(query) {
 }
 
 function openAdminPinModal() {
-  document.getElementById('adminPinBackdrop').classList.add('active');
+  if (apIsAuthenticated) {
+    switchView('admin');
+    return;
+  }
+  const backdrop = document.getElementById('adminPinBackdrop');
+  if (!backdrop) {
+    console.error('[UE] Admin PIN modal element missing');
+    alert('Admin login could not load. Please hard-refresh the page (Ctrl+Shift+R).');
+    return;
+  }
+  backdrop.classList.add('active');
   const input = document.getElementById('adminPinInput');
   if (input) { input.value = ''; setTimeout(() => input.focus(), 200); }
 }
 
 function closeAdminPinModal() {
-  document.getElementById('adminPinBackdrop').classList.remove('active');
+  document.getElementById('adminPinBackdrop')?.classList.remove('active');
 }
 
 function verifyAdminPin() {
@@ -10863,7 +10899,13 @@ function verifyAdminPin() {
     switchView('admin');
   } else {
     showToast('Incorrect PIN. Please try again.', 'info');
+    const input = document.getElementById('adminPinInput');
+    if (input) { input.value = ''; input.focus(); }
   }
+}
+
+function switchAdminTab(tabId) {
+  switchApTab(tabId);
 }
 
 function closeAllModals() {
