@@ -240,6 +240,74 @@ let CATEGORIES_DATA = JSON.parse(localStorage.getItem('ue_categories_data_v5')) 
 ];
 
 let CATEGORIES = CATEGORIES_DATA.map(c => c.name);
+
+const CATEGORY_IMAGE_MAP = {
+  'RC Toys': 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?w=600&auto=format&fit=crop',
+  'RC Flying Toys': 'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?w=600&auto=format&fit=crop',
+  'Educational Toys': 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&auto=format&fit=crop',
+  'Educational & STEM': 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&auto=format&fit=crop',
+  'Standard Toys': 'https://images.unsplash.com/photo-1533227268428-f9ed0900fb3b?w=600&auto=format&fit=crop',
+  'Trending & Standard Toys': 'https://images.unsplash.com/photo-1533227268428-f9ed0900fb3b?w=600&auto=format&fit=crop',
+  'Handicrafts': 'https://images.unsplash.com/photo-1606293926075-69a00dbfde81?w=600&auto=format&fit=crop',
+  'Traditional Handicrafts': 'https://images.unsplash.com/photo-1606293926075-69a00dbfde81?w=600&auto=format&fit=crop',
+  'Stationary': 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=600&auto=format&fit=crop',
+  'Fancy Imported Stationery': 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=600&auto=format&fit=crop',
+  'Combos': 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600&auto=format&fit=crop',
+  'Kids Footwear': 'https://images.unsplash.com/photo-1514989940723-e8e51635b782?w=600&auto=format&fit=crop',
+  'Gifts & Gadgets': 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600&auto=format&fit=crop',
+  'Return Gifts': 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600&auto=format&fit=crop',
+  'Return Gift Studio': 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600&auto=format&fit=crop',
+  'Latest Arrivars': 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600&auto=format&fit=crop',
+  'RC Toys & Cars': 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?w=600&auto=format&fit=crop'
+};
+
+const CATEGORY_EMOJI_MAP = {
+  'RC Toys': '🚗', 'RC Flying Toys': '🛸', 'Educational Toys': '🧩', 'Standard Toys': '🧸',
+  'Handicrafts': '🏺', 'Stationary': '📝', 'Combos': '🎀', 'Kids Footwear': '👟',
+  'Gifts & Gadgets': '🎮', 'Return Gifts': '🎁', 'Latest Arrivars': '✨'
+};
+
+function getCategoryEmoji(name) {
+  if (CATEGORY_EMOJI_MAP[name]) return CATEGORY_EMOJI_MAP[name];
+  const lower = String(name).toLowerCase();
+  if (lower.includes('rc') && lower.includes('fly')) return '🛸';
+  if (lower.includes('rc') || lower.includes('car')) return '🚗';
+  if (lower.includes('educat') || lower.includes('stem')) return '🧩';
+  if (lower.includes('handi') || lower.includes('craft')) return '🏺';
+  if (lower.includes('stat') || lower.includes('station')) return '📝';
+  if (lower.includes('gift') || lower.includes('return')) return '🎁';
+  if (lower.includes('foot') || lower.includes('shoe')) return '👟';
+  if (lower.includes('gadget')) return '🎮';
+  if (lower.includes('toy')) return '🧸';
+  return '🛍️';
+}
+
+function getCategoryDisplayImage(cat) {
+  const name = typeof cat === 'string' ? cat : cat.name;
+  const custom = typeof cat === 'object' ? (cat.image || '') : '';
+  const isGeneric = !custom
+    || custom.includes('photo-1596461404969')
+    || custom.includes('assets/banners/');
+  if (!isGeneric) return custom;
+  return CATEGORY_IMAGE_MAP[name] || getCategoryThumb(name);
+}
+
+function normalizeCategoriesData() {
+  let changed = false;
+  CATEGORIES_DATA.forEach(c => {
+    const proper = getCategoryDisplayImage(c);
+    if (c.image !== proper) {
+      c.image = proper;
+      changed = true;
+    }
+  });
+  CATEGORIES = CATEGORIES_DATA.map(c => c.name);
+  if (changed) {
+    localStorage.setItem('ue_categories_data_v5', JSON.stringify(CATEGORIES_DATA));
+  }
+}
+
+normalizeCategoriesData();
 localStorage.setItem('ue_categories_data_v4', JSON.stringify(CATEGORIES_DATA));
 localStorage.setItem('ue_hero_slides_v7', JSON.stringify(HERO_SLIDES));
 localStorage.setItem('ue_hero_slides_v6', JSON.stringify(HERO_SLIDES));
@@ -5710,7 +5778,6 @@ function renderCategoryBar() {
   if (visibleCats.length === 0) return;
 
   const countFor = (name) => ALL_PRODUCTS.filter(p => p.category === name).length;
-  const imgFor = (c) => c.image || getCategoryThumb(c.name);
   const esc = (s) => String(s).replace(/'/g, "\\'");
 
   const mobileRail = document.getElementById('mCatRailContainer');
@@ -5718,10 +5785,11 @@ function renderCategoryBar() {
     mobileRail.innerHTML = visibleCats.map(c => {
       const safeId = c.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
       const count = countFor(c.name);
+      const img = getCategoryDisplayImage(c);
       return `
         <div class="m-cat-pill-thumb" id="mCat-${safeId}" onclick="filterCategory('${esc(c.name)}')">
           <div class="m-cat-img-box">
-            <img src="${imgFor(c)}" alt="${c.name}" onerror="this.src='assets/banners/return_gifts_banner.png'">
+            <img src="${img}" alt="${c.name}" loading="lazy">
           </div>
           <div class="m-cat-overlay-text">
             <span class="m-cat-name-label">${c.name}</span>
@@ -5734,13 +5802,37 @@ function renderCategoryBar() {
 
   const desktopGrid = document.querySelector('#desktopHomeView .dt-category-grid');
   if (desktopGrid) {
-    desktopGrid.innerHTML = visibleCats.slice(0, 8).map(c => `
+    desktopGrid.innerHTML = visibleCats.map(c => {
+      const img = getCategoryDisplayImage(c);
+      return `
       <div class="dt-category-card" onclick="filterCategory('${esc(c.name)}')">
-        <img src="${imgFor(c)}" alt="${c.name}" style="object-fit:cover;" onerror="this.src='assets/banners/return_gifts_banner.png'">
+        <img src="${img}" alt="${c.name}" style="object-fit:cover;" loading="lazy">
         <div class="dt-category-overlay">
           <h3>${c.name}</h3>
           <p>${c.description || 'Browse collection'}</p>
         </div>
+      </div>
+    `;
+    }).join('');
+  }
+
+  // Shop By Store Categories — mobile chips + desktop occasion grid
+  const mobileOccasion = document.querySelector('#mobileHomeView .m-occasion-scroll-row');
+  if (mobileOccasion) {
+    mobileOccasion.innerHTML = visibleCats.map(c => `
+      <div class="m-occasion-chip-card" onclick="filterCategory('${esc(c.name)}')">
+        <div class="m-occasion-emoji">${getCategoryEmoji(c.name)}</div>
+        <div class="m-occasion-label">${c.name.length > 14 ? c.name.slice(0, 12) + '…' : c.name}</div>
+      </div>
+    `).join('');
+  }
+
+  const desktopOccasion = document.querySelector('#desktopHomeView .dt-occasion-grid');
+  if (desktopOccasion) {
+    desktopOccasion.innerHTML = visibleCats.slice(0, 10).map(c => `
+      <div class="dt-occasion-card" onclick="filterCategory('${esc(c.name)}')">
+        <span class="dt-occ-icon">${getCategoryEmoji(c.name)}</span>
+        <span class="dt-occ-title">${c.name}</span>
       </div>
     `).join('');
   }
@@ -6687,11 +6779,12 @@ function renderCategoriesView() {
       <!-- Premium Circular Category Navigation Strip -->
       <div class="m-cat-circle-scroll-row no-scrollbar">
         ${categoriesList.map(cat => {
-          const thumbImg = getCategoryThumb(cat);
+          const catObj = CATEGORIES_DATA.find(c => c.name === cat) || { name: cat };
+          const thumbImg = getCategoryDisplayImage(catObj);
           return `
             <button onclick="filterCategoryCircle('${cat.replace(/'/g, "\\'")}', this)" class="m-cat-circle-item">
               <div class="m-cat-circle-avatar">
-                <img src="${thumbImg}" alt="${cat}" onerror="this.src='assets/banners/return_gifts_banner.png'">
+                <img src="${thumbImg}" alt="${cat}" loading="lazy">
               </div>
               <span class="m-cat-circle-label">${cat}</span>
             </button>
@@ -9442,12 +9535,8 @@ function deleteApCategory(id) {
 }
 
 function openApCategoryModal(catId = null) {
-  let c = null;
-  if (typeof catId === 'number') {
-    c = CATEGORIES_DATA.find(item => item.id === catId);
-  } else if (typeof catId === 'string') {
-    c = CATEGORIES_DATA.find(item => item.name === catId);
-  }
+  let c = catId != null ? CATEGORIES_DATA.find(item => String(item.id) === String(catId)) : null;
+  const catIdJs = c ? JSON.stringify(c.id) : 'null';
 
   let modalBackdrop = document.getElementById('apCategoryModalOverlay');
   if (!modalBackdrop) {
@@ -9464,7 +9553,7 @@ function openApCategoryModal(catId = null) {
         <button class="ap-btn-icon" onclick="closeApCategoryModal()"><i class="ri-close-line" style="font-size:18px;"></i></button>
       </div>
       <div class="ap-modal-body">
-        <form onsubmit="event.preventDefault(); saveApCategoryForm(${c ? c.id : 'null'});">
+        <form onsubmit="event.preventDefault(); saveApCategoryForm(${catIdJs});">
           <div style="display:flex; flex-direction:column; gap:14px;">
             <div>
               <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Category Name *</label>
@@ -9477,10 +9566,14 @@ function openApCategoryModal(catId = null) {
             </div>
 
             <div>
-              <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Thumbnail Image URL</label>
+              <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Thumbnail Image URL or Upload</label>
               <div style="display:flex; gap:10px; align-items:center;">
-                <input type="text" id="apFormCatImg" class="ap-search-input" style="flex:1;" value="${c ? c.image : ''}" placeholder="https://images.unsplash.com/..." oninput="document.getElementById('apFormCatImgPrev').src=this.value">
-                <img id="apFormCatImgPrev" src="${c ? c.image : 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' fill=\'%2394a3b8\' viewBox=\'0 0 24 24\'><path d=\'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z\'/></svg>'}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1;">
+                <input type="text" id="apFormCatImg" class="ap-search-input" style="flex:1;" value="${c ? (c.image || '') : ''}" placeholder="https://images.unsplash.com/..." oninput="document.getElementById('apFormCatImgPrev').src=this.value">
+                <label class="ap-btn ap-btn-secondary" style="height:38px; font-size:11px; padding:0 10px; cursor:pointer; margin:0; display:flex; align-items:center; gap:4px;">
+                  ☁️ Upload
+                  <input type="file" accept="image/*" style="display:none;" onchange="uploadImageToCloudinary(this, 'apFormCatImg', 'apFormCatImgPrev')">
+                </label>
+                <img id="apFormCatImgPrev" src="${c ? getCategoryDisplayImage(c) : 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' fill=\'%2394a3b8\' viewBox=\'0 0 24 24\'><path d=\'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z\'/></svg>'}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1;">
               </div>
             </div>
 
@@ -9501,8 +9594,8 @@ function openApCategoryModal(catId = null) {
         </form>
       </div>
       <div class="ap-modal-footer">
-        <button class="ap-btn ap-btn-secondary" onclick="closeApCategoryModal()">Cancel</button>
-        <button class="ap-btn ap-btn-primary" onclick="saveApCategoryForm(${c ? c.id : 'null'})">
+        <button type="button" class="ap-btn ap-btn-secondary" onclick="closeApCategoryModal()">Cancel</button>
+        <button type="button" class="ap-btn ap-btn-primary" onclick="saveApCategoryForm(${catIdJs})">
           <i class="ri-check-line"></i> Save Category
         </button>
       </div>
@@ -9531,13 +9624,14 @@ function saveApCategoryForm(catId = null) {
   }
 
   const subcategories = subStr ? subStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const finalImage = image || getCategoryDisplayImage(name);
 
   let c = catId != null ? CATEGORIES_DATA.find(item => String(item.id) === String(catId)) : null;
   if (c) {
     const oldName = c.name;
     c.name = name;
     c.description = description;
-    c.image = image;
+    c.image = finalImage;
     c.subcategories = subcategories;
     c.isFeatured = isFeatured;
     c.isVisible = isVisible;
@@ -9551,7 +9645,7 @@ function saveApCategoryForm(catId = null) {
       id: Date.now(),
       name: name,
       description: description || `Curated boutique ${name} items.`,
-      image: image || 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop',
+      image: finalImage,
       subcategories: subcategories,
       isFeatured: isFeatured,
       isVisible: isVisible,
