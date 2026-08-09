@@ -282,20 +282,40 @@ function getCategoryEmoji(name) {
   return '🛍️';
 }
 
+function resolveCategoryImage(c, index = 0) {
+  const name = typeof c === 'string' ? c : c.name;
+  const catObj = typeof c === 'object' ? c : { name };
+
+  // Best source: real product photo from this category
+  if (typeof ALL_PRODUCTS !== 'undefined' && ALL_PRODUCTS.length) {
+    const inCat = ALL_PRODUCTS.filter(p => p.category === name && p.image && !String(p.image).startsWith('data:'));
+    if (inCat.length) {
+      const pick = inCat.find(p => p.isFeatured) || inCat[0];
+      return pick.image;
+    }
+  }
+
+  // Admin-uploaded Cloudinary image
+  if (catObj.image && String(catObj.image).includes('res.cloudinary.com')) {
+    return catObj.image;
+  }
+
+  // Named fallback map
+  if (CATEGORY_IMAGE_MAP[name]) return CATEGORY_IMAGE_MAP[name];
+
+  // Unique fallback by index so new categories never share one image
+  const mapUrls = [...new Set(Object.values(CATEGORY_IMAGE_MAP))];
+  return mapUrls[index % mapUrls.length];
+}
+
 function getCategoryDisplayImage(cat) {
-  const name = typeof cat === 'string' ? cat : cat.name;
-  const custom = typeof cat === 'object' ? (cat.image || '') : '';
-  const isGeneric = !custom
-    || custom.includes('photo-1596461404969')
-    || custom.includes('assets/banners/');
-  if (!isGeneric) return custom;
-  return CATEGORY_IMAGE_MAP[name] || getCategoryThumb(name);
+  return resolveCategoryImage(cat);
 }
 
 function normalizeCategoriesData() {
   let changed = false;
-  CATEGORIES_DATA.forEach(c => {
-    const proper = getCategoryDisplayImage(c);
+  CATEGORIES_DATA.forEach((c, idx) => {
+    const proper = resolveCategoryImage(c, idx);
     if (c.image !== proper) {
       c.image = proper;
       changed = true;
@@ -308,6 +328,13 @@ function normalizeCategoriesData() {
 }
 
 normalizeCategoriesData();
+
+// Re-normalize after products load so each category uses its own product photo
+function refreshCategoryImagesFromCatalog() {
+  if (localStorage.getItem('ue_cat_img_refresh') === 'v4') return;
+  normalizeCategoriesData();
+  localStorage.setItem('ue_cat_img_refresh', 'v4');
+}
 localStorage.setItem('ue_categories_data_v4', JSON.stringify(CATEGORIES_DATA));
 localStorage.setItem('ue_hero_slides_v7', JSON.stringify(HERO_SLIDES));
 localStorage.setItem('ue_hero_slides_v6', JSON.stringify(HERO_SLIDES));
@@ -5487,6 +5514,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   updateBadges();
   startHeroCarousel();
+  refreshCategoryImagesFromCatalog();
+  renderCategoryBar();
   if (window.feather) feather.replace();
   if (window.lucide) lucide.createIcons();
 
@@ -5552,6 +5581,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     console.log('[UE] Supabase sync complete');
+    refreshCategoryImagesFromCatalog();
+    renderCategoryBar();
   } catch (err) {
     console.warn('[UE] Supabase bootstrap error (offline mode active):', err.message);
   }
@@ -5782,10 +5813,10 @@ function renderCategoryBar() {
 
   const mobileRail = document.getElementById('mCatRailContainer');
   if (mobileRail) {
-    mobileRail.innerHTML = visibleCats.map(c => {
+    mobileRail.innerHTML = visibleCats.map((c, idx) => {
       const safeId = c.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
       const count = countFor(c.name);
-      const img = getCategoryDisplayImage(c);
+      const img = resolveCategoryImage(c, idx);
       return `
         <div class="m-cat-pill-thumb" id="mCat-${safeId}" onclick="filterCategory('${esc(c.name)}')">
           <div class="m-cat-img-box">
@@ -5800,10 +5831,10 @@ function renderCategoryBar() {
     }).join('');
   }
 
-  const desktopGrid = document.querySelector('#desktopHomeView .dt-category-grid');
+  const desktopGrid = document.getElementById('dtCategoryGrid') || document.querySelector('#desktopHomeView .dt-category-grid');
   if (desktopGrid) {
-    desktopGrid.innerHTML = visibleCats.map(c => {
-      const img = getCategoryDisplayImage(c);
+    desktopGrid.innerHTML = visibleCats.map((c, idx) => {
+      const img = resolveCategoryImage(c, idx);
       return `
       <div class="dt-category-card" onclick="filterCategory('${esc(c.name)}')">
         <img src="${img}" alt="${c.name}" style="object-fit:cover;" loading="lazy">

@@ -187,60 +187,7 @@
           </div>
 
           <div class="m-cat-rail-scroll no-scrollbar" id="mCatRailContainer">
-            <div class="m-cat-pill-thumb active-cat" id="mCat-RC-Toys" onclick="filterCategory('RC Toys')">
-              <div class="m-cat-img-box">
-                <img src="assets/banners/rc_toys_banner.png" alt="RC Toys">
-              </div>
-              <div class="m-cat-overlay-text">
-                <span class="m-cat-name-label">🚗 RC Toys</span>
-                <span class="m-cat-count-label">13+ SKUs</span>
-              </div>
-            </div>
-            <div class="m-cat-pill-thumb" id="mCat-Educational" onclick="filterCategory('Educational Toys')">
-              <div class="m-cat-img-box">
-                <img src="assets/banners/educational_banner.png" alt="Educational Toys">
-              </div>
-              <div class="m-cat-overlay-text">
-                <span class="m-cat-name-label">🧩 Educational</span>
-                <span class="m-cat-count-label">30+ SKUs</span>
-              </div>
-            </div>
-            <div class="m-cat-pill-thumb" id="mCat-Handicrafts" onclick="filterCategory('Handicrafts')">
-              <div class="m-cat-img-box">
-                <img src="assets/banners/handicrafts_banner.png" alt="Handicrafts">
-              </div>
-              <div class="m-cat-overlay-text">
-                <span class="m-cat-name-label">🏺 Crafts</span>
-                <span class="m-cat-count-label">30+ SKUs</span>
-              </div>
-            </div>
-            <div class="m-cat-pill-thumb" id="mCat-Stationery" onclick="filterCategory('Stationary')">
-              <div class="m-cat-img-box">
-                <img src="assets/banners/stationery_banner.png" alt="Stationary">
-              </div>
-              <div class="m-cat-overlay-text">
-                <span class="m-cat-name-label">📝 Stationary</span>
-                <span class="m-cat-count-label">30+ SKUs</span>
-              </div>
-            </div>
-            <div class="m-cat-pill-thumb" id="mCat-Return-Gifts" onclick="filterCategory('Return Gifts')">
-              <div class="m-cat-img-box">
-                <img src="assets/banners/return_gifts_banner.png" alt="Return Gifts">
-              </div>
-              <div class="m-cat-overlay-text">
-                <span class="m-cat-name-label">🎁 Party Gifts</span>
-                <span class="m-cat-count-label">14+ SKUs</span>
-              </div>
-            </div>
-            <div class="m-cat-pill-thumb" id="mCat-All" onclick="filterCategory('All')">
-              <div class="m-cat-img-box">
-                <img src="assets/banners/rc_toys_banner.png" alt="All">
-              </div>
-              <div class="m-cat-overlay-text">
-                <span class="m-cat-name-label">✨ All Items</span>
-                <span class="m-cat-count-label">240+ SKUs</span>
-              </div>
-            </div>
+            <!-- Rendered dynamically via renderCategoryBar() -->
           </div>
 
           <!-- 5. FEATURED COLLECTIONS (MOBILE) -->
@@ -526,42 +473,8 @@
             <span class="m-section-sublink" onclick="switchView('categories')">200+ Items Available →</span>
           </div>
 
-          <div class="dt-category-grid">
-            <div class="dt-category-card" onclick="filterCategory('RC Toys')">
-              <img src="assets/banners/rc_toys_banner.png" alt="RC Toys" style="object-fit:cover;">
-              <div class="dt-category-overlay">
-                <h3>🚗 RC Toys</h3>
-                <p>High-Speed Cars & Buggies</p>
-              </div>
-            </div>
-            <div class="dt-category-card" onclick="filterCategory('Educational Toys')">
-              <img src="assets/banners/educational_banner.png" alt="Educational Toys" style="object-fit:cover;">
-              <div class="dt-category-overlay">
-                <h3>🧩 Educational Toys</h3>
-                <p>STEM Kits & Learning Games</p>
-              </div>
-            </div>
-            <div class="dt-category-card" onclick="filterCategory('Handicrafts')">
-              <img src="assets/banners/handicrafts_banner.png" alt="Handicrafts" style="object-fit:cover;">
-              <div class="dt-category-overlay">
-                <h3>🏺 Handicrafts</h3>
-                <p>Artisan Decor & Wooden Craft</p>
-              </div>
-            </div>
-            <div class="dt-category-card" onclick="filterCategory('Stationary')">
-              <img src="assets/banners/stationery_banner.png" alt="Stationary" style="object-fit:cover;">
-              <div class="dt-category-overlay">
-                <h3>📝 Fancy Stationary</h3>
-                <p>Cute Pens, Stamps & Diaries</p>
-              </div>
-            </div>
-            <div class="dt-category-card" onclick="filterCategory('Return Gifts')">
-              <img src="assets/banners/return_gifts_banner.png" alt="Return Gifts" style="object-fit:cover;">
-              <div class="dt-category-overlay">
-                <h3>🎁 Return Gifts</h3>
-                <p>Party Hampers & Favors</p>
-              </div>
-            </div>
+          <div class="dt-category-grid" id="dtCategoryGrid">
+            <!-- Rendered dynamically from admin categories via renderCategoryBar() -->
           </div>
 
           <!-- 2.5 Desktop Shop By Category Grid -->
@@ -1344,7 +1257,7 @@
   <!-- Supabase config & DB helpers -->
   <script src="supabase.js?v=1.0"></script>
   <!-- Main App -->
-  <script src="app.js?v=5.5"></script>
+  <script src="app.js?v=5.6"></script>
   <script>
     if (window.feather) feather.replace();
     if (window.lucide) lucide.createIcons();
