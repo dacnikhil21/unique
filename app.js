@@ -5350,9 +5350,6 @@ function encodeNavParams(params) {
 }
 
 function parseNavHash() {
-  if (window.location.pathname === '/admin' || window.location.pathname === '/admin/') {
-    return { view: 'admin', params: {} };
-  }
   const hash = window.location.hash.slice(1); // remove leading '#'
   if (!hash) return null;
   const parts = {};
@@ -5380,6 +5377,11 @@ window.addEventListener('popstate', (e) => {
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // Legacy /admin pathname → hash route (avoids 404 on static hosts)
+  if (window.location.pathname === '/admin' || window.location.pathname === '/admin/') {
+    history.replaceState({ view: 'admin', params: {} }, '', '#view=admin');
+  }
+
   // Restore view from URL hash (deep link from WhatsApp etc.) or default to home
   const restoredNav = parseNavHash();
   if (restoredNav) {
@@ -5405,7 +5407,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const sbProds = await sbGetProducts();
     if (sbProds && sbProds.length > 0) {
       ALL_PRODUCTS = sbProds;
-      localStorage.setItem('ue_products', JSON.stringify(ALL_PRODUCTS));
+      localStorage.setItem('ue_products_v9', JSON.stringify(ALL_PRODUCTS));
+      localStorage.setItem('ue_products_v8', JSON.stringify(ALL_PRODUCTS));
       renderAllSections();
     } else if (ALL_PRODUCTS.length > 0) {
       // Seed Supabase with local products on first run
@@ -5462,7 +5465,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    SPA ROUTER ENGINE
    ========================================================================== */
 function switchView(viewName, params = {}, skipHistory = false) {
-  if (viewName === 'admin' && typeof apIsAuthenticated !== 'undefined' && !apIsAuthenticated) {
+  if (viewName === 'admin' && !apIsAuthenticated) {
     openAdminPinModal();
     return;
   }
@@ -5474,7 +5477,7 @@ function switchView(viewName, params = {}, skipHistory = false) {
     history.pushState(
       { view: viewName, params },
       '',
-      viewName === 'admin' ? '/admin' : `#view=${viewName}${encodeNavParams(params)}`
+      `#view=${viewName}${encodeNavParams(params)}`
     );
   }
 
@@ -5520,7 +5523,9 @@ function switchView(viewName, params = {}, skipHistory = false) {
   if (navBtn) navBtn.classList.add('active');
   updateNavIcons(viewName);
 
-  const targetView = document.getElementById('view' + viewName.toUpperCase()) || document.getElementById('view' + capitalizeFirst(viewName)) || document.getElementById('view' + viewName);
+  const targetView = viewName === 'admin'
+    ? document.getElementById('viewAdmin')
+    : (document.getElementById('view' + viewName.toUpperCase()) || document.getElementById('view' + capitalizeFirst(viewName)) || document.getElementById('view' + viewName));
   if (targetView) {
     targetView.classList.add('active-view');
   }
@@ -5563,7 +5568,12 @@ function switchView(viewName, params = {}, skipHistory = false) {
   } else if (viewName === 'b2b' || viewName === 'wholesale') {
     renderB2BView();
   } else if (viewName === 'admin') {
-    renderAdminView();
+    try {
+      renderAdminView();
+    } catch (err) {
+      console.error('[UE] Admin render failed:', err);
+      showToast('Admin panel failed to load. Please refresh and try again.', 'info');
+    }
   } else if (viewName === 'reviews') {
     renderReviewsView();
   } else if (viewName === 'returns') {
@@ -8173,9 +8183,19 @@ async function handleAdminImageUpload(input) {
    PRODUCTION-GRADE ADMIN PANEL ENGINE (.ap-*)
    ========================================================================== */
 let apActiveTab = 'dashboard';
+let apIsAuthenticated = sessionStorage.getItem('ue_admin_auth') === '1';
 let apSearchQuery = '';
 let apCategoryFilter = 'All';
 let apStatusFilter = 'All';
+
+function showToast(message, type = 'info') {
+  if (typeof showApToast === 'function') {
+    const mapped = type === 'success' ? 'success' : (type === 'error' ? 'error' : 'info');
+    showApToast(message, mapped);
+    return;
+  }
+  console.log('[Toast]', message);
+}
 
 function showApToast(message, type = 'success') {
   let toastBox = document.getElementById('apToastContainer');
@@ -8187,8 +8207,10 @@ function showApToast(message, type = 'success') {
   }
   const toast = document.createElement('div');
   toast.className = `admin-toast admin-toast-${type}`;
+  const iconClass = type === 'success' ? 'ri-checkbox-circle-fill' : type === 'info' ? 'ri-information-fill' : 'ri-error-warning-fill';
+  const iconColor = type === 'success' ? '#10b981' : type === 'info' ? '#2563eb' : '#ef4444';
   toast.innerHTML = `
-    <i class="${type === 'success' ? 'ri-checkbox-circle-fill' : 'ri-error-warning-fill'}" style="color:${type === 'success' ? '#10b981' : '#ef4444'}; font-size:18px;"></i>
+    <i class="${iconClass}" style="color:${iconColor}; font-size:18px;"></i>
     <span>${message}</span>
   `;
   toastBox.appendChild(toast);
@@ -8724,14 +8746,19 @@ function toggleApNotifDropdown(event) {
   if (notif) notif.classList.toggle('active');
 }
 
-function bulkDeleteProducts() {
+async function bulkDeleteProducts() {
   if (apSelectedProductIds.length === 0) return;
   if (confirm(`Are you sure you want to delete ${apSelectedProductIds.length} selected products?`)) {
-    ALL_PRODUCTS = ALL_PRODUCTS.filter(p => !apSelectedProductIds.includes(p.id));
+    const idsToDelete = [...apSelectedProductIds];
+    ALL_PRODUCTS = ALL_PRODUCTS.filter(p => !idsToDelete.some(id => String(id) === String(p.id)));
     apSelectedProductIds = [];
     syncStorefrontState();
     switchApTab('products');
     showApToast(`Bulk deleted selected products!`, 'error');
+    const results = await Promise.all(idsToDelete.map(id => sbAdminDeleteProduct(id)));
+    if (results.some(ok => !ok)) {
+      showApToast('Some products saved locally but cloud sync failed', 'info');
+    }
   }
 }
 
@@ -8846,7 +8873,7 @@ function renderApProducts() {
 
               return `
                 <tr style="${isChecked ? 'background:#f1f5f9 !important;' : ''}">
-                  <td><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectProduct(${p.id}, this.checked)"></td>
+                  <td><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectProduct(${JSON.stringify(p.id)}, this.checked)"></td>
                   <td><code style="font-size:11px; font-weight:700;">${p.sku || `UE-SKU-${p.id}`}</code></td>
                   <td><img src="${p.image}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #e2e8f0;"></td>
                   <td>
@@ -8859,26 +8886,26 @@ function renderApProducts() {
                   <td>${statusBadge}</td>
                   <td>
                     <div style="display:flex; gap:6px; align-items:center;">
-                      <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="openApProductModal(${p.id})">Edit</button>
+                      <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="openApProductModal(${JSON.stringify(p.id)})">Edit</button>
                       
                       <!-- Popover ⋮ More Menu -->
                       <div class="ap-dropdown-wrapper">
-                        <button class="ap-btn ap-btn-secondary" style="height:26px; width:26px; padding:0; justify-content:center; font-weight:800;" onclick="toggleApRowDropdown(event, ${p.id})">⋮</button>
+                        <button class="ap-btn ap-btn-secondary" style="height:26px; width:26px; padding:0; justify-content:center; font-weight:800;" onclick="toggleApRowDropdown(event, ${JSON.stringify(p.id)})">⋮</button>
                         <div id="apRowDropdown-${p.id}" class="ap-dropdown-menu">
-                          <button class="ap-dropdown-item" onclick="duplicateApProduct(${p.id})">
+                          <button class="ap-dropdown-item" onclick="duplicateApProduct(${JSON.stringify(p.id)})">
                             <i class="ri-file-copy-line"></i> Duplicate
                           </button>
-                          <button class="ap-dropdown-item" onclick="switchView('pdp', {id:${p.id}})">
+                          <button class="ap-dropdown-item" onclick="switchView('pdp', {productId: ${JSON.stringify(p.id)}})">
                             <i class="ri-eye-line"></i> Preview PDP
                           </button>
-                          <button class="ap-dropdown-item" onclick="toggleApFeatured(${p.id})">
+                          <button class="ap-dropdown-item" onclick="toggleApFeatured(${JSON.stringify(p.id)})">
                             <i class="ri-star-line"></i> ${p.isFeatured ? 'Unfeature' : 'Make Featured'}
                           </button>
-                          <button class="ap-dropdown-item" onclick="toggleApStock(${p.id})">
+                          <button class="ap-dropdown-item" onclick="toggleApStock(${JSON.stringify(p.id)})">
                             <i class="ri-stack-line"></i> Toggle Stock
                           </button>
                           <div style="border-top:1px solid #e2e8f0; margin:4px 0;"></div>
-                          <button class="ap-dropdown-item danger" onclick="deleteApProduct(${p.id})">
+                          <button class="ap-dropdown-item danger" onclick="deleteApProduct(${JSON.stringify(p.id)})">
                             <i class="ri-delete-bin-line"></i> Delete Product
                           </button>
                         </div>
@@ -8935,13 +8962,15 @@ function duplicateApProduct(id) {
   }
 }
 
-function deleteApProduct(id) {
-  const p = ALL_PRODUCTS.find(item => item.id === id);
+async function deleteApProduct(id) {
+  const p = ALL_PRODUCTS.find(item => String(item.id) === String(id));
   if (p && confirm(`Delete product "${p.title}" permanently?`)) {
-    ALL_PRODUCTS = ALL_PRODUCTS.filter(item => item.id !== id);
+    ALL_PRODUCTS = ALL_PRODUCTS.filter(item => String(item.id) !== String(id));
     syncStorefrontState();
     switchApTab('products');
     showApToast(`Product removed from catalog!`, 'error');
+    const ok = await sbAdminDeleteProduct(id);
+    if (!ok) showApToast('Saved locally; cloud sync failed — check Supabase delete policy', 'info');
   }
 }
 
@@ -9095,7 +9124,7 @@ function openApCategoryProductsModal(catName) {
                   <div style="font-size:11px; color:#64748b;">SKU: ${p.sku || `UE-SKU-${p.id}`} • ₹${p.price}</div>
                 </div>
               </div>
-              <button class="ap-btn ap-btn-secondary" style="height:28px; padding:0 10px; font-size:11px;" onclick="document.getElementById('apCatProductsModalOverlay').classList.remove('active'); openApProductModal(${p.id});">Edit Product</button>
+              <button class="ap-btn ap-btn-secondary" style="height:28px; padding:0 10px; font-size:11px;" onclick="document.getElementById('apCatProductsModalOverlay').classList.remove('active'); openApProductModal(${JSON.stringify(p.id)});">Edit Product</button>
             </div>
           `).join('')}
         </div>
@@ -9509,7 +9538,7 @@ function renderApInventory() {
                   ${(p.stockQty || 0) < 5 ? `<span class="ap-badge ap-badge-danger">⚠️ LOW STOCK</span>` : `<span class="ap-badge ap-badge-success">OK</span>`}
                 </td>
                 <td>
-                  <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="toggleApStock(${p.id})">
+                  <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="toggleApStock(${JSON.stringify(p.id)})">
                     ${p.inStock !== false ? '🟢 Available' : '🔴 Out of Stock'}
                   </button>
                 </td>
@@ -10605,12 +10634,14 @@ function closeAdminPinModal() {
 }
 
 function verifyAdminPin() {
-  const pin = document.getElementById('adminPinInput')?.value;
+  const pin = (document.getElementById('adminPinInput')?.value || '').trim();
   if (pin === '1234') {
+    apIsAuthenticated = true;
+    sessionStorage.setItem('ue_admin_auth', '1');
     closeAdminPinModal();
     switchView('admin');
   } else {
-    showToast('❌ Incorrect PIN! Try 1234', 'info');
+    showToast('Incorrect PIN. Please try again.', 'info');
   }
 }
 
@@ -11552,7 +11583,8 @@ function submitSampleKitRequest() {
    PRODUCTION CUSTOM HTML MODALS FOR ADMIN CMS
    ========================================================================== */
 function openApProductModal(editId = null) {
-  const p = ALL_PRODUCTS.find(item => item.id === editId) || null;
+  const p = ALL_PRODUCTS.find(item => String(item.id) === String(editId)) || null;
+  const editIdJs = editId != null ? JSON.stringify(editId) : 'null';
   
   let modalBackdrop = document.getElementById('apProductModalOverlay');
   if (!modalBackdrop) {
@@ -11571,7 +11603,7 @@ function openApProductModal(editId = null) {
         <button class="ap-btn-icon" onclick="closeApProductModal()"><i class="ri-close-line" style="font-size:18px;"></i></button>
       </div>
       <div class="ap-modal-body">
-        <form id="apProductForm" onsubmit="event.preventDefault(); saveApProductForm(${editId || 'null'});">
+        <form id="apProductForm" onsubmit="event.preventDefault(); saveApProductForm(${editIdJs});">
           <div style="display:flex; flex-direction:column; gap:14px;">
             <div>
               <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Product Title *</label>
@@ -11653,8 +11685,8 @@ function openApProductModal(editId = null) {
         </form>
       </div>
       <div class="ap-modal-footer">
-        <button class="ap-btn ap-btn-secondary" onclick="closeApProductModal()">Cancel</button>
-        <button class="ap-btn ap-btn-primary" onclick="saveApProductForm(${editId || 'null'})">
+        <button type="button" class="ap-btn ap-btn-secondary" onclick="closeApProductModal()">Cancel</button>
+        <button type="button" id="apSaveProductBtn" class="ap-btn ap-btn-primary" onclick="saveApProductForm(${editIdJs})">
           <i class="ri-check-line"></i> Save Product Changes
         </button>
       </div>
@@ -11685,17 +11717,20 @@ function closeApProductModal() {
   if (modalBackdrop) modalBackdrop.classList.remove('active');
 }
 
-function saveApProductForm(editId = null) {
-  const title = document.getElementById('apFormTitle').value.trim();
-  const sku = document.getElementById('apFormSku').value.trim();
-  const category = document.getElementById('apFormCategory').value;
-  const price = parseInt(document.getElementById('apFormPrice').value, 10) || 0;
-  const originalPrice = parseInt(document.getElementById('apFormOrigPrice').value, 10) || Math.round(price * 1.2);
-  const stockQty = parseInt(document.getElementById('apFormStock').value, 10) || 0;
-  const image = document.getElementById('apFormImg').value.trim();
-  const description = document.getElementById('apFormDesc').value.trim();
-  const inStock = document.getElementById('apFormInStock').checked;
-  const isFeatured = document.getElementById('apFormFeatured').checked;
+async function saveApProductForm(editId = null) {
+  const saveBtn = document.getElementById('apSaveProductBtn');
+  if (saveBtn?.dataset.saving === '1') return;
+
+  const title = document.getElementById('apFormTitle')?.value.trim();
+  const sku = document.getElementById('apFormSku')?.value.trim();
+  const category = document.getElementById('apFormCategory')?.value;
+  const price = parseInt(document.getElementById('apFormPrice')?.value, 10) || 0;
+  const originalPrice = parseInt(document.getElementById('apFormOrigPrice')?.value, 10) || Math.round(price * 1.2);
+  const stockQty = parseInt(document.getElementById('apFormStock')?.value, 10) || 0;
+  const image = document.getElementById('apFormImg')?.value.trim() || '';
+  const description = document.getElementById('apFormDesc')?.value.trim() || '';
+  const inStock = document.getElementById('apFormInStock')?.checked;
+  const isFeatured = document.getElementById('apFormFeatured')?.checked;
   const videoUrl = (document.getElementById('apFormVideoUrl')?.value || '').trim();
   const rawImages = (document.getElementById('apFormImagesList')?.value || '').trim().split('\n').map(s => s.trim()).filter(Boolean);
   const images = rawImages.length > 0 ? rawImages : [image];
@@ -11703,56 +11738,109 @@ function saveApProductForm(editId = null) {
   const boughtTogether = rawFbt;
 
   if (!title) {
-    showToast('Please enter a product title.', 'info');
+    showApToast('Please enter a product title.', 'info');
     return;
   }
 
-  const p = ALL_PRODUCTS.find(item => item.id === editId);
-  if (p) {
-    p.title = title;
-    p.sku = sku;
-    p.category = category;
-    p.price = price;
-    p.originalPrice = originalPrice;
-    p.stockQty = stockQty;
-    p.image = image;
-    p.description = description;
-    p.inStock = inStock;
-    p.isFeatured = isFeatured;
-    p.videoUrl = videoUrl;
-    p.images = images;
-    p.boughtTogether = boughtTogether;
-  } else {
-    ALL_PRODUCTS.unshift({
-      id: Date.now(),
-      sku: sku || `UE-SKU-${Date.now()}`,
-      title: title,
-      category: category,
-      price: price,
-      originalPrice: originalPrice,
-      discount: Math.round(((originalPrice - price) / originalPrice) * 100) || 0,
-      image: image,
-      rating: "5.0",
-      reviewsCount: 1,
-      description: description || `${title} offered by UNIQUE EXPRESSIONS, Visakhapatnam.`,
-      stockQty: stockQty,
-      inStock: inStock,
-      isFeatured: isFeatured,
-      videoUrl: videoUrl,
-      images: images,
-      boughtTogether: boughtTogether
-    });
+  if (!image) {
+    showApToast('Please upload a photo or paste an image URL.', 'info');
+    return;
   }
 
-  syncStorefrontState();
-  closeApProductModal();
-  if (apActiveTab === 'products') switchApTab('products');
-  showApToast(`Product saved successfully!`, 'success');
+  if (image.startsWith('data:')) {
+    showApToast('Image upload still in progress or failed. Wait for "uploaded successfully" or paste an image URL.', 'error');
+    return;
+  }
+
+  const existing = editId != null ? ALL_PRODUCTS.find(item => String(item.id) === String(editId)) : null;
+  let savedProduct;
+
+  if (existing) {
+    existing.title = title;
+    existing.sku = sku;
+    existing.category = category;
+    existing.price = price;
+    existing.originalPrice = originalPrice;
+    existing.stockQty = stockQty;
+    existing.image = image;
+    existing.description = description;
+    existing.inStock = inStock;
+    existing.isFeatured = isFeatured;
+    existing.videoUrl = videoUrl;
+    existing.images = images;
+    existing.boughtTogether = boughtTogether;
+    existing.discount = Math.round(((originalPrice - price) / originalPrice) * 100) || 0;
+    savedProduct = existing;
+  } else {
+    savedProduct = {
+      id: Date.now(),
+      sku: sku || `UE-SKU-${Date.now()}`,
+      title,
+      category,
+      price,
+      originalPrice,
+      discount: Math.round(((originalPrice - price) / originalPrice) * 100) || 0,
+      image,
+      rating: '5.0',
+      reviewsCount: 1,
+      description: description || `${title} offered by UNIQUE EXPRESSIONS, Visakhapatnam.`,
+      stockQty,
+      inStock,
+      isFeatured,
+      videoUrl,
+      images,
+      boughtTogether
+    };
+    ALL_PRODUCTS.unshift(savedProduct);
+  }
+
+  if (saveBtn) {
+    saveBtn.dataset.saving = '1';
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="ri-loader-4-line"></i> Saving...';
+  }
+
+  try {
+    syncStorefrontState();
+    closeApProductModal();
+
+    let cloudOk = false;
+    if (existing && typeof sbAdminUpdateProduct === 'function') {
+      cloudOk = !!(await sbAdminUpdateProduct(savedProduct));
+    } else if (typeof sbAdminInsertProduct === 'function') {
+      const sbResult = await sbAdminInsertProduct(savedProduct);
+      if (sbResult?.id != null) {
+        savedProduct.id = sbResult.id;
+        syncStorefrontState();
+        cloudOk = true;
+      }
+    }
+
+    if (apActiveTab === 'products') switchApTab('products');
+    showApToast(
+      cloudOk ? 'Product saved and synced to cloud!' : 'Product saved locally (cloud sync pending).',
+      cloudOk ? 'success' : 'info'
+    );
+  } catch (err) {
+    console.error('[UE] saveApProductForm failed:', err);
+    showApToast('Save failed: ' + (err.message || 'storage error. Try a smaller image URL.'), 'error');
+  } finally {
+    if (saveBtn) {
+      saveBtn.dataset.saving = '0';
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<i class="ri-check-line"></i> Save Product Changes';
+    }
+  }
 }
 
 function uploadImageToCloudinary(fileInput, targetInputId, targetPrevId) {
   const file = fileInput.files[0];
   if (!file) return;
+
+  if (file.size > 8 * 1024 * 1024) {
+    showApToast('Image too large. Please use a file under 8MB.', 'error');
+    return;
+  }
 
   showApToast('Uploading image to Cloudinary...', 'info');
 
@@ -11770,19 +11858,16 @@ function uploadImageToCloudinary(fileInput, targetInputId, targetPrevId) {
       if (data.success && data.url) {
         document.getElementById(targetInputId).value = data.url;
         document.getElementById(targetPrevId).src = data.url;
-        showApToast('Image uploaded successfully to Cloudinary!', 'success');
+        showApToast('Image uploaded successfully!', 'success');
       } else {
-        document.getElementById(targetInputId).value = base64Data;
-        document.getElementById(targetPrevId).src = base64Data;
-        showApToast('Image attached locally!', 'success');
+        showApToast(data.error || 'Upload failed. Paste an image URL instead.', 'error');
       }
     })
     .catch(() => {
-      document.getElementById(targetInputId).value = base64Data;
-      document.getElementById(targetPrevId).src = base64Data;
-      showApToast('Image attached locally!', 'success');
+      showApToast('Upload failed on this server. Paste an image URL instead.', 'error');
     });
   };
+  reader.onerror = () => showApToast('Could not read image file.', 'error');
   reader.readAsDataURL(file);
 }
 

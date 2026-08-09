@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "db:policies": "node scripts/apply-product-policies.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.16.0"
   },
   "keywords": [
     "ecommerce",

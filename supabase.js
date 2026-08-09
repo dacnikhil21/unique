@@ -87,6 +87,34 @@ async function sbAdminInsertProduct(product) {
   }
 }
 
+async function sbAdminUpdateProduct(product) {
+  try {
+    const row = {
+      title: product.title,
+      category: product.category,
+      image: product.image || '',
+      price: product.price,
+      original_price: product.originalPrice,
+      discount: product.discount || 0,
+      rating: parseFloat(product.rating) || 4.5,
+      reviews_count: product.reviewsCount || 0,
+      description: product.description || '',
+      in_stock: product.inStock !== false
+    };
+    const { data, error } = await _supabase
+      .from('products')
+      .update(row)
+      .eq('id', product.id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.warn('[Supabase] adminUpdateProduct failed:', err.message);
+    return null;
+  }
+}
+
 async function sbAdminDeleteProduct(id) {
   try {
     const { error } = await _supabase.from('products').delete().eq('id', id);

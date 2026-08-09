@@ -96,6 +96,14 @@ alter table support_tickets enable row level security;
 create policy "Public read products"
   on products for select using (true);
 
+-- Products: admin CRUD (anon key — no auth layer yet)
+create policy "Public insert products"
+  on products for insert with check (true);
+create policy "Public update products"
+  on products for update using (true);
+create policy "Public delete products"
+  on products for delete using (true);
+
 -- Orders: anyone can insert + read (no auth for now)
 create policy "Public insert orders"
   on orders for insert with check (true);

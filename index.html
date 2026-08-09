@@ -9,6 +9,12 @@
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/feather-icons"></script>
+  <script>
+    // Fix 404 when refreshing on legacy /admin URL (Vercel/static hosts)
+    if (location.pathname === '/admin' || location.pathname === '/admin/') {
+      location.replace(location.origin + '/#view=admin');
+    }
+  </script>
 </head>
 <body>
 
@@ -489,7 +495,7 @@
               <li><a href="#" onclick="switchView('terms'); return false;">Terms & Conditions</a></li>
               <li><a href="#" onclick="switchView('privacy'); return false;">Privacy Policy</a></li>
               <li><a href="#" onclick="openWhatsAppChat(); return false;">WhatsApp Customer Support</a></li>
-              <li><a href="#" onclick="switchView('admin'); return false;">Admin Portal Dashboard</a></li>
+              <li><a href="#" onclick="openAdminPinModal(); return false;">Admin Portal Dashboard</a></li>
             </ul>
 
             <div style="border-top:1px solid rgba(255,255,255,0.08); margin-top:20px; padding-top:16px; font-size:11px; color:#64748b; text-align:center;">
@@ -988,7 +994,7 @@
       <h3 style="font-family:var(--font-serif); font-size:22px; margin-bottom:6px;">Admin Security Check</h3>
       <p style="font-size:11px; color:#64748b; margin-bottom:14px;">Enter 4-digit PIN for inventory control. (Default: <strong>1234</strong>)</p>
       <input type="password" maxlength="4" id="adminPinInput" style="width:140px; margin:0 auto 14px auto; text-align:center; font-size:22px; letter-spacing:8px; padding:6px; border-radius:10px; border:1px solid #cbd5e1;" placeholder="••••" onkeyup="if(event.key==='Enter') verifyAdminPin()">
-      <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="verifyAdminPin()">Verify PIN</button>
+      <button type="button" class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="verifyAdminPin()">Verify PIN</button>
     </div>
   </div>
 
@@ -1338,7 +1344,7 @@
   <!-- Supabase config & DB helpers -->
   <script src="supabase.js?v=1.0"></script>
   <!-- Main App -->
-  <script src="app.js?v=5.1"></script>
+  <script src="app.js?v=5.3"></script>
   <script>
     if (window.feather) feather.replace();
     if (window.lucide) lucide.createIcons();
