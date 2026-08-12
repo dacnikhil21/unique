@@ -6295,11 +6295,6 @@ let apStatusFilter = 'All';
    SPA ROUTER ENGINE
    ========================================================================== */
 function switchView(viewName, params = {}, skipHistory = false) {
-  if (viewName === 'admin' && !apIsAuthenticated) {
-    openAdminPinModal();
-    return;
-  }
-
   currentView = viewName;
 
   // ── Push a history entry so Android Back navigates through screens ──────────
@@ -7424,7 +7419,7 @@ function addPdpToCart(goToCheckout = false) {
   if (goToCheckout) {
     switchView('checkout');
   } else {
-    openCartDrawer();
+    showToast(`Added ${pdpSelectedQty} × ${currentPdpProduct.title} to your cart! 🛒`, 'success');
   }
 }
 
@@ -8526,8 +8521,13 @@ async function submitNewPassword() {
   if (result.ok) {
     showToast('Password updated! You are logged in.', 'success');
     document.getElementById('resetPasswordOverlay')?.classList.remove('active');
-    history.replaceState({}, '', '#view=profile');
-    renderProfileView();
+    if (isAdminAuthenticated()) {
+      history.replaceState({}, '', '#view=admin');
+      switchView('admin');
+    } else {
+      history.replaceState({}, '', '#view=profile');
+      renderProfileView();
+    }
   } else {
     showToast(result.error || 'Could not update password.', 'info');
   }
@@ -8723,19 +8723,6 @@ function renderProfileView() {
         </div>
         <span style="font-size:12px; color:#94a3b8;">→</span>
       </div>
-
-      ${(['uniqueexpressions@gmail.com','uniqueexpressions.in@gmail.com','dacnikhil121@gmail.com'].includes((userProfile.email||'').toLowerCase().trim())) ? `
-      <div class="profile-menu-tile" onclick="openAdminPinModal()">
-        <div class="profile-menu-left">
-          <div class="profile-menu-icon" style="background:#fce7f3; color:#9d174d;"><i class="ri-shield-keyhole-line"></i></div>
-          <div>
-            <div class="profile-menu-title">Admin Control Panel</div>
-            <div class="profile-menu-sub">Store inventory, orders &amp; CMS (PIN required)</div>
-          </div>
-        </div>
-        <span style="font-size:12px; color:#94a3b8;">→</span>
-      </div>
-      ` : ''}
 
       <div style="margin-top:20px; margin-bottom:30px;">
         <button class="m-hero-cta-button" style="width:100%; justify-content:center; min-height:44px; background:#f1f5f9; color:#dc2626; border:1px solid #cbd5e1; box-shadow:none; font-weight:800;" onclick="handleUserLogout()">
@@ -9347,9 +9334,114 @@ function handleApGlobalSearch(query) {
   else switchApTab(apActiveTab);
 }
 
+function isAdminAuthenticated() {
+  return userProfile && String(userProfile.email || '').toLowerCase().trim() === 'uestore.online@gmail.com';
+}
+
+function renderAdminLoginView(container) {
+  container.innerHTML = `
+    <div style="min-height: 100vh; background: #0f172a; display: flex; align-items: center; justify-content: center; padding: 20px; font-family: sans-serif;">
+      <div style="background: #1e293b; border-radius: 24px; border: 1px solid #334155; width: 100%; max-width: 440px; padding: 40px 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); text-align: center; color: #ffffff;">
+        <div style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.05); border-radius: 18px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
+          <i class="ri-shield-keyhole-fill" style="font-size: 30px; color: #f59e0b;"></i>
+        </div>
+        <h2 style="font-size: 24px; font-weight: 800; margin: 0 0 6px 0; letter-spacing: -0.02em;">UE Control Center</h2>
+        <p style="font-size: 13px; color: #94a3b8; margin: 0 0 32px 0;">Sign in to manage inventory, tracking & operations</p>
+        
+        <form onsubmit="handleAdminLoginSubmit(event)">
+          <div style="text-align: left; margin-bottom: 20px;">
+            <label style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 8px;">Admin Email</label>
+            <div style="position: relative;">
+              <i class="ri-mail-line" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 18px;"></i>
+              <input type="email" id="adminEmailInput" style="width: 100%; height: 48px; border-radius: 12px; background: #0f172a; border: 1px solid #334155; color: #ffffff; padding: 0 16px 0 46px; font-size: 14px; outline: none; transition: border-color 0.2s;" placeholder="uestore.online@gmail.com" value="uestore.online@gmail.com" required readonly>
+            </div>
+          </div>
+          
+          <div style="text-align: left; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Password</label>
+              <a href="#" onclick="handleAdminForgotPassword(event)" style="font-size: 12px; color: #3b82f6; text-decoration: none; font-weight: 600;">Forgot Password?</a>
+            </div>
+            <div style="position: relative;">
+              <i class="ri-lock-2-line" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 18px;"></i>
+              <input type="password" id="adminPasswordInput" style="width: 100%; height: 48px; border-radius: 12px; background: #0f172a; border: 1px solid #334155; color: #ffffff; padding: 0 16px 0 46px; font-size: 14px; outline: none; transition: border-color 0.2s;" placeholder="••••••••" required>
+            </div>
+          </div>
+          
+          <button type="submit" id="adminLoginBtn" style="width: 100%; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; border: none; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);">
+            Sign In Securely <i class="ri-arrow-right-line"></i>
+          </button>
+        </form>
+        
+        <div style="margin-top: 32px; border-top: 1px solid #334155; padding-top: 20px;">
+          <a href="#" onclick="switchView('home'); return false;" style="font-size: 13px; color: #94a3b8; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="ri-arrow-left-line"></i> Return to Main Storefront
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+  setTimeout(() => document.getElementById('adminPasswordInput')?.focus(), 200);
+}
+
+async function handleAdminLoginSubmit(e) {
+  if (e) e.preventDefault();
+  const email = document.getElementById('adminEmailInput')?.value.trim().toLowerCase();
+  const password = document.getElementById('adminPasswordInput')?.value;
+  const btn = document.getElementById('adminLoginBtn');
+
+  if (email !== 'uestore.online@gmail.com') {
+    showToast('Access Denied: Unauthorized admin credentials.', 'error');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="ri-loader-4-line ri-spin"></i> Authenticating...`;
+  }
+
+  const result = await sbSignIn(email, password);
+  if (result.error) {
+    showToast(result.error || 'Authentication failed.', 'info');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `Sign In Securely <i class="ri-arrow-right-line"></i>`;
+    }
+  } else {
+    await applyAuthSession(result.session);
+    showToast('Admin access authorized. Welcome back!', 'success');
+    renderAdminView();
+  }
+}
+
+async function handleAdminForgotPassword(e) {
+  if (e) e.preventDefault();
+  const email = 'uestore.online@gmail.com';
+  
+  showToast('Initiating password reset request...', 'info');
+  const result = await sbResetPassword(email);
+  if (result.ok) {
+    showToast('Verification email sent to uestore.online@gmail.com. Check inbox/spam.', 'success');
+  } else {
+    showToast(result.error || 'Could not send verification email.', 'info');
+  }
+}
+
+async function handleAdminLogout() {
+  await sbSignOut();
+  await applyAuthSession(null);
+  showToast('Admin logged out successfully.', 'info');
+  switchView('home');
+}
+
 function renderAdminView() {
   const container = document.getElementById('viewAdmin');
   if (!container) return;
+
+  if (!isAdminAuthenticated()) {
+    renderAdminLoginView(container);
+    return;
+  }
 
   const lowStockCount = ALL_PRODUCTS.filter(p => getAvailableStock(p) > 0 && getAvailableStock(p) < 5).length;
   const pendingReviewsCount = STORE_REVIEWS.filter(r => r.status === 'Pending').length;
@@ -9414,9 +9506,12 @@ function renderAdminView() {
           </a>
         </nav>
 
-        <div class="ap-sidebar-footer">
+        <div class="ap-sidebar-footer" style="display: flex; flex-direction: column; gap: 8px;">
           <button class="ap-btn ap-btn-secondary" style="width:100%; justify-content:center;" onclick="switchView('home')">
             ← Back to Storefront
+          </button>
+          <button class="ap-btn" style="width:100%; justify-content:center; background:#dc2626; color:#ffffff; border:none; display:flex; align-items:center; gap:8px;" onclick="handleAdminLogout()">
+            🚪 Log Out Admin
           </button>
         </div>
       </aside>
@@ -11729,7 +11824,29 @@ function updateCartQty(idx, change) {
 }
 
 function quickAddToCart(productId) {
-  openAddToCartPopUpModal(productId);
+  const product = ALL_PRODUCTS.find(p => String(p.id) === String(productId));
+  if (!product) return;
+  const check = validateStockForCart(product.id, 1);
+  if (!check.ok) {
+    showToast(check.msg, 'info');
+    return;
+  }
+  const effectivePrice = getEffectivePrice(product.price);
+  const existing = cart.find(i => String(i.id) === String(product.id));
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    cart.push({
+      id: product.id,
+      title: product.title,
+      category: product.category,
+      image: product.image,
+      price: effectivePrice,
+      qty: 1
+    });
+  }
+  saveCart();
+  showToast(`Added ${product.title} to your cart! 🛒`, 'success');
 }
 
 function saveCart() {
