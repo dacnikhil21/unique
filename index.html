@@ -76,7 +76,7 @@
             <span>My Cart</span>
             <span class="dt-badge-dot id-cart-badge">0</span>
           </button>
-          <button class="dt-action-btn" onclick="switchView('profile')" title="Account">
+          <button class="dt-action-btn" onclick="userProfile ? switchView('profile') : switchView('profile')" title="Account">
             <i class="ri-user-3-line"></i>
             <span>Account</span>
           </button>
@@ -97,52 +97,13 @@
             📦 All Categories <i class="ri-arrow-down-s-line"></i>
           </a>
           <div class="dt-mega-dropdown">
-            <div class="dt-mega-grid">
-              <div class="dt-mega-col">
-                <div class="dt-mega-col-title">🧸 Toys Collection</div>
-                <a href="#" onclick="filterCategory('Toys'); return false;">RC 360 Stunt Cars</a>
-                <a href="#" onclick="filterCategory('Toys'); return false;">Plush Teddy Bears</a>
-                <a href="#" onclick="filterCategory('Toys'); return false;">Building Block Sets</a>
-                <a href="#" onclick="filterCategory('Toys'); return false;">Magnetic Board Games</a>
-              </div>
-              <div class="dt-mega-col">
-                <div class="dt-mega-col-title">📱 Smart Gadgets</div>
-                <a href="#" onclick="filterCategory('Gadgets'); return false;">Mini Bluetooth Speakers</a>
-                <a href="#" onclick="filterCategory('Gadgets'); return false;">Astronaut Star Projectors</a>
-                <a href="#" onclick="filterCategory('Gadgets'); return false;">Smart Digital Clocks</a>
-                <a href="#" onclick="filterCategory('Gadgets'); return false;">Rechargeable Desk Fans</a>
-              </div>
-              <div class="dt-mega-col">
-                <div class="dt-mega-col-title">🎨 Handicrafts & Art</div>
-                <a href="#" onclick="filterCategory('Handicrafts'); return false;">Handcrafted Brass Idols</a>
-                <a href="#" onclick="filterCategory('Handicrafts'); return false;">Kondapalli Wooden Dolls</a>
-                <a href="#" onclick="filterCategory('Handicrafts'); return false;">Etikoppaka Rattles</a>
-                <a href="#" onclick="filterCategory('Handicrafts'); return false;">Terracotta Diya Sets</a>
-              </div>
-              <div class="dt-mega-col">
-                <div class="dt-mega-col-title">✏️ Stationery & Gifts</div>
-                <a href="#" onclick="filterCategory('Stationery'); return false;">Kawaii Gel Pen Sets</a>
-                <a href="#" onclick="filterCategory('Stationery'); return false;">Hardbound Journals</a>
-                <a href="#" onclick="filterCategory('Return Gifts'); return false;">Birthday Return Hampers</a>
-                <a href="#" onclick="filterCategory('Return Gifts'); return false;">Plantable Seed Pencils</a>
-              </div>
-              <div class="dt-mega-col dt-mega-banner-col">
-                <div class="dt-mega-promo-box">
-                  <span class="dt-mega-tag">SPECIAL OFFER</span>
-                  <h4>Return Gift Studio</h4>
-                  <p>Customized hampers for birthdays & weddings.</p>
-                  <button onclick="switchView('b2b')">Explore Wholesale →</button>
-                </div>
-              </div>
+            <div class="dt-mega-grid" id="dtMegaMenuGrid">
+              <!-- Filled dynamically from admin categories -->
             </div>
           </div>
         </div>
 
-        <a href="#" class="dt-nav-link" onclick="filterCategory('Toys'); return false;">🧸 Toys</a>
-        <a href="#" class="dt-nav-link" onclick="filterCategory('Gadgets'); return false;">📱 Gadgets</a>
-        <a href="#" class="dt-nav-link" onclick="filterCategory('Handicrafts'); return false;">🎨 Handicrafts</a>
-        <a href="#" class="dt-nav-link" onclick="filterCategory('Stationery'); return false;">✏️ Stationery</a>
-        <a href="#" class="dt-nav-link" onclick="filterCategory('Return Gifts'); return false;">🎁 Return Gifts</a>
+        <span id="dtNavCategoryLinks"></span>
         <a href="#" class="dt-nav-link dt-highlight-link" onclick="switchView('b2b'); return false;">📦 Wholesale GST</a>
         <a href="#" class="dt-nav-link" onclick="switchView('storeLocator'); return false;">📍 Visakhapatnam Store</a>
       </nav>
@@ -264,7 +225,7 @@
             <span class="m-section-sublink" onclick="switchView('categories')">View All →</span>
           </div>
 
-          <div class="m-occasion-scroll-row no-scrollbar">
+          <div class="m-occasion-scroll-row no-scrollbar" id="mOccasionScrollRow">
             <div class="m-occasion-chip-card" onclick="filterCategory('RC Toys')">
               <div class="m-occasion-emoji">🚗</div>
               <div class="m-occasion-label">RC Toys</div>
@@ -718,13 +679,7 @@
 
         <div class="dt-footer-col">
           <h4 class="dt-footer-heading">Categories</h4>
-          <ul class="dt-footer-links">
-            <li><a href="#" onclick="filterCategory('RC Toys'); return false;">RC Stunt Cars & Vehicles</a></li>
-            <li><a href="#" onclick="filterCategory('RC Flying Toys'); return false;">RC Flying Toys & Drones</a></li>
-            <li><a href="#" onclick="filterCategory('Educational Toys'); return false;">Educational & STEM Toys</a></li>
-            <li><a href="#" onclick="filterCategory('Handicrafts'); return false;">Brass Idols & Handicrafts</a></li>
-            <li><a href="#" onclick="filterCategory('Stationary'); return false;">Kawaii Pens & Stationery</a></li>
-            <li><a href="#" onclick="filterCategory('Return Gifts'); return false;">Party Return Gift Boxes</a></li>
+          <ul class="dt-footer-links" id="footerCategoryLinks">
             <li><a href="#" onclick="switchView('categories'); return false;">View All Categories →</a></li>
           </ul>
         </div>
@@ -931,7 +886,7 @@
   <div class="drawer-backdrop" id="adminPinBackdrop" onclick="closeAdminPinModal()">
     <div class="modal-window" style="max-width:340px; text-align:center;" onclick="event.stopPropagation()">
       <h3 style="font-family:var(--font-serif); font-size:22px; margin-bottom:6px;">Admin Security Check</h3>
-      <p style="font-size:11px; color:#64748b; margin-bottom:14px;">Enter 4-digit PIN for inventory control. (Default: <strong>1234</strong>)</p>
+      <p style="font-size:11px; color:#64748b; margin-bottom:14px;">Enter your 4-digit admin PIN. Change it anytime in Store Settings.</p>
       <input type="password" maxlength="4" id="adminPinInput" style="width:140px; margin:0 auto 14px auto; text-align:center; font-size:22px; letter-spacing:8px; padding:6px; border-radius:10px; border:1px solid #cbd5e1;" placeholder="••••" onkeyup="if(event.key==='Enter') verifyAdminPin()">
       <button type="button" class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="verifyAdminPin()">Verify PIN</button>
     </div>
@@ -1095,11 +1050,7 @@
         <div class="form-group" style="flex:1;">
           <label class="form-label">Category</label>
           <select id="admModalCategorySelect" class="form-input">
-            <option value="Toys">Toys</option>
-            <option value="Gadgets">Gadgets</option>
-            <option value="Handicrafts">Handicrafts</option>
-            <option value="Stationery">Stationery</option>
-            <option value="Return Gifts">Return Gifts</option>
+            <option value="">Loading categories…</option>
           </select>
         </div>
         <div class="form-group" style="flex:1;">
@@ -1182,7 +1133,7 @@
             <div class="form-group" style="margin-bottom:14px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                 <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569; margin:0;">Password</label>
-                <a href="#" onclick="showToast('Password reset link sent to your registered email/phone!', 'info'); return false;" style="font-size:11px; color:#2563eb; font-weight:700; text-decoration:none;">Forgot?</a>
+                <a href="#" onclick="openForgotPasswordModal(); return false;" style="font-size:11px; color:#2563eb; font-weight:700; text-decoration:none;">Forgot?</a>
               </div>
               <div style="position:relative;">
                 <i class="ri-lock-2-line" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>

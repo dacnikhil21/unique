@@ -17,6 +17,7 @@ create table if not exists products (
   reviews_count integer default 0,
   description text,
   in_stock boolean default true,
+  stock_qty integer default 12,
   created_at timestamptz default now()
 );
 
@@ -79,6 +80,20 @@ create table if not exists support_tickets (
   created_at timestamptz default now()
 );
 
+-- 6. CATEGORIES TABLE
+create table if not exists categories (
+  id text primary key,
+  name text not null,
+  description text,
+  image text,
+  subcategories jsonb default '[]',
+  is_featured boolean default true,
+  is_visible boolean default true,
+  sort_order integer default 1,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
 -- ================================================================
 -- ROW LEVEL SECURITY — Enable RLS on all tables
 -- ================================================================
@@ -87,16 +102,21 @@ alter table orders enable row level security;
 alter table reviews enable row level security;
 alter table returns enable row level security;
 alter table support_tickets enable row level security;
+alter table categories enable row level security;
 
 -- ================================================================
 -- RLS POLICIES — Allow anonymous access (no login required)
 -- ================================================================
 
 -- Products: public read only
+drop policy if exists "Public read products" on products;
 create policy "Public read products"
   on products for select using (true);
 
 -- Products: admin CRUD (anon key — no auth layer yet)
+drop policy if exists "Public insert products" on products;
+drop policy if exists "Public update products" on products;
+drop policy if exists "Public delete products" on products;
 create policy "Public insert products"
   on products for insert with check (true);
 create policy "Public update products"
@@ -105,6 +125,9 @@ create policy "Public delete products"
   on products for delete using (true);
 
 -- Orders: anyone can insert + read (no auth for now)
+drop policy if exists "Public insert orders" on orders;
+drop policy if exists "Public read orders" on orders;
+drop policy if exists "Public update orders" on orders;
 create policy "Public insert orders"
   on orders for insert with check (true);
 create policy "Public read orders"
@@ -113,6 +136,9 @@ create policy "Public update orders"
   on orders for update using (true);
 
 -- Reviews: anyone can read, insert, update helpful count
+drop policy if exists "Public read reviews" on reviews;
+drop policy if exists "Public insert reviews" on reviews;
+drop policy if exists "Public update reviews" on reviews;
 create policy "Public read reviews"
   on reviews for select using (true);
 create policy "Public insert reviews"
@@ -121,16 +147,34 @@ create policy "Public update reviews"
   on reviews for update using (true);
 
 -- Returns: anyone can insert + read
+drop policy if exists "Public insert returns" on returns;
+drop policy if exists "Public read returns" on returns;
 create policy "Public insert returns"
   on returns for insert with check (true);
 create policy "Public read returns"
   on returns for select using (true);
 
 -- Support Tickets: anyone can insert + read
+drop policy if exists "Public insert tickets" on support_tickets;
+drop policy if exists "Public read tickets" on support_tickets;
 create policy "Public insert tickets"
   on support_tickets for insert with check (true);
 create policy "Public read tickets"
   on support_tickets for select using (true);
+
+-- Categories: public CRUD (admin PIN protects UI)
+drop policy if exists "Public read categories" on categories;
+drop policy if exists "Public insert categories" on categories;
+drop policy if exists "Public update categories" on categories;
+drop policy if exists "Public delete categories" on categories;
+create policy "Public read categories"
+  on categories for select using (true);
+create policy "Public insert categories"
+  on categories for insert with check (true);
+create policy "Public update categories"
+  on categories for update using (true);
+create policy "Public delete categories"
+  on categories for delete using (true);
 
 -- ================================================================
 -- DONE! Your schema is ready.

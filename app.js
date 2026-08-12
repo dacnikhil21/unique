@@ -148,11 +148,11 @@ let CATEGORIES_DATA = (() => {
   },
   {
     "id": "-O_ulCIFrv0XxjtLO57Z",
-    "name": "Educational Toys",
-    "description": "Educational Toys collection at UNIQUE EXPRESSIONS",
+    "name": "Educational & STEM",
+    "description": "Educational & STEM collection at UNIQUE EXPRESSIONS",
     "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
     "subcategories": [
-      "Educational Toys"
+      "Educational & STEM"
     ],
     "isFeatured": true,
     "isVisible": true,
@@ -160,11 +160,11 @@ let CATEGORIES_DATA = (() => {
   },
   {
     "id": "-O_v2NV8oS3tXI0meXWL",
-    "name": "Standard Toys",
-    "description": "Standard Toys collection at UNIQUE EXPRESSIONS",
+    "name": "Trending & Standard Toys",
+    "description": "Trending & Standard Toys collection at UNIQUE EXPRESSIONS",
     "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
     "subcategories": [
-      "Standard Toys"
+      "Trending & Standard Toys"
     ],
     "isFeatured": true,
     "isVisible": true,
@@ -172,11 +172,11 @@ let CATEGORIES_DATA = (() => {
   },
   {
     "id": "-O_VyIL9w369A00JEKUX",
-    "name": "Handicrafts",
-    "description": "Handicrafts collection at UNIQUE EXPRESSIONS",
+    "name": "Traditional Handicrafts",
+    "description": "Traditional Handicrafts collection at UNIQUE EXPRESSIONS",
     "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
     "subcategories": [
-      "Handicrafts"
+      "Traditional Handicrafts"
     ],
     "isFeatured": true,
     "isVisible": true,
@@ -184,11 +184,11 @@ let CATEGORIES_DATA = (() => {
   },
   {
     "id": "-O_WcwUXR93XyalqJm8s",
-    "name": "Stationary",
-    "description": "Stationary collection at UNIQUE EXPRESSIONS",
+    "name": "Fancy Imported Stationery",
+    "description": "Fancy Imported Stationery collection at UNIQUE EXPRESSIONS",
     "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
     "subcategories": [
-      "Stationary"
+      "Fancy Imported Stationery"
     ],
     "isFeatured": true,
     "isVisible": true,
@@ -232,11 +232,11 @@ let CATEGORIES_DATA = (() => {
   },
   {
     "id": "-O_WcsOAQRkDGH5FkmNE",
-    "name": "Return Gifts",
-    "description": "Return Gifts collection at UNIQUE EXPRESSIONS",
+    "name": "Return Gift Studio",
+    "description": "Return Gift Studio collection at UNIQUE EXPRESSIONS",
     "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
     "subcategories": [
-      "Return Gifts"
+      "Return Gift Studio"
     ],
     "isFeatured": true,
     "isVisible": true,
@@ -244,11 +244,11 @@ let CATEGORIES_DATA = (() => {
   },
   {
     "id": "-OiCu94_rWjPcWX8nmt0",
-    "name": "Latest Arrivars",
-    "description": "Latest Arrivars collection at UNIQUE EXPRESSIONS",
+    "name": "Latest Arrivals",
+    "description": "Latest Arrivals collection at UNIQUE EXPRESSIONS",
     "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
     "subcategories": [
-      "Latest Arrivars"
+      "Latest Arrivals"
     ],
     "isFeatured": true,
     "isVisible": true,
@@ -257,6 +257,436 @@ let CATEGORIES_DATA = (() => {
 ];
 
 let CATEGORIES = CATEGORIES_DATA.map(c => c.name);
+
+/** Legacy admin category names → canonical product category names */
+const CATEGORY_RENAME_MAP = {
+  'Educational Toys': 'Educational & STEM',
+  'Standard Toys': 'Trending & Standard Toys',
+  'Handicrafts': 'Traditional Handicrafts',
+  'Stationary': 'Fancy Imported Stationery',
+  'Return Gifts': 'Return Gift Studio',
+  'Latest Arrivars': 'Latest Arrivals'
+};
+
+const AP_HIDDEN_TABS = ['wholesale', 'analytics', 'users'];
+
+function productsInCategory(categoryName) {
+  if (!categoryName || categoryName === 'All') return ALL_PRODUCTS || [];
+  return (ALL_PRODUCTS || []).filter(p => p.category === categoryName);
+}
+
+function getAvailableStock(product) {
+  if (!product || product.inStock === false) return 0;
+  return Math.max(0, parseInt(product.stockQty, 10) || 0);
+}
+
+function validateStockForCart(productId, addQty = 1) {
+  const product = (ALL_PRODUCTS || []).find(p => String(p.id) === String(productId));
+  if (!product) return { ok: false, msg: 'Product not found.' };
+  const available = getAvailableStock(product);
+  if (available <= 0) return { ok: false, msg: `"${product.title}" is out of stock.` };
+  const inCart = cart.find(i => String(i.id) === String(productId));
+  const currentInCart = inCart ? (inCart.qty || 0) : 0;
+  if (currentInCart + addQty > available) {
+    return { ok: false, msg: `Only ${available} left in stock for "${product.title}".` };
+  }
+  return { ok: true };
+}
+
+function validateCartStockBeforeCheckout() {
+  for (const item of cart) {
+    const product = ALL_PRODUCTS.find(p => String(p.id) === String(item.id));
+    const qty = item.qty || item.quantity || 1;
+    const check = validateStockForCart(item.id, 0);
+    if (!product || product.inStock === false || getAvailableStock(product) < qty) {
+      return {
+        ok: false,
+        msg: product
+          ? `"${product.title}" — only ${getAvailableStock(product)} available (cart has ${qty}).`
+          : 'A product in your cart is no longer available.'
+      };
+    }
+  }
+  return { ok: true };
+}
+
+function deductStockForOrder(items) {
+  (items || []).forEach(item => {
+    const p = ALL_PRODUCTS.find(x => String(x.id) === String(item.id));
+    if (!p) return;
+    const qty = item.qty || item.quantity || 1;
+    p.stockQty = Math.max(0, getAvailableStock({ ...p, inStock: true }) - qty);
+    if (p.stockQty <= 0) p.inStock = false;
+    if (typeof sbAdminUpdateProduct === 'function') {
+      sbAdminUpdateProduct(p).catch(err => console.warn('[UE] Stock sync failed:', err));
+    }
+  });
+}
+
+function migrateCategoriesForProduction() {
+  let changed = false;
+
+  CATEGORIES_DATA.forEach(c => {
+    if (CATEGORY_RENAME_MAP[c.name]) {
+      c.name = CATEGORY_RENAME_MAP[c.name];
+      changed = true;
+    }
+    if (Array.isArray(c.subcategories)) {
+      c.subcategories = c.subcategories.map(s => CATEGORY_RENAME_MAP[s] || s);
+    }
+    if (c.description && CATEGORY_RENAME_MAP[c.description.split(' collection')[0]]) {
+      c.description = `${c.name} collection at UNIQUE EXPRESSIONS`;
+      changed = true;
+    }
+  });
+
+  const productCats = [...new Set((ALL_PRODUCTS || []).map(p => p.category).filter(Boolean))];
+  productCats.forEach((name, i) => {
+    if (!CATEGORIES_DATA.some(c => c.name === name)) {
+      CATEGORIES_DATA.push({
+        id: `cat-auto-${Date.now()}-${i}`,
+        name,
+        description: `${name} collection at UNIQUE EXPRESSIONS`,
+        image: getCategoryDisplayImage({ name }),
+        subcategories: [name],
+        isFeatured: false,
+        isVisible: true,
+        sortOrder: CATEGORIES_DATA.length + 1
+      });
+      changed = true;
+    }
+  });
+
+  CATEGORIES = CATEGORIES_DATA.map(c => c.name);
+  if (changed) {
+    localStorage.setItem('ue_categories_data_v5', JSON.stringify(CATEGORIES_DATA));
+    localStorage.setItem('ue_categories_v5', JSON.stringify(CATEGORIES));
+  }
+  localStorage.setItem('ue_cat_migration_v1', 'done');
+}
+
+function apEscHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function apJsAttr(v) {
+  return JSON.stringify(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
+
+function apSafeDomId(prefix, id) {
+  return prefix + String(id ?? '').replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function renderDynamicNavCategories() {
+  const visible = getVisibleCategories();
+  const esc = (s) => String(s).replace(/'/g, "\\'");
+
+  const pills = document.getElementById('dtNavCategoryLinks');
+  if (pills) {
+    pills.innerHTML = visible.slice(0, 6).map(c =>
+      `<a href="#" class="dt-nav-link" onclick="filterCategory('${esc(c.name)}'); return false;">${getCategoryEmoji(c.name)} ${c.name}</a>`
+    ).join('');
+  }
+
+  const megaGrid = document.getElementById('dtMegaMenuGrid');
+  if (megaGrid) {
+    megaGrid.innerHTML = visible.slice(0, 8).map(c => `
+      <div class="dt-mega-col">
+        <div class="dt-mega-col-title">${getCategoryEmoji(c.name)} ${c.name}</div>
+        <a href="#" onclick="filterCategory('${esc(c.name)}'); return false;">Browse all ${apEscHtml(c.name)} →</a>
+        ${(c.subcategories || []).slice(0, 3).map(s =>
+          `<a href="#" onclick="filterCategory('${esc(c.name)}'); return false;">${apEscHtml(s)}</a>`
+        ).join('')}
+      </div>
+    `).join('') + `
+      <div class="dt-mega-col dt-mega-banner-col">
+        <div class="dt-mega-promo-box">
+          <span class="dt-mega-tag">VISAKHAPATNAM STORE</span>
+          <h4>UNIQUE EXPRESSIONS</h4>
+          <p>Curated toys, gifts &amp; return hampers.</p>
+          <button onclick="switchView('categories')">View All Categories →</button>
+        </div>
+      </div>`;
+  }
+
+  const footerList = document.getElementById('footerCategoryLinks');
+  if (footerList) {
+    footerList.innerHTML = visible.map(c =>
+      `<li><a href="#" onclick="filterCategory('${esc(c.name)}'); return false;">${apEscHtml(c.name)}</a></li>`
+    ).join('') + `<li><a href="#" onclick="switchView('categories'); return false;">View All Categories →</a></li>`;
+  }
+}
+
+/* ==========================================================================
+   PRODUCTION UTILITIES — cart, coupons, orders, customers, admin alerts
+   ========================================================================== */
+function cartItemQty(item) {
+  return Math.max(1, parseInt(item?.qty ?? item?.quantity, 10) || 1);
+}
+
+function normalizeCartItems() {
+  cart.forEach(i => { i.qty = cartItemQty(i); delete i.quantity; });
+}
+
+function normalizeStoreCoupons() {
+  STORE_COUPONS = (STORE_COUPONS || []).map(c => {
+    if (c.type) return c;
+    const d = String(c.discount || '').toLowerCase();
+    if (d.includes('%')) return { ...c, type: 'percent', value: parseInt(c.discount, 10) || 20 };
+    if (d.includes('free') || d.includes('shipping')) return { ...c, type: 'shipping', value: 0 };
+    return { ...c, type: 'fixed', value: parseInt(String(c.discount).replace(/\D/g, ''), 10) || 100 };
+  });
+}
+
+function calculateCouponDiscount(subtotal, code) {
+  if (!code) return { discount: 0, shippingOverride: null, label: '', valid: true };
+  const coupon = STORE_COUPONS.find(c => c.code === code && c.status === 'Active');
+  if (!coupon) return { valid: false, error: 'Invalid coupon code.' };
+  if (subtotal < (coupon.minSpend || 0)) {
+    return { valid: false, error: `Minimum order ₹${coupon.minSpend} required for ${coupon.code}.` };
+  }
+  if (coupon.type === 'percent') {
+    return { valid: true, discount: Math.round(subtotal * coupon.value / 100), shippingOverride: null, label: `${coupon.value}% off`, coupon };
+  }
+  if (coupon.type === 'fixed') {
+    return { valid: true, discount: Math.min(subtotal, coupon.value), shippingOverride: null, label: `₹${coupon.value} off`, coupon };
+  }
+  if (coupon.type === 'shipping') {
+    return { valid: true, discount: 0, shippingOverride: 0, label: 'Free shipping', coupon };
+  }
+  return { valid: true, discount: 0, shippingOverride: null, label: '', coupon };
+}
+
+function calculateCheckoutTotals() {
+  normalizeCartItems();
+  const subtotal = cart.reduce((acc, i) => acc + i.price * cartItemQty(i), 0);
+  const wrapCost = giftWrapSelected ? (STORE_SETTINGS.giftWrapFee || 30) * cart.length : 0;
+  const itemsTotal = subtotal + wrapCost;
+  const couponResult = calculateCouponDiscount(itemsTotal, appliedCouponCode);
+  const discount = couponResult.valid ? (couponResult.discount || 0) : 0;
+  let shipping = itemsTotal >= (STORE_SETTINGS.freeShippingMin || 499) ? 0 : (STORE_SETTINGS.shippingFee || 50);
+  if (couponResult.valid && couponResult.shippingOverride === 0) shipping = 0;
+  const grandTotal = Math.max(0, itemsTotal - discount + shipping);
+  return { subtotal: itemsTotal, discount, shipping, grandTotal, couponResult };
+}
+
+function parseOrderDate(o) {
+  if (o.createdAt) return new Date(o.createdAt);
+  const parsed = Date.parse(o.date);
+  return isNaN(parsed) ? new Date() : new Date(parsed);
+}
+
+function getLast7DaysSales() {
+  const days = [];
+  const maxAmt = Math.max(1, ...Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (6 - i)); d.setHours(0, 0, 0, 0);
+    const next = new Date(d); next.setDate(next.getDate() + 1);
+    return userOrders.filter(o => { const od = parseOrderDate(o); return od >= d && od < next; })
+      .reduce((s, o) => s + (o.totalAmount || o.grandTotal || 0), 0);
+  }));
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0, 0, 0, 0);
+    const next = new Date(d); next.setDate(next.getDate() + 1);
+    const amount = userOrders.filter(o => { const od = parseOrderDate(o); return od >= d && od < next; })
+      .reduce((s, o) => s + (o.totalAmount || o.grandTotal || 0), 0);
+    days.push({
+      label: d.toLocaleDateString('en-IN', { weekday: 'short' }),
+      amount,
+      height: Math.max(8, Math.round((amount / maxAmt) * 100))
+    });
+  }
+  return days;
+}
+
+function syncCustomersFromOrders() {
+  const map = new Map();
+  userOrders.forEach(o => {
+    const phone = (o.phone || '').replace(/\D/g, '');
+    const key = phone || (o.customerName || o.name || 'guest').toLowerCase();
+    if (!map.has(key)) {
+      map.set(key, {
+        id: key,
+        name: o.customerName || o.name || 'Customer',
+        phone: o.phone || '',
+        email: o.email || '',
+        city: 'Visakhapatnam',
+        ordersCount: 0,
+        totalSpend: 0,
+        status: 'Active'
+      });
+    }
+    const c = map.get(key);
+    c.ordersCount += 1;
+    c.totalSpend += (o.totalAmount || o.grandTotal || 0);
+    if (c.totalSpend >= 5000) c.status = 'VIP';
+    else if (c.ordersCount === 1) c.status = 'New';
+  });
+  STORE_CUSTOMERS = [...map.values()].sort((a, b) => b.totalSpend - a.totalSpend);
+}
+
+function getAdminNotifications() {
+  const notes = [];
+  userOrders.filter(o => ['Order Confirmed', 'Processing', 'Confirmed'].includes(o.status)).slice(0, 3).forEach(o => {
+    notes.push({ icon: 'ri-shopping-bag-3-fill', color: '#10b981', title: `New Order ${o.orderId}`, sub: `₹${o.totalAmount || o.grandTotal || 0} • ${o.customerName || 'Customer'}` });
+  });
+  ALL_PRODUCTS.filter(p => getAvailableStock(p) > 0 && getAvailableStock(p) < 5).slice(0, 3).forEach(p => {
+    notes.push({ icon: 'ri-error-warning-fill', color: '#ef4444', title: 'Low Stock Alert', sub: `${p.title} (${getAvailableStock(p)} left)` });
+  });
+  STORE_REVIEWS.filter(r => r.status === 'Pending').slice(0, 2).forEach(r => {
+    notes.push({ icon: 'ri-star-fill', color: '#f59e0b', title: 'Review Pending Approval', sub: `${r.name} — ${r.rating}★` });
+  });
+  if (notes.length === 0) {
+    notes.push({ icon: 'ri-check-double-fill', color: '#10b981', title: 'All Clear', sub: 'No urgent store alerts right now.' });
+  }
+  return notes.slice(0, 8);
+}
+
+function renderAdminNotificationsHtml() {
+  const notes = getAdminNotifications();
+  return notes.map(n => `
+    <div class="ap-notif-item">
+      <i class="${n.icon}" style="color:${n.color}; font-size:18px; margin-top:2px;"></i>
+      <div><div style="font-size:12px; font-weight:700;">${apEscHtml(n.title)}</div>
+      <div style="font-size:11px; color:#64748b;">${apEscHtml(n.sub)}</div></div>
+    </div>`).join('');
+}
+
+function restoreStockForOrder(items) {
+  (items || []).forEach(item => {
+    const p = ALL_PRODUCTS.find(x => String(x.id) === String(item.id));
+    if (!p) return;
+    const qty = cartItemQty(item);
+    p.stockQty = (parseInt(p.stockQty, 10) || 0) + qty;
+    if (p.stockQty > 0) p.inStock = true;
+    if (typeof sbAdminUpdateProduct === 'function') sbAdminUpdateProduct(p).catch(() => {});
+  });
+}
+
+function exportOrdersCSV() {
+  const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const headers = ['Order ID', 'Date', 'Customer', 'Phone', 'Amount', 'Status', 'Payment'];
+  const rows = userOrders.map(o => [
+    esc(o.orderId), esc(o.date), esc(o.customerName || o.name),
+    esc(o.phone), o.totalAmount || o.grandTotal || 0, esc(o.status), esc(o.paymentMethod)
+  ].join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `unique-expressions-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showApToast(`Exported ${userOrders.length} orders`, 'success');
+}
+
+function openApOrderDetailModal(orderId) {
+  const o = userOrders.find(item => item.orderId === orderId);
+  if (!o) { showApToast('Order not found.', 'info'); return; }
+  const items = (o.items || []).map(it => `
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid #f1f5f9;">
+      <span>${apEscHtml(it.title)} × ${cartItemQty(it)}</span><strong>₹${cartItemQty(it) * it.price}</strong>
+    </div>`).join('') || '<p style="font-size:12px;color:#64748b;">No line items recorded.</p>';
+  let el = document.getElementById('apOrderDetailOverlay');
+  if (!el) { el = document.createElement('div'); el.id = 'apOrderDetailOverlay'; el.className = 'ap-modal-backdrop'; document.body.appendChild(el); }
+  el.innerHTML = `<div class="ap-modal-container" style="max-width:520px;" onclick="event.stopPropagation()">
+    <div class="ap-modal-header"><h3 class="ap-modal-title">📦 Order ${o.orderId}</h3>
+    <button class="ap-btn-icon" onclick="document.getElementById('apOrderDetailOverlay').classList.remove('active')"><i class="ri-close-line"></i></button></div>
+    <div class="ap-modal-body" style="padding:20px;">
+      <p style="font-size:12px;margin:0 0 8px;"><strong>Customer:</strong> ${apEscHtml(o.customerName || o.name)}</p>
+      <p style="font-size:12px;margin:0 0 8px;"><strong>Phone:</strong> ${apEscHtml(o.phone || '')}</p>
+      <p style="font-size:12px;margin:0 0 12px;"><strong>Address:</strong> ${apEscHtml(o.address || '')}</p>
+      <p style="font-size:12px;margin:0 0 8px;"><strong>Status:</strong> ${apEscHtml(o.status)} · <strong>Payment:</strong> ${apEscHtml(o.paymentMethod || '')}</p>
+      <div style="background:#f8fafc;border-radius:10px;padding:10px;margin:12px 0;">${items}</div>
+      <h4 style="text-align:right;margin:0;">Total: ₹${o.totalAmount || o.grandTotal || 0}</h4>
+    </div>
+    <div class="ap-modal-footer">
+      <button class="ap-btn ap-btn-secondary" onclick="viewApOrderInvoice('${o.orderId}')">🧾 GST Invoice</button>
+      <button class="ap-btn ap-btn-primary" onclick="document.getElementById('apOrderDetailOverlay').classList.remove('active')">Close</button>
+    </div></div>`;
+  el.classList.add('active');
+}
+
+function openBulkCategoryPickerModal() {
+  if (apSelectedProductIds.length === 0) return;
+  let el = document.getElementById('apBulkCatOverlay');
+  if (!el) { el = document.createElement('div'); el.id = 'apBulkCatOverlay'; el.className = 'ap-modal-backdrop'; document.body.appendChild(el); }
+  const opts = getAdminCategoryNames().map(c => `<option value="${apEscHtml(c)}">${apEscHtml(c)}</option>`).join('');
+  el.innerHTML = `<div class="ap-modal-container" style="max-width:400px;" onclick="event.stopPropagation()">
+    <div class="ap-modal-header"><h3 class="ap-modal-title">Change Category (${apSelectedProductIds.length} products)</h3>
+    <button class="ap-btn-icon" onclick="document.getElementById('apBulkCatOverlay').classList.remove('active')"><i class="ri-close-line"></i></button></div>
+    <div class="ap-modal-body" style="padding:20px;">
+      <select id="apBulkCatSelect" class="ap-search-input" style="width:100%;padding-left:12px;">${opts}</select>
+    </div>
+    <div class="ap-modal-footer">
+      <button class="ap-btn ap-btn-secondary" onclick="document.getElementById('apBulkCatOverlay').classList.remove('active')">Cancel</button>
+      <button class="ap-btn ap-btn-primary" onclick="confirmBulkCategoryChange()">Apply</button>
+    </div></div>`;
+  el.classList.add('active');
+}
+
+function getAdminCategoryNames() {
+  const visible = getVisibleCategories();
+  if (visible.length) return visible.map(c => c.name);
+  return CATEGORIES.length ? CATEGORIES : ['General'];
+}
+
+function syncReviewsForAdmin() {
+  (userReviews || []).forEach(ur => {
+    const mapped = {
+      id: ur.id,
+      name: ur.userName || ur.name || 'Customer',
+      rating: ur.rating,
+      comment: ur.comment || ur.title || '',
+      date: ur.date || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      status: ur.adminStatus || ur.status || 'Pending',
+      featured: !!ur.featured,
+      productId: ur.productId,
+      productTitle: ur.productTitle
+    };
+    const idx = STORE_REVIEWS.findIndex(r => r.id === ur.id);
+    if (idx >= 0) STORE_REVIEWS[idx] = { ...STORE_REVIEWS[idx], ...mapped };
+    else STORE_REVIEWS.push(mapped);
+  });
+}
+
+function syncAdminReviewToUser(review) {
+  const ur = userReviews.find(r => r.id === review.id);
+  if (ur) {
+    ur.adminStatus = review.status;
+    ur.status = review.status;
+    ur.featured = review.featured;
+    localStorage.setItem('ue_reviews', JSON.stringify(userReviews));
+    sbInsertReview(ur).catch(() => {});
+  }
+}
+
+function populateAdminCategorySelect(selectEl, selectedValue) {
+  if (!selectEl) return;
+  const names = getAdminCategoryNames();
+  selectEl.innerHTML = names.map(n => `<option value="${apEscHtml(n)}">${apEscHtml(n)}</option>`).join('');
+  if (selectedValue && names.includes(selectedValue)) selectEl.value = selectedValue;
+}
+
+function confirmBulkCategoryChange() {
+  const cat = document.getElementById('apBulkCatSelect')?.value;
+  if (!cat) return;
+  ALL_PRODUCTS.forEach(p => {
+    if (apSelectedProductIds.some(id => String(id) === String(p.id))) {
+      p.category = cat;
+      if (typeof sbAdminUpdateProduct === 'function') {
+        sbAdminUpdateProduct(p).catch(err => console.warn('[UE] Bulk category sync failed:', err.message));
+      }
+    }
+  });
+  apSelectedProductIds = [];
+  syncStorefrontState();
+  document.getElementById('apBulkCatOverlay')?.classList.remove('active');
+  switchApTab('products');
+  showApToast(`Category updated to ${cat}`, 'success');
+}
 
 const CATEGORY_IMAGE_MAP = {
   'RC Toys': 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?w=600&auto=format&fit=crop',
@@ -274,6 +704,7 @@ const CATEGORY_IMAGE_MAP = {
   'Gifts & Gadgets': 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600&auto=format&fit=crop',
   'Return Gifts': 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600&auto=format&fit=crop',
   'Return Gift Studio': 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600&auto=format&fit=crop',
+  'Latest Arrivals': 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600&auto=format&fit=crop',
   'Latest Arrivars': 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600&auto=format&fit=crop',
   'RC Toys & Cars': 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?w=600&auto=format&fit=crop'
 };
@@ -281,7 +712,7 @@ const CATEGORY_IMAGE_MAP = {
 const CATEGORY_EMOJI_MAP = {
   'RC Toys': '🚗', 'RC Flying Toys': '🛸', 'Educational Toys': '🧩', 'Standard Toys': '🧸',
   'Handicrafts': '🏺', 'Stationary': '📝', 'Combos': '🎀', 'Kids Footwear': '👟',
-  'Gifts & Gadgets': '🎮', 'Return Gifts': '🎁', 'Latest Arrivars': '✨'
+  'Gifts & Gadgets': '🎮', 'Return Gift Studio': '🎁', 'Latest Arrivals': '✨'
 };
 
 function getCategoryEmoji(name) {
@@ -371,6 +802,7 @@ function syncStorefrontState() {
   // Live re-render all storefront components
   if (typeof renderDesktopGrid === 'function') renderDesktopGrid();
   if (typeof renderCategoryBar === 'function') renderCategoryBar();
+  if (typeof renderDynamicNavCategories === 'function') renderDynamicNavCategories();
   if (typeof renderMobileHome === 'function') renderMobileHome();
   if (typeof renderAllSections === 'function') renderAllSections();
   if (typeof updateBadges === 'function') updateBadges();
@@ -5228,34 +5660,29 @@ let STORE_SETTINGS = JSON.parse(localStorage.getItem('ue_store_settings_v5')) ||
   shippingFee: 50,
   giftWrapFee: 30,
   instagram: "@uniqueexpressions.in",
-  youtube: "@UNIQUEEXPRESSIONS-25"
+  youtube: "@UNIQUEEXPRESSIONS-25",
+  adminPin: "1234"
 };
+if (!STORE_SETTINGS.adminPin) STORE_SETTINGS.adminPin = '1234';
 localStorage.setItem('ue_store_settings_v5', JSON.stringify(STORE_SETTINGS));
 
-let STORE_CUSTOMERS = JSON.parse(localStorage.getItem('ue_customers_v5')) || [
-  { id: 1, name: "Sowmya Rao", phone: "+91 8886662334", email: "sowmya.rao@gmail.com", city: "Visakhapatnam", ordersCount: 4, totalSpend: 3450, status: "Active" },
-  { id: 2, name: "Rajesh Varma", phone: "+91 9876543210", email: "rajesh.v@yahoo.com", city: "Visakhapatnam", ordersCount: 2, totalSpend: 1850, status: "Active" },
-  { id: 3, name: "Priya Sundaram", phone: "+91 9440123456", email: "priya.sundaram@gmail.com", city: "Visakhapatnam", ordersCount: 5, totalSpend: 5400, status: "VIP" },
-  { id: 4, name: "K. V. Raman", phone: "+91 9123456789", email: "raman.kv@outlook.com", city: "Visakhapatnam", ordersCount: 1, totalSpend: 799, status: "New" }
-];
+let STORE_CUSTOMERS = JSON.parse(localStorage.getItem('ue_customers_v5')) || [];
 localStorage.setItem('ue_customers_v5', JSON.stringify(STORE_CUSTOMERS));
 
 let STORE_COUPONS = JSON.parse(localStorage.getItem('ue_coupons_v5')) || [
-  { code: "WELCOME100", discount: "₹100 OFF", minSpend: 499, usedCount: 48, expiry: "31 Dec 2026", status: "Active" },
-  { code: "VIZAGFREE", discount: "FREE Shipping", minSpend: 299, usedCount: 120, expiry: "31 Dec 2026", status: "Active" },
-  { code: "FESTIVE20", discount: "20% OFF", minSpend: 999, usedCount: 15, expiry: "15 Oct 2026", status: "Active" }
+  { code: "WELCOME100", type: "fixed", value: 100, discount: "₹100 OFF", minSpend: 499, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
+  { code: "VIZAGFREE", type: "shipping", value: 0, discount: "FREE Shipping", minSpend: 299, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
+  { code: "FESTIVE20", type: "percent", value: 20, discount: "20% OFF", minSpend: 999, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
+  { code: "UNIQUE10", type: "percent", value: 10, discount: "10% OFF", minSpend: 399, usedCount: 0, expiry: "31 Dec 2026", status: "Active" }
 ];
+normalizeStoreCoupons();
 localStorage.setItem('ue_coupons_v5', JSON.stringify(STORE_COUPONS));
 
-let STORE_REVIEWS = JSON.parse(localStorage.getItem('ue_reviews_v5')) || [
-  { id: 101, name: "Sowmya Rao", rating: 5, comment: "Ordered 50 return gift hampers for my daughter's birthday. Exceptional quality and prompt same-day delivery in Madhurawada!", date: "28 Jul 2026", status: "Approved", featured: true },
-  { id: 102, name: "Rajesh Varma", rating: 5, comment: "My son loved this stunt car! The 360-degree flip works smoothly and battery performance is great.", date: "24 Jul 2026", status: "Approved", featured: true },
-  { id: 103, name: "Priya Sundaram", rating: 5, comment: "Bought this idol as a housewarming gift. The finish is handcrafted with intricate details. Highly recommended boutique!", date: "19 Jul 2026", status: "Approved", featured: false },
-  { id: 104, name: "K. V. Raman", rating: 4, comment: "Seamless mobile app experience made ordering school stationery so convenient. Best boutique store!", date: "15 Jul 2026", status: "Approved", featured: true }
-];
+let STORE_REVIEWS = JSON.parse(localStorage.getItem('ue_reviews_v5')) || [];
 localStorage.setItem('ue_reviews_v5', JSON.stringify(STORE_REVIEWS));
 
 function syncStorefrontState() {
+  syncReviewsForAdmin();
   localStorage.setItem('ue_products_v9', JSON.stringify(ALL_PRODUCTS));
   localStorage.setItem('ue_products_v8', JSON.stringify(ALL_PRODUCTS));
   localStorage.setItem('ue_categories_data_v5', JSON.stringify(CATEGORIES_DATA));
@@ -5268,8 +5695,12 @@ function syncStorefrontState() {
   localStorage.setItem('ue_reviews_v5', JSON.stringify(STORE_REVIEWS));
   localStorage.setItem('ue_orders_v5', JSON.stringify(userOrders));
 
+  syncCustomersFromOrders();
+  localStorage.setItem('ue_customers_v5', JSON.stringify(STORE_CUSTOMERS));
+
   if (typeof renderDesktopGrid === 'function') renderDesktopGrid();
   if (typeof renderCategoryBar === 'function') renderCategoryBar();
+  if (typeof renderDynamicNavCategories === 'function') renderDynamicNavCategories();
   if (typeof renderMobileHome === 'function') renderMobileHome();
   if (typeof renderAllSections === 'function') renderAllSections();
   if (typeof updateBadges === 'function') updateBadges();
@@ -5289,158 +5720,98 @@ let recentlyViewed = JSON.parse(localStorage.getItem('ue_recently_viewed') || '[
 
 let userSession = JSON.parse(localStorage.getItem('ue_user_session_v2') || 'null');
 let userProfile = (userSession && userSession.isLoggedIn) ? userSession.profile : null;
+let authUserId = userProfile?.id || null;
+let userAddresses = [];
 
-let userAddresses = JSON.parse(localStorage.getItem('ue_addresses') || JSON.stringify([
-  {
-    id: 1,
-    name: "G Mounika Durga",
-    phone: "+91 8886662334",
-    street: "2nd floor LIG 347, 2-115/9/1, near Shivalayam",
-    area: "Midhilapuri VUDA Colony, Madhurawada",
-    city: "Visakhapatnam",
-    pincode: "530041",
-    type: "Home",
-    isDefault: true
-  },
-  {
-    id: 2,
-    name: "K. V. Raman",
-    phone: "+91 9876543210",
-    street: "Door No 10-4-5, VIP Road, Near Siripuram Circle",
-    area: "Siripuram",
-    city: "Visakhapatnam",
-    pincode: "530003",
-    type: "Work",
-    isDefault: false
-  }
-]));
+function getAddressesStorageKey() {
+  return authUserId ? `ue_addresses_${authUserId}` : 'ue_addresses_guest';
+}
 
-let userOrders = JSON.parse(localStorage.getItem('ue_orders') || JSON.stringify([
-  {
-    orderId: "UE-892410",
-    date: "01 Aug 2026, 10:15 AM",
-    status: "Out for Delivery",
-    stepIndex: 2,
-    customerName: "G Mounika Durga",
-    phone: "+91 8886662334",
-    address: "2nd floor LIG 347, Madhurawada, Visakhapatnam - 530041",
-    paymentMethod: "UPI / PhonePe",
-    totalAmount: 1298,
-    subtotal: 1298,
-    discountAmount: 130,
-    shippingFee: 0,
-    gstin: "37BVTPG7761F1Z1",
-    items: [
-      { id: 1, title: "RC Super Stunt Car 360", price: 799, qty: 1, image: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop" },
-      { id: 2, title: "Soft Cuddly Teddy Bear (Large)", price: 499, qty: 1, image: "https://images.unsplash.com/photo-1559454403-b8fb88521f11?q=80&w=600&auto=format&fit=crop" }
-    ]
-  },
-  {
-    orderId: "UE-781923",
-    date: "25 Jul 2026, 04:30 PM",
-    status: "Delivered",
-    stepIndex: 3,
-    customerName: "G Mounika Durga",
-    phone: "+91 8886662334",
-    address: "2nd floor LIG 347, Madhurawada, Visakhapatnam - 530041",
-    paymentMethod: "Cash on Delivery",
-    totalAmount: 1499,
-    subtotal: 1499,
-    discountAmount: 0,
-    shippingFee: 0,
-    gstin: "37BVTPG7761F1Z1",
-    items: [
-      { id: 9, title: "Handcrafted Brass Ganesha Idol", price: 1499, qty: 1, image: "https://images.unsplash.com/photo-1606293926075-69a00dbfde81?q=80&w=600&auto=format&fit=crop" }
-    ]
-  }
-]));
+function loadUserAddressesFromStorage() {
+  userAddresses = JSON.parse(localStorage.getItem(getAddressesStorageKey()) || '[]');
+}
 
-let userReviews = JSON.parse(localStorage.getItem('ue_reviews') || JSON.stringify([
-  {
-    id: 101,
-    productId: 17,
-    productTitle: "Kids Birthday Return Gift Combo Box",
-    category: "Return Gifts",
-    userName: "Sowmya Rao",
-    city: "Visakhapatnam",
-    rating: 5,
-    title: "Absolute Lifesaver for Birthday Parties!",
-    comment: "Ordered 50 return gift hampers for my daughter's birthday. Exceptional quality and prompt same-day delivery in Madhurawada!",
-    date: "28 Jul 2026",
-    verified: true,
-    helpfulCount: 24,
-    image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=400&auto=format&fit=crop"
-  },
-  {
-    id: 102,
-    productId: 1,
-    productTitle: "RC Super Stunt Car 360",
-    category: "Toys",
-    userName: "Rajesh Varma",
-    city: "Madhurawada, Vizag",
-    rating: 5,
-    title: "Super Durable & Fun Remote Control Car",
-    comment: "My son loved this stunt car! The 360-degree flip works smoothly and battery performance is great.",
-    date: "24 Jul 2026",
-    verified: true,
-    helpfulCount: 18,
-    image: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop"
-  },
-  {
-    id: 103,
-    productId: 9,
-    productTitle: "Handcrafted Brass Ganesha Idol",
-    category: "Handicrafts",
-    userName: "Priya Sundaram",
-    city: "Siripuram, Vizag",
-    rating: 5,
-    title: "Exquisite Craftsmanship & Heavy Brass Build",
-    comment: "Bought this idol as a housewarming gift. The finish is handcrafted with intricate details. Highly recommended boutique!",
-    date: "19 Jul 2026",
-    verified: true,
-    helpfulCount: 15,
-    image: "https://images.unsplash.com/photo-1606293926075-69a00dbfde81?q=80&w=400&auto=format&fit=crop"
-  },
-  {
-    id: 104,
-    productId: 13,
-    productTitle: "Unicorn Kawaii Multi-Color Pen Set",
-    category: "Stationery",
-    userName: "K. V. Raman",
-    city: "Visakhapatnam",
-    rating: 4,
-    title: "Great Gift for School Children",
-    comment: "Seamless mobile app experience made ordering school stationery so convenient. Best boutique store!",
-    date: "15 Jul 2026",
-    verified: true,
-    helpfulCount: 9,
-    image: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?q=80&w=400&auto=format&fit=crop"
+function saveUserAddressesToStorage() {
+  localStorage.setItem(getAddressesStorageKey(), JSON.stringify(userAddresses));
+  if (authUserId && typeof sbUpsertProfile === 'function') {
+    sbUpsertProfile(authUserId, { ...userProfile, addresses: userAddresses });
   }
-]));
+}
 
-let userReturns = JSON.parse(localStorage.getItem('ue_returns') || JSON.stringify([
-  {
-    returnId: "RET-904128",
-    orderId: "UE-781923",
-    date: "26 Jul 2026",
-    status: "Approved - Pickup Scheduled",
-    itemTitle: "Handcrafted Brass Ganesha Idol",
-    reason: "Requested Exchange for Different Statue Variant",
-    resolution: "Store Credit Refund",
-    amount: 1499
-  }
-]));
+loadUserAddressesFromStorage();
 
-let supportTickets = JSON.parse(localStorage.getItem('ue_tickets') || JSON.stringify([
-  {
-    ticketId: "TCK-4819",
-    category: "Wholesale Inquiry",
-    subject: "Bulk Return Gift Invoice with GSTIN",
-    status: "Resolved",
-    date: "29 Jul 2026",
-    message: "Requested official GST tax invoice for bulk return gift purchase."
+function getCustomerOrders() {
+  if (!userProfile) return userOrders;
+  const phone10 = String(userProfile.phone || '').replace(/\D/g, '').slice(-10);
+  return userOrders.filter(o => {
+    if (authUserId && o.userId === authUserId) return true;
+    if (phone10 && String(o.phone || '').replace(/\D/g, '').slice(-10) === phone10) return true;
+    return false;
+  });
+}
+
+async function applyAuthSession(session) {
+  if (!session?.user) {
+    authUserId = null;
+    userProfile = null;
+    userSession = null;
+    localStorage.removeItem('ue_user_session_v2');
+    loadUserAddressesFromStorage();
+    return;
   }
-]));
+  authUserId = session.user.id;
+  const meta = session.user.user_metadata || {};
+  const prof = typeof sbGetProfile === 'function' ? await sbGetProfile(session.user.id) : null;
+  userProfile = {
+    id: session.user.id,
+    name: prof?.name || meta.name || 'Customer',
+    email: prof?.email || meta.email || session.user.email || '',
+    phone: prof?.phone || meta.phone || '',
+    city: prof?.city || meta.city || 'Visakhapatnam',
+    address: prof?.address || '',
+    pincode: prof?.pincode || ''
+  };
+  if (Array.isArray(prof?.addresses) && prof.addresses.length) {
+    userAddresses = prof.addresses;
+    saveUserAddressesToStorage();
+  } else {
+    loadUserAddressesFromStorage();
+  }
+  userSession = { isLoggedIn: true, profile: userProfile };
+  localStorage.setItem('ue_user_session_v2', JSON.stringify(userSession));
+  if (typeof sbGetOrdersForUser === 'function') {
+    const remote = await sbGetOrdersForUser(session.user.id, userProfile.phone);
+    if (remote.length) {
+      const ids = new Set(userOrders.map(o => o.orderId));
+      remote.forEach(o => { if (!ids.has(o.orderId)) userOrders.unshift(o); });
+      localStorage.setItem('ue_orders', JSON.stringify(userOrders));
+    }
+  }
+}
+
+async function bootstrapCustomerAuth() {
+  if (typeof sbGetAuthSession !== 'function') return;
+  const session = await sbGetAuthSession();
+  await applyAuthSession(session);
+  if (typeof sbOnAuthStateChange === 'function') {
+    sbOnAuthStateChange(async (_event, session) => {
+      await applyAuthSession(session);
+      if (currentView === 'profile') renderProfileView();
+      if (currentView === 'checkout') renderCheckoutView();
+    });
+  }
+  if (window.location.hash.includes('reset=1') || window.location.search.includes('type=recovery')) {
+    setTimeout(openResetPasswordModal, 400);
+  }
+}
+
+let userOrders = JSON.parse(localStorage.getItem('ue_orders') || '[]');
+
+let userReviews = JSON.parse(localStorage.getItem('ue_reviews') || '[]');
+
+let userReturns = JSON.parse(localStorage.getItem('ue_returns') || '[]');
+
+let supportTickets = JSON.parse(localStorage.getItem('ue_tickets') || '[]');
 
 function openWishlistDrawer() {
   switchView('wishlist');
@@ -5502,7 +5873,7 @@ function mergeProductsFromSupabase(sbProds) {
       ...sb,
       image: sb.image || local.image,
       images: local.images || (sb.image ? [sb.image] : []),
-      stockQty: local.stockQty ?? 12,
+      stockQty: local.stockQty ?? sb.stockQty ?? 12,
       sku: local.sku || sb.sku,
       isFeatured: local.isFeatured ?? false
     };
@@ -5535,9 +5906,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateBadges();
   startHeroCarousel();
   refreshCategoryImagesFromCatalog();
+  if (typeof migrateCategoriesForProduction === 'function') migrateCategoriesForProduction();
   renderCategoryBar();
+  if (typeof renderDynamicNavCategories === 'function') renderDynamicNavCategories();
   if (window.feather) feather.replace();
   if (window.lucide) lucide.createIcons();
+
+  await bootstrapCustomerAuth();
 
   // Bootstrap from Supabase in background
   try {
@@ -5582,7 +5957,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       await sbSeedReviews(userReviews);
     }
 
-    // 4. Load returns from Supabase
+    // 6. Load categories from Supabase
+    const sbCats = await sbGetCategories();
+    if (sbCats && sbCats.length > 0) {
+      CATEGORIES_DATA = sbCats;
+      CATEGORIES = CATEGORIES_DATA.map(c => c.name);
+      localStorage.setItem('ue_categories_data_v5', JSON.stringify(CATEGORIES_DATA));
+      migrateCategoriesForProduction();
+      renderCategoryBar();
+      renderDynamicNavCategories();
+    } else if (CATEGORIES_DATA.length > 0) {
+      await sbSeedCategories(CATEGORIES_DATA);
+    }
+
+    // 7. Load returns from Supabase
     const sbRets = await sbGetReturns();
     if (sbRets !== null && sbRets.length > 0) {
       const sbRetIds = new Set(sbRets.map(r => r.returnId));
@@ -5603,6 +5991,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('[UE] Supabase sync complete');
     refreshCategoryImagesFromCatalog();
     renderCategoryBar();
+    renderDynamicNavCategories();
+    populateAdminCategorySelect(document.getElementById('admModalCategorySelect'));
+    syncReviewsForAdmin();
+    syncStorefrontState();
   } catch (err) {
     console.warn('[UE] Supabase bootstrap error (offline mode active):', err.message);
   }
@@ -5851,7 +6243,7 @@ function renderCategoryBar() {
 
   if (visibleCats.length === 0) return;
 
-  const countFor = (name) => ALL_PRODUCTS.filter(p => p.category === name).length;
+  const countFor = (name) => productsInCategory(name).length;
   const esc = (s) => String(s).replace(/'/g, "\\'");
 
   const mobileRail = document.getElementById('mCatRailContainer');
@@ -6721,6 +7113,11 @@ function updatePdpQty(change) {
 
 function addPdpToCart(goToCheckout = false) {
   if (!currentPdpProduct) return;
+  const check = validateStockForCart(currentPdpProduct.id, pdpSelectedQty);
+  if (!check.ok) {
+    showToast(check.msg, 'info');
+    return;
+  }
   const existing = cart.find(i => i.id === currentPdpProduct.id && i.variant === pdpSelectedVariant);
   if (existing) {
     existing.qty += pdpSelectedQty;
@@ -7260,10 +7657,27 @@ function openVoiceSearchModal() {
    ========================================================================== */
 function renderCheckoutView() {
   const container = document.getElementById('viewCheckout');
-  const subtotal = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
-  const discount = appliedCouponCode ? Math.round(subtotal * 0.1) : 0;
-  const shipping = subtotal > 499 ? 0 : 50;
-  const grandTotal = Math.max(0, subtotal - discount + shipping);
+  normalizeCartItems();
+  const { subtotal, discount, shipping, grandTotal, couponResult } = calculateCheckoutTotals();
+  appliedDiscountAmount = discount;
+
+  const chkNameVal = userProfile?.name || '';
+  const chkPhoneVal = userProfile?.phone || '';
+  const defaultAddr = userAddresses.find(a => a.isDefault) || userAddresses[0];
+  const chkAddressVal = defaultAddr ? `${defaultAddr.street || ''}, ${defaultAddr.area || ''}`.replace(/^,\s*/, '') : (userProfile?.address || '');
+  const chkLocalityVal = defaultAddr?.city || userProfile?.city || 'Visakhapatnam';
+  const chkPincodeVal = defaultAddr?.pincode || userProfile?.pincode || '';
+
+  const savedAddrHtml = userAddresses.length > 0
+    ? userAddresses.map((addr, i) => `
+          <div class="payment-option-card ${selectedDeliveryAddress === String(addr.id) ? 'active' : ''}" onclick="selectSavedAddress(${addr.id})">
+            <input type="radio" name="chkAddrRadio" ${selectedDeliveryAddress === String(addr.id) ? 'checked' : ''}>
+            <div>
+              <div style="font-size:12px; font-weight:800;">${addr.type === 'Work' ? '💼' : '🏠'} ${apEscHtml(addr.name)} (${addr.type || 'Home'})</div>
+              <div style="font-size:10px; color:#64748b;">${apEscHtml(addr.street)}, ${apEscHtml(addr.area)}, ${apEscHtml(addr.city)} - ${apEscHtml(addr.pincode)}</div>
+            </div>
+          </div>`).join('')
+    : `<p style="font-size:11px;color:#64748b;margin:0 0 8px;">No saved addresses. Enter delivery details below or <a href="#" onclick="switchView('profile');return false;" style="color:#2563eb;font-weight:700;">login</a> to save addresses.</p>`;
 
   container.innerHTML = `
     <div class="m-view-header-bar">
@@ -7273,6 +7687,18 @@ function renderCheckoutView() {
     </div>
 
     <div class="checkout-container">
+      ${!userProfile ? `
+      <div class="checkout-card" style="background:#eff6ff;border-color:#bfdbfe;padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div style="font-size:12px;color:#1e40af;font-weight:700;">Have an account? Login for saved addresses & faster checkout.</div>
+          <button class="ap-btn ap-btn-primary" style="height:32px;font-size:11px;" onclick="switchView('profile')">Login / Register</button>
+        </div>
+        <p style="font-size:10px;color:#64748b;margin:8px 0 0;">Guest checkout is available — no account required to place an order.</p>
+      </div>` : `
+      <div class="checkout-card" style="background:#f0fdf4;border-color:#bbf7d0;padding:12px 16px;">
+        <span style="font-size:12px;color:#166534;font-weight:700;">Logged in as ${apEscHtml(userProfile.name)} — details pre-filled below.</span>
+      </div>`}
+
       <!-- Step 1: Order Summary -->
       <div class="checkout-card">
         <div class="checkout-step-title"><span class="checkout-step-num">1</span> Order Summary (${cart.length} items)</div>
@@ -7283,9 +7709,9 @@ function renderCheckoutView() {
                 <img src="${item.image}" style="width:36px; height:36px; border-radius:6px; object-fit:cover;">
                 <div style="flex:1;">
                   <div style="font-weight:700; color:#0f172a;">${item.title}</div>
-                  <div style="font-size:10px; color:#64748b;">Qty: ${item.quantity} × ₹${item.price}</div>
+                  <div style="font-size:10px; color:#64748b;">Qty: ${cartItemQty(item)} × ₹${item.price}</div>
                 </div>
-                <div style="font-weight:800; color:#0f172a;">₹${item.quantity * item.price}</div>
+                <div style="font-weight:800; color:#0f172a;">₹${cartItemQty(item) * item.price}</div>
               </div>
             `).join('')}
           </div>
@@ -7294,10 +7720,11 @@ function renderCheckoutView() {
         <div class="form-group" style="margin-top:12px;">
           <label class="form-label">Have a Discount Coupon?</label>
           <div class="coupon-input-wrap">
-            <input type="text" id="checkoutCouponInput" class="form-input" placeholder="Try coupon UNIQUE10..." value="${appliedCouponCode || ''}">
+            <input type="text" id="checkoutCouponInput" class="form-input" placeholder="Try WELCOME100, FESTIVE20, VIZAGFREE..." value="${appliedCouponCode || ''}">
             <button class="btn-apply-coupon" onclick="applyCheckoutCoupon()">Apply</button>
           </div>
-          ${appliedCouponCode ? `<span style="font-size:10px; font-weight:700; color:var(--func-green); margin-top:4px; display:block;">✓ Coupon ${appliedCouponCode} applied! (10% Off)</span>` : ''}
+          ${appliedCouponCode && couponResult.valid ? `<span style="font-size:10px; font-weight:700; color:var(--func-green); margin-top:4px; display:block;">✓ ${appliedCouponCode} applied! (${couponResult.label})</span>` : ''}
+          ${appliedCouponCode && !couponResult.valid ? `<span style="font-size:10px; font-weight:700; color:#ef4444; margin-top:4px; display:block;">${couponResult.error || 'Invalid coupon'}</span>` : ''}
         </div>
       </div>
 
@@ -7307,42 +7734,29 @@ function renderCheckoutView() {
         
         <span style="font-size:11px; font-weight:800; color:#334155; margin-bottom:6px; display:block;">Select Saved Address:</span>
         <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
-          <div class="payment-option-card ${selectedDeliveryAddress === 'home' ? 'active' : ''}" onclick="selectDeliveryAddressCard(this, 'home')">
-            <input type="radio" name="chkAddrRadio" ${selectedDeliveryAddress === 'home' ? 'checked' : ''}>
-            <div>
-              <div style="font-size:12px; font-weight:800;">🏠 Home Address (Default)</div>
-              <div style="font-size:10px; color:#64748b;">LIG 347, Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041</div>
-            </div>
-          </div>
-          <div class="payment-option-card ${selectedDeliveryAddress === 'work' ? 'active' : ''}" onclick="selectDeliveryAddressCard(this, 'work')">
-            <input type="radio" name="chkAddrRadio" ${selectedDeliveryAddress === 'work' ? 'checked' : ''}>
-            <div>
-              <div style="font-size:12px; font-weight:800;">💼 Work Office</div>
-              <div style="font-size:10px; color:#64748b;">IT Hill No. 3, Rushikonda, Visakhapatnam - 530045</div>
-            </div>
-          </div>
+          ${savedAddrHtml}
         </div>
 
         <div class="form-group">
           <label class="form-label">Full Name *</label>
-          <input type="text" id="chkName" class="form-input" placeholder="e.g. Sowmya Rao" value="Sowmya Rao">
+          <input type="text" id="chkName" class="form-input" placeholder="e.g. Your Full Name" value="${apEscHtml(chkNameVal)}">
         </div>
         <div class="form-group">
           <label class="form-label">Mobile / WhatsApp Number *</label>
-          <input type="tel" id="chkPhone" class="form-input" placeholder="e.g. 9876543210" value="8886662334">
+          <input type="tel" id="chkPhone" class="form-input" placeholder="e.g. 9876543210" value="${apEscHtml(chkPhoneVal)}">
         </div>
         <div class="form-group">
           <label class="form-label">Delivery Street Address *</label>
-          <input type="text" id="chkAddress" class="form-input" placeholder="Flat No, Building, Street near Landmark" value="LIG 347, 2-115/9/1, near Shivalayam">
+          <input type="text" id="chkAddress" class="form-input" placeholder="Flat No, Building, Street near Landmark" value="${apEscHtml(chkAddressVal)}">
         </div>
         <div style="display:flex; gap:10px;">
           <div class="form-group" style="flex:1;">
             <label class="form-label">Area / Locality</label>
-            <input type="text" id="chkLocality" class="form-input" value="Madhurawada, Visakhapatnam">
+            <input type="text" id="chkLocality" class="form-input" value="${apEscHtml(chkLocalityVal)}">
           </div>
           <div class="form-group" style="flex:1;">
             <label class="form-label">Pincode</label>
-            <input type="text" id="chkPincode" class="form-input" value="530041">
+            <input type="text" id="chkPincode" class="form-input" value="${apEscHtml(chkPincodeVal)}">
           </div>
         </div>
       </div>
@@ -7401,13 +7815,17 @@ function applyCheckoutCoupon() {
   const input = document.getElementById('checkoutCouponInput');
   if (!input) return;
   const val = input.value.trim().toUpperCase();
-  if (val === 'UNIQUE10') {
-    appliedCouponCode = 'UNIQUE10';
-    showApToast('🎉 Coupon UNIQUE10 Applied! You get 10% Extra Discount.', 'info');
-    renderCheckoutView();
-  } else {
-    showToast('❌ Invalid Coupon Code! Try UNIQUE10', 'info');
+  if (!val) { appliedCouponCode = null; renderCheckoutView(); return; }
+  normalizeCartItems();
+  const itemsTotal = cart.reduce((acc, i) => acc + i.price * cartItemQty(i), 0);
+  const result = calculateCouponDiscount(itemsTotal, val);
+  if (!result.valid) {
+    showApToast(result.error || 'Invalid coupon code.', 'info');
+    return;
   }
+  appliedCouponCode = val;
+  showApToast(`Coupon ${val} applied! ${result.label}`, 'success');
+  renderCheckoutView();
 }
 
 function selectPaymentMethod(el, methodName) {
@@ -7415,6 +7833,23 @@ function selectPaymentMethod(el, methodName) {
   el.classList.add('active');
   const radio = el.querySelector('input[type="radio"]');
   if (radio) radio.checked = true;
+}
+
+function selectSavedAddress(addrId) {
+  selectedDeliveryAddress = String(addrId);
+  const addr = userAddresses.find(a => a.id === addrId || String(a.id) === String(addrId));
+  if (!addr) return;
+  const nameEl = document.getElementById('chkName');
+  const phoneEl = document.getElementById('chkPhone');
+  const addressEl = document.getElementById('chkAddress');
+  const localityEl = document.getElementById('chkLocality');
+  const pincodeEl = document.getElementById('chkPincode');
+  if (nameEl) nameEl.value = addr.name || '';
+  if (phoneEl) phoneEl.value = addr.phone || '';
+  if (addressEl) addressEl.value = addr.street || '';
+  if (localityEl) localityEl.value = addr.area ? `${addr.area}, ${addr.city || 'Visakhapatnam'}` : (addr.city || 'Visakhapatnam');
+  if (pincodeEl) pincodeEl.value = addr.pincode || '';
+  renderCheckoutView();
 }
 
 function selectDeliveryAddressCard(el, addressKey) {
@@ -7442,35 +7877,61 @@ function placeOrderFinal(grandTotal) {
     return;
   }
 
+  const stockCheck = validateCartStockBeforeCheckout();
+  if (!stockCheck.ok) {
+    showApToast(stockCheck.msg, 'info');
+    return;
+  }
+
+  const locality = document.getElementById('chkLocality')?.value.trim() || 'Visakhapatnam';
+  const pincode = document.getElementById('chkPincode')?.value.trim() || '';
+  const fullAddress = [address, locality, pincode].filter(Boolean).join(', ');
+
+  const totals = calculateCheckoutTotals();
   const orderRecord = {
     orderId: 'UE-' + Math.floor(100000 + Math.random() * 900000),
     date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-    items: [...cart],
-    totalAmount: grandTotal,
-    subtotal: grandTotal,
-    discountAmount: appliedDiscountAmount || 0,
-    shippingFee: 0,
+    createdAt: new Date().toISOString(),
+    items: cart.map(i => ({ ...i, qty: cartItemQty(i) })),
+    totalAmount: totals.grandTotal,
+    subtotal: totals.subtotal,
+    discountAmount: totals.discount,
+    shippingFee: totals.shipping,
+    couponCode: appliedCouponCode || null,
     stepIndex: 0,
     status: 'Order Confirmed',
     customerName: name,
     phone: phone,
-    address: address || 'Madhurawada, Visakhapatnam',
+    address: fullAddress || 'Visakhapatnam',
     paymentMethod: document.querySelector('.payment-option-card.active span')?.innerText || 'Online',
-    gstin: '37BVTPG7761F1Z1'
+    gstin: '37BVTPG7761F1Z1',
+    userId: authUserId || null
   };
 
   // Save locally first
   userOrders.unshift(orderRecord);
   localStorage.setItem('ue_orders', JSON.stringify(userOrders));
 
+  // Deduct stock for each ordered item
+  deductStockForOrder(orderRecord.items);
+  syncStorefrontState();
+
   // Sync to Supabase (non-blocking)
   sbInsertOrder(orderRecord).catch(err => console.warn('[UE] Order sync failed:', err));
+
+  if (appliedCouponCode) {
+    const c = STORE_COUPONS.find(x => x.code === appliedCouponCode);
+    if (c) c.usedCount = (c.usedCount || 0) + 1;
+  }
+  appliedCouponCode = null;
+  appliedDiscountAmount = 0;
 
   // Reset Cart
   cart = [];
   saveCart();
 
   // Stop right here and display a clean Order Confirmation Screen on Checkout view
+  const paidTotal = totals.grandTotal;
   const container = document.getElementById('viewCheckout');
   container.innerHTML = `
     <div class="m-view-header-bar">
@@ -7489,25 +7950,25 @@ function placeOrderFinal(grandTotal) {
         </span>
         <h2 style="font-size:19px; font-weight:800; color:#0f172a; margin-bottom:6px;">Thank You, ${name}!</h2>
         <p style="font-size:12px; color:#64748b; margin-bottom:20px; line-height:1.5;">
-          Your order has been placed successfully for <strong>₹${grandTotal}</strong>.<br>
-          Express delivery to <strong>${address || 'Madhurawada, Visakhapatnam'}</strong> is scheduled.
+          Your order has been placed successfully for <strong>₹${paidTotal}</strong>.<br>
+          Express delivery to <strong>${address || 'Visakhapatnam'}</strong> is scheduled.
         </p>
 
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px; text-align:left; margin-bottom:20px;">
           <div style="font-size:11px; font-weight:800; color:#334155; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Order Summary:</div>
           ${orderRecord.items.map(item => `
             <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:#334155;">
-              <span>${item.title} (x${item.quantity})</span>
-              <span style="font-weight:700; color:#0f172a;">₹${item.quantity * item.price}</span>
+              <span>${item.title} (x${cartItemQty(item)})</span>
+              <span style="font-weight:700; color:#0f172a;">₹${cartItemQty(item) * item.price}</span>
             </div>
           `).join('')}
           <div style="border-top:1px dashed #cbd5e1; margin-top:8px; padding-top:6px; display:flex; justify-content:space-between; font-size:13px; font-weight:800; color:#0f172a;">
             <span>Total Paid:</span>
-            <span style="color:var(--brand-magenta-dark);">₹${grandTotal}</span>
+            <span style="color:var(--brand-magenta-dark);">₹${paidTotal}</span>
           </div>
         </div>
 
-        <button class="pdp-btn-amazon-buy" style="width:100%; height:44px; margin-bottom:10px; font-size:12px;" onclick="openWhatsAppChat('Hi, I just placed Order ${orderRecord.orderId} for ₹${grandTotal}. Please share delivery updates!')">
+        <button class="pdp-btn-amazon-buy" style="width:100%; height:44px; margin-bottom:10px; font-size:12px;" onclick="openWhatsAppChat('Hi, I just placed Order ${orderRecord.orderId} for ₹${paidTotal}. Please share delivery updates!')">
           💬 Send Order to WhatsApp (+91 8886662334)
         </button>
 
@@ -7643,25 +8104,26 @@ function switchProfileAuthTab(tab) {
 function handleProfilePageLogin(e) {
   if (e) e.preventDefault();
   const input = document.getElementById('profLoginInput')?.value.trim();
-  const pass = document.getElementById('profPassInput')?.value.trim();
+  const pass = document.getElementById('profPassInput')?.value;
+  const btn = e?.target?.querySelector('button[type="submit"]');
 
   if (!input || !pass) {
     showToast('Please enter your mobile number/email and password.', 'info');
     return;
   }
 
-  userProfile = {
-    name: input.includes('@') ? input.split('@')[0] : 'G Mounika Durga',
-    email: input.includes('@') ? input : 'customer@uniqueexpressions.in',
-    phone: !input.includes('@') ? input : '+91 8886662334',
-    city: 'Visakhapatnam',
-    address: 'Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam – 530041'
-  };
+  if (btn) { btn.disabled = true; btn.textContent = 'Logging in...'; }
 
-  localStorage.setItem('ue_user_session_v2', JSON.stringify({ isLoggedIn: true, profile: userProfile }));
-  if (typeof sbInsertProfile === 'function') sbInsertProfile(userProfile);
-  showToast(`Welcome back, ${userProfile.name}! Logged in successfully.`, 'success');
-  renderProfileView();
+  sbSignIn(input, pass).then(async (result) => {
+    if (result.error) {
+      showToast(result.error === 'Invalid login credentials' ? 'Wrong email/phone or password. Try again or reset password.' : result.error, 'info');
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Login to My Account &rarr;'; }
+      return;
+    }
+    await applyAuthSession(result.session);
+    showToast(`Welcome back, ${userProfile.name}!`, 'success');
+    renderProfileView();
+  });
 }
 
 function handleProfilePageRegister(e) {
@@ -7669,49 +8131,117 @@ function handleProfilePageRegister(e) {
   const name = document.getElementById('regFullName')?.value.trim();
   const phone = document.getElementById('regMobile')?.value.trim();
   const email = document.getElementById('regEmail')?.value.trim();
+  const pass = document.getElementById('regPass')?.value || '';
+  const btn = e?.target?.querySelector('button[type="submit"]');
 
   if (!name || !phone || !email) {
     showToast('Please enter your name, phone number, and email.', 'info');
     return;
   }
+  if (pass.length < 6) {
+    showToast('Password must be at least 6 characters.', 'info');
+    return;
+  }
 
-  userProfile = {
-    name: name,
-    email: email,
-    phone: phone,
-    city: 'Visakhapatnam',
-    address: 'Visakhapatnam, Andhra Pradesh'
-  };
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating account...'; }
 
-  localStorage.setItem('ue_user_session_v2', JSON.stringify({ isLoggedIn: true, profile: userProfile }));
-  showToast(`Registration Successful! Welcome ${name}!`, 'success');
-  renderProfileView();
+  sbSignUp({ email, password: pass, name, phone }).then(async (result) => {
+    if (result.error) {
+      showToast(result.error, 'info');
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Create Account & Claim VIP 10% Off &rarr;'; }
+      return;
+    }
+    if (result.session) {
+      await applyAuthSession(result.session);
+      showToast(`Welcome ${name}! Your account is ready.`, 'success');
+      renderProfileView();
+    } else {
+      showToast('Account created! If email verification is on, check your inbox then login.', 'success');
+      switchProfileAuthTab('login');
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Create Account & Claim VIP 10% Off &rarr;'; }
+    }
+  });
 }
 
 function handleProfileWhatsAppOtp() {
-  const phone = prompt('Enter your 10-digit mobile number for WhatsApp OTP:', '+91 8886662334');
-  if (phone) {
-    const otp = prompt('WhatsApp OTP code sent! Enter 4-digit OTP:', '1234');
-    if (otp) {
-      userProfile = {
-        name: 'G Mounika Durga',
-        email: 'customer@uniqueexpressions.in',
-        phone: phone,
-        city: 'Visakhapatnam',
-        address: 'Visakhapatnam, Andhra Pradesh'
-      };
-      localStorage.setItem('ue_user_session_v2', JSON.stringify({ isLoggedIn: true, profile: userProfile }));
-      showToast('WhatsApp OTP Verified! Logged in successfully.', 'success');
-      renderProfileView();
-    }
+  openWhatsAppChat('Hi, I need help with my UNIQUE EXPRESSIONS account login.');
+}
+
+async function handleUserLogout() {
+  await sbSignOut();
+  await applyAuthSession(null);
+  showToast('Logged out successfully.', 'info');
+  renderProfileView();
+}
+
+function openForgotPasswordModal() {
+  let el = document.getElementById('forgotPasswordOverlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'forgotPasswordOverlay';
+    el.className = 'ap-modal-backdrop';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<div class="ap-modal-container" style="max-width:420px;" onclick="event.stopPropagation()">
+    <div class="ap-modal-header"><h3 class="ap-modal-title">Reset Password</h3>
+    <button class="ap-btn-icon" onclick="document.getElementById('forgotPasswordOverlay').classList.remove('active')"><i class="ri-close-line"></i></button></div>
+    <div class="ap-modal-body" style="padding:20px;">
+      <p style="font-size:12px;color:#64748b;margin:0 0 12px;">Enter your registered email or mobile number. We will send a reset link to your email.</p>
+      <input type="text" id="forgotPassInput" class="ap-search-input" style="width:100%;" placeholder="Email or +91 mobile number">
+    </div>
+    <div class="ap-modal-footer">
+      <button class="ap-btn ap-btn-secondary" onclick="document.getElementById('forgotPasswordOverlay').classList.remove('active')">Cancel</button>
+      <button class="ap-btn ap-btn-primary" onclick="submitForgotPassword()">Send Reset Link</button>
+    </div></div>`;
+  el.classList.add('active');
+}
+
+async function submitForgotPassword() {
+  const id = document.getElementById('forgotPassInput')?.value.trim();
+  if (!id) { showToast('Enter your email or mobile number.', 'info'); return; }
+  const result = await sbResetPassword(id);
+  if (result.ok) {
+    showToast('Password reset link sent! Check your email inbox.', 'success');
+    document.getElementById('forgotPasswordOverlay')?.classList.remove('active');
+  } else {
+    showToast(result.error || 'Could not send reset link.', 'info');
   }
 }
 
-function handleUserLogout() {
-  userProfile = null;
-  localStorage.removeItem('ue_user_session_v2');
-  showToast('Logged out of your account successfully.', 'info');
-  renderProfileView();
+function openResetPasswordModal() {
+  let el = document.getElementById('resetPasswordOverlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'resetPasswordOverlay';
+    el.className = 'ap-modal-backdrop';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<div class="ap-modal-container" style="max-width:420px;" onclick="event.stopPropagation()">
+    <div class="ap-modal-header"><h3 class="ap-modal-title">Set New Password</h3></div>
+    <div class="ap-modal-body" style="padding:20px;">
+      <input type="password" id="newPassInput" class="ap-search-input" style="width:100%;margin-bottom:10px;" placeholder="New password (min 6 chars)">
+      <input type="password" id="newPassConfirm" class="ap-search-input" style="width:100%;" placeholder="Confirm new password">
+    </div>
+    <div class="ap-modal-footer">
+      <button class="ap-btn ap-btn-primary" onclick="submitNewPassword()">Update Password</button>
+    </div></div>`;
+  el.classList.add('active');
+}
+
+async function submitNewPassword() {
+  const p1 = document.getElementById('newPassInput')?.value || '';
+  const p2 = document.getElementById('newPassConfirm')?.value || '';
+  if (p1.length < 6) { showToast('Password must be at least 6 characters.', 'info'); return; }
+  if (p1 !== p2) { showToast('Passwords do not match.', 'info'); return; }
+  const result = await sbUpdatePassword(p1);
+  if (result.ok) {
+    showToast('Password updated! You are logged in.', 'success');
+    document.getElementById('resetPasswordOverlay')?.classList.remove('active');
+    history.replaceState({}, '', '#view=profile');
+    renderProfileView();
+  } else {
+    showToast(result.error || 'Could not update password.', 'info');
+  }
 }
 
 function renderProfileView() {
@@ -7757,7 +8287,7 @@ function renderProfileView() {
             <div class="form-group" style="margin-bottom:16px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                 <label class="form-label" style="font-size:12px; font-weight:800; color:#475569; margin:0;">Password</label>
-                <a href="#" onclick="showToast('Password reset link sent to your mobile/email!', 'info'); return false;" style="font-size:11px; color:#2563eb; font-weight:700; text-decoration:none;">Forgot?</a>
+                <a href="#" onclick="openForgotPasswordModal(); return false;" style="font-size:11px; color:#2563eb; font-weight:700; text-decoration:none;">Forgot?</a>
               </div>
               <div style="position:relative;">
                 <i class="ri-lock-2-line" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>
@@ -7775,8 +8305,8 @@ function renderProfileView() {
             <div style="flex:1; height:1px; background:#e2e8f0;"></div>
           </div>
 
-          <button onclick="handleProfileWhatsAppOtp()" style="width:100%; height:46px; display:flex; align-items:center; justify-content:center; gap:8px; background:#25D366; color:#ffffff; font-weight:800; font-size:13.5px; border:none; border-radius:12px; cursor:pointer; box-shadow:0 4px 12px rgba(37,211,102,0.25);">
-            <i class="ri-whatsapp-fill" style="font-size:20px;"></i> Instant WhatsApp OTP Login
+          <button type="button" onclick="openWhatsAppChat('Hi, I need help logging into my UNIQUE EXPRESSIONS account.')" style="width:100%; height:46px; display:flex; align-items:center; justify-content:center; gap:8px; background:#25D366; color:#ffffff; font-weight:800; font-size:13.5px; border:none; border-radius:12px; cursor:pointer; box-shadow:0 4px 12px rgba(37,211,102,0.25);">
+            <i class="ri-whatsapp-fill" style="font-size:20px;"></i> Need Help? Chat on WhatsApp
           </button>
         </div>
 
@@ -7809,6 +8339,7 @@ function renderProfileView() {
   }
 
   // 2. IF LOGGED IN: SHOW AUTHENTICATED CUSTOMER PROFILE
+  const myOrders = getCustomerOrders();
   const defaultAddress = userAddresses.find(a => a.isDefault) || userAddresses[0];
 
   container.innerHTML = `
@@ -7838,7 +8369,7 @@ function renderProfileView() {
 
         <div class="profile-stats-row">
           <div class="profile-stat-box">
-            <div class="profile-stat-val">${userOrders.length}</div>
+            <div class="profile-stat-val">${myOrders.length}</div>
             <div class="profile-stat-label">Total Orders</div>
           </div>
           <div class="profile-stat-box">
@@ -7856,12 +8387,12 @@ function renderProfileView() {
         <h4 style="font-size:12px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">My Account & Shopping</h4>
       </div>
 
-      <div class="profile-menu-tile" onclick="switchView('orders')">
+      <div class="profile-menu-tile" onclick="switchView('orderDetails', { orderId: '${myOrders[0]?.orderId || ''}' })">
         <div class="profile-menu-left">
           <div class="profile-menu-icon"><i class="ri-shopping-bag-line"></i></div>
           <div>
             <div class="profile-menu-title">Order History & Live Tracking</div>
-            <div class="profile-menu-sub">Track active dispatches & past orders (${userOrders.length})</div>
+            <div class="profile-menu-sub">Track active dispatches & past orders (${myOrders.length})</div>
           </div>
         </div>
         <span style="font-size:12px; color:#94a3b8;">→</span>
@@ -8057,14 +8588,14 @@ function saveAddressFromModal() {
     userAddresses.push({ id: newId, name, phone, street, area, city: "Visakhapatnam", pincode, type, isDefault });
   }
 
-  localStorage.setItem('ue_addresses', JSON.stringify(userAddresses));
+  saveUserAddressesToStorage();
   closeAddressModal();
   renderAddressesView();
 }
 
 function setDefaultAddress(addressId) {
   userAddresses.forEach(a => a.isDefault = (a.id === addressId));
-  localStorage.setItem('ue_addresses', JSON.stringify(userAddresses));
+  saveUserAddressesToStorage();
   renderAddressesView();
 }
 
@@ -8074,7 +8605,7 @@ function deleteAddress(addressId) {
     if (userAddresses.length > 0 && !userAddresses.some(a => a.isDefault)) {
       userAddresses[0].isDefault = true;
     }
-    localStorage.setItem('ue_addresses', JSON.stringify(userAddresses));
+    saveUserAddressesToStorage();
     renderAddressesView();
   }
 }
@@ -8258,9 +8789,13 @@ function saveUserProfile() {
   userProfile.phone = phone;
   userProfile.city = city;
 
-  localStorage.setItem('ue_user_profile', JSON.stringify(userProfile));
+  localStorage.setItem('ue_user_session_v2', JSON.stringify({ isLoggedIn: true, profile: userProfile }));
+  if (authUserId && typeof sbUpsertProfile === 'function') {
+    sbUpsertProfile(authUserId, { ...userProfile, addresses: userAddresses });
+  }
   closeEditProfileModal();
   renderProfileView();
+  showToast('Profile updated!', 'success');
 }
 
 function openInvoiceModal(orderId) {
@@ -8464,6 +8999,10 @@ function showApToast(message, type = 'success') {
 }
 
 function switchApTab(tabId) {
+  if (AP_HIDDEN_TABS.includes(tabId)) {
+    showApToast('This section is coming soon.', 'info');
+    return;
+  }
   apActiveTab = tabId;
   document.querySelectorAll('.ap-nav-item').forEach(el => el.classList.remove('active'));
   const activeNav = document.getElementById(`apNav-${tabId}`);
@@ -8514,17 +9053,23 @@ function switchApTab(tabId) {
 
 function handleApGlobalSearch(query) {
   apSearchQuery = query.trim().toLowerCase();
-  if (apActiveTab !== 'dashboard') {
-    switchApTab(apActiveTab);
-  }
+  if (!apSearchQuery) { switchApTab(apActiveTab); return; }
+  const inOrders = userOrders.some(o => o.orderId.toLowerCase().includes(apSearchQuery) || (o.customerName || '').toLowerCase().includes(apSearchQuery));
+  const inProducts = ALL_PRODUCTS.some(p => p.title.toLowerCase().includes(apSearchQuery) || (p.sku || '').toLowerCase().includes(apSearchQuery));
+  const inCats = CATEGORIES.some(c => c.toLowerCase().includes(apSearchQuery));
+  if (inOrders) switchApTab('orders');
+  else if (inProducts) switchApTab('products');
+  else if (inCats) switchApTab('categories');
+  else switchApTab(apActiveTab);
 }
 
 function renderAdminView() {
   const container = document.getElementById('viewAdmin');
   if (!container) return;
 
-  const lowStockCount = ALL_PRODUCTS.filter(p => (p.stockQty || 12) < 5).length;
+  const lowStockCount = ALL_PRODUCTS.filter(p => getAvailableStock(p) > 0 && getAvailableStock(p) < 5).length;
   const pendingReviewsCount = STORE_REVIEWS.filter(r => r.status === 'Pending').length;
+  const notifCount = getAdminNotifications().length;
 
   container.innerHTML = `
     <div class="ap-layout-wrapper">
@@ -8578,19 +9123,10 @@ function renderAdminView() {
             <div class="ap-nav-item-left"><i class="ri-star-line"></i><span>Reviews</span></div>
             ${pendingReviewsCount > 0 ? `<span class="ap-nav-count-badge alert">${pendingReviewsCount}</span>` : ''}
           </a>
-          <a class="ap-nav-item ${apActiveTab === 'wholesale' ? 'active' : ''}" id="apNav-wholesale" onclick="switchApTab('wholesale')">
-            <div class="ap-nav-item-left"><i class="ri-building-4-line"></i><span>Wholesale B2B</span></div>
-          </a>
 
           <div class="ap-nav-section-title">System & Settings</div>
-          <a class="ap-nav-item ${apActiveTab === 'analytics' ? 'active' : ''}" id="apNav-analytics" onclick="switchApTab('analytics')">
-            <div class="ap-nav-item-left"><i class="ri-bar-chart-2-line"></i><span>Analytics</span></div>
-          </a>
           <a class="ap-nav-item ${apActiveTab === 'settings' ? 'active' : ''}" id="apNav-settings" onclick="switchApTab('settings')">
             <div class="ap-nav-item-left"><i class="ri-settings-4-line"></i><span>Store Settings</span></div>
-          </a>
-          <a class="ap-nav-item ${apActiveTab === 'users' ? 'active' : ''}" id="apNav-users" onclick="switchApTab('users')">
-            <div class="ap-nav-item-left"><i class="ri-shield-user-line"></i><span>Users & Roles</span></div>
           </a>
         </nav>
 
@@ -8615,41 +9151,14 @@ function renderAdminView() {
             <div class="ap-notif-wrapper">
               <button class="ap-notif-btn" onclick="toggleApNotifDropdown(event)" title="Store Alerts & Notifications">
                 <i class="ri-notification-3-line" style="font-size:18px;"></i>
-                <span class="ap-notif-badge">4</span>
+                <span class="ap-notif-badge">${notifCount}</span>
               </button>
               <div id="apNotifDropdown" class="ap-notif-dropdown">
                 <div class="ap-notif-header">
-                  <strong style="font-size:13px; color:#0f172a;">🔔 Store Activity & Alerts</strong>
-                  <span style="font-size:10px; color:#64748b; font-weight:700;">4 Unread</span>
+                  <strong style="font-size:13px; color:#0f172a;">🔔 Store Activity</strong>
+                  <span style="font-size:10px; color:#64748b; font-weight:700;">${notifCount} alert${notifCount !== 1 ? 's' : ''}</span>
                 </div>
-                <div class="ap-notif-item">
-                  <i class="ri-shopping-bag-3-fill" style="color:#10b981; font-size:18px; margin-top:2px;"></i>
-                  <div>
-                    <div style="font-size:12px; font-weight:700;">New Order #UE-892410</div>
-                    <div style="font-size:11px; color:#64748b;">₹1,298 via UPI • Madhurawada Store</div>
-                  </div>
-                </div>
-                <div class="ap-notif-item">
-                  <i class="ri-error-warning-fill" style="color:#ef4444; font-size:18px; margin-top:2px;"></i>
-                  <div>
-                    <div style="font-size:12px; font-weight:700;">Low Stock Alert</div>
-                    <div style="font-size:11px; color:#64748b;">Antique Brass Ganesha Idol (&lt; 5 units left)</div>
-                  </div>
-                </div>
-                <div class="ap-notif-item">
-                  <i class="ri-star-fill" style="color:#f59e0b; font-size:18px; margin-top:2px;"></i>
-                  <div>
-                    <div style="font-size:12px; font-weight:700;">Pending Review Moderation</div>
-                    <div style="font-size:11px; color:#64748b;">5 Stars from Sowmya Rao</div>
-                  </div>
-                </div>
-                <div class="ap-notif-item">
-                  <i class="ri-building-4-fill" style="color:#9333ea; font-size:18px; margin-top:2px;"></i>
-                  <div>
-                    <div style="font-size:12px; font-weight:700;">Wholesale GST Request</div>
-                    <div style="font-size:11px; color:#64748b;">Bulk Return Gift quote for schools</div>
-                  </div>
-                </div>
+                ${renderAdminNotificationsHtml()}
               </div>
             </div>
 
@@ -8682,21 +9191,24 @@ function renderAdminView() {
 
 /* 1. Dashboard View Renderer */
 function renderApDashboard() {
-  const totalRevenue = userOrders.reduce((sum, o) => sum + (o.grandTotal || o.totalAmount || 0), 48500);
-  const pendingOrders = userOrders.filter(o => o.status === 'Processing' || o.status === 'Confirmed').length;
-  const lowStockCount = ALL_PRODUCTS.filter(p => (p.stockQty || 0) < 5).length;
+  const totalRevenue = userOrders.reduce((sum, o) => sum + (o.grandTotal || o.totalAmount || 0), 0);
+  const pendingOrders = userOrders.filter(o =>
+    ['Processing', 'Confirmed', 'Order Confirmed', 'Packed'].includes(o.status)
+  ).length;
+  const lowStockCount = ALL_PRODUCTS.filter(p => getAvailableStock(p) < 5 && getAvailableStock(p) > 0).length;
+  const outOfStockCount = ALL_PRODUCTS.filter(p => getAvailableStock(p) <= 0).length;
 
   return `
     <div class="ap-metrics-grid">
       <div class="ap-metric-card">
         <span class="ap-metric-label">Total Store Revenue</span>
         <div class="ap-metric-value">₹${totalRevenue.toLocaleString('en-IN')}</div>
-        <div class="ap-metric-change up"><i class="ri-arrow-up-line"></i> +18.4% vs last month</div>
+        <div class="ap-metric-change up"><i class="ri-money-rupee-circle-line"></i> From ${userOrders.length} orders</div>
       </div>
       <div class="ap-metric-card">
         <span class="ap-metric-label">Total Store Orders</span>
-        <div class="ap-metric-value">${userOrders.length + 142}</div>
-        <div class="ap-metric-change up"><i class="ri-arrow-up-line"></i> +12.5% volume</div>
+        <div class="ap-metric-value">${userOrders.length}</div>
+        <div class="ap-metric-change up"><i class="ri-shopping-bag-3-line"></i> Live order count</div>
       </div>
       <div class="ap-metric-card">
         <span class="ap-metric-label">Pending Orders</span>
@@ -8706,7 +9218,7 @@ function renderApDashboard() {
       <div class="ap-metric-card">
         <span class="ap-metric-label">Active Catalog Size</span>
         <div class="ap-metric-value">${ALL_PRODUCTS.length}</div>
-        <div class="ap-metric-change up"><i class="ri-check-line"></i> ${CATEGORIES.length} Categories</div>
+        <div class="ap-metric-change ${lowStockCount + outOfStockCount > 0 ? 'down' : 'up'}"><i class="ri-stack-line"></i> ${lowStockCount} low · ${outOfStockCount} out</div>
       </div>
     </div>
 
@@ -8718,13 +9230,11 @@ function renderApDashboard() {
           <span style="font-size:12px; color:#64748b; font-weight:600;">Visakhapatnam Store</span>
         </div>
         <div style="height:180px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; display:flex; align-items:flex-end; justify-content:space-between; padding:16px; box-sizing:border-box;">
-          <div style="text-align:center; flex:1;"><div style="height:45%; background:#0f172a; border-radius:4px 4px 0 0; margin:0 6px;"></div><span style="font-size:10px; color:#64748b; font-weight:700;">Mon</span></div>
-          <div style="text-align:center; flex:1;"><div style="height:65%; background:#0f172a; border-radius:4px 4px 0 0; margin:0 6px;"></div><span style="font-size:10px; color:#64748b; font-weight:700;">Tue</span></div>
-          <div style="text-align:center; flex:1;"><div style="height:55%; background:#0f172a; border-radius:4px 4px 0 0; margin:0 6px;"></div><span style="font-size:10px; color:#64748b; font-weight:700;">Wed</span></div>
-          <div style="text-align:center; flex:1;"><div style="height:85%; background:#0f172a; border-radius:4px 4px 0 0; margin:0 6px;"></div><span style="font-size:10px; color:#64748b; font-weight:700;">Thu</span></div>
-          <div style="text-align:center; flex:1;"><div style="height:70%; background:#0f172a; border-radius:4px 4px 0 0; margin:0 6px;"></div><span style="font-size:10px; color:#64748b; font-weight:700;">Fri</span></div>
-          <div style="text-align:center; flex:1;"><div style="height:95%; background:linear-gradient(135deg, #d82b7d, #9333ea); border-radius:4px 4px 0 0; margin:0 6px;"></div><span style="font-size:10px; color:#0f172a; font-weight:800;">Sat</span></div>
-          <div style="text-align:center; flex:1;"><div style="height:60%; background:#0f172a; border-radius:4px 4px 0 0; margin:0 6px;"></div><span style="font-size:10px; color:#64748b; font-weight:700;">Sun</span></div>
+          ${getLast7DaysSales().map((d, i) => `
+          <div style="text-align:center; flex:1;" title="₹${d.amount.toLocaleString('en-IN')}">
+            <div style="height:${d.height}%; background:${i === 6 ? 'linear-gradient(135deg, #d82b7d, #9333ea)' : '#0f172a'}; border-radius:4px 4px 0 0; margin:0 6px; min-height:4px;"></div>
+            <span style="font-size:10px; color:#64748b; font-weight:700;">${d.label}</span>
+          </div>`).join('')}
         </div>
       </div>
 
@@ -8734,7 +9244,8 @@ function renderApDashboard() {
           <button class="ap-btn ap-btn-secondary" style="font-size:11px; height:28px;" onclick="switchApTab('reviews')">View All</button>
         </div>
         <div style="display:flex; flex-direction:column; gap:10px;">
-          ${STORE_REVIEWS.slice(0, 3).map(r => `
+          ${STORE_REVIEWS.length === 0 ? `<p style="font-size:12px;color:#64748b;margin:0;">No reviews yet.</p>` :
+          STORE_REVIEWS.slice(0, 3).map(r => `
             <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
               <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700;">
                 <span>${r.name}</span>
@@ -8795,11 +9306,13 @@ function renderApOrders() {
   if (apStatusFilter !== 'All') {
     filtered = filtered.filter(o => o.status === apStatusFilter);
   }
+  const totalRev = userOrders.reduce((s, o) => s + (o.totalAmount || o.grandTotal || 0), 0);
+  const pending = userOrders.filter(o => ['Processing', 'Confirmed', 'Order Confirmed'].includes(o.status)).length;
 
   return `
     <div class="ap-card">
-      <div style="font-size:12px; color:#64748b; margin-top:-8px; margin-bottom:16px; font-weight:600;">
-        ${userOrders.length} Orders Recorded • ₹48.5K Total Revenue • 1 Pending Dispatch • Synced Just Now
+      <div style="font-size:12px; color:#64748b; margin-bottom:16px; font-weight:600;">
+        ${userOrders.length} Orders • ₹${totalRev.toLocaleString('en-IN')} Revenue • ${pending} Pending Dispatch
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:16px; flex-wrap:wrap;">
@@ -8807,6 +9320,7 @@ function renderApOrders() {
           <input type="text" class="ap-search-input" style="width:260px;" placeholder="Search Order ID or Customer..." value="${apSearchQuery}" oninput="apSearchQuery=this.value; switchApTab('orders');">
           <select class="ap-search-input" style="width:160px; padding-left:12px;" onchange="apStatusFilter=this.value; switchApTab('orders');">
             <option value="All" ${apStatusFilter === 'All' ? 'selected' : ''}>All Statuses</option>
+            <option value="Order Confirmed" ${apStatusFilter === 'Order Confirmed' ? 'selected' : ''}>Order Confirmed</option>
             <option value="Processing" ${apStatusFilter === 'Processing' ? 'selected' : ''}>Processing</option>
             <option value="Confirmed" ${apStatusFilter === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
             <option value="Out for Delivery" ${apStatusFilter === 'Out for Delivery' ? 'selected' : ''}>Out for Delivery</option>
@@ -8814,7 +9328,7 @@ function renderApOrders() {
             <option value="Cancelled" ${apStatusFilter === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
           </select>
         </div>
-        <button class="ap-btn ap-btn-primary" onclick="showApToast('Exported Orders to CSV File!', 'success')">
+        <button class="ap-btn ap-btn-primary" onclick="exportOrdersCSV()">
           <i class="ri-download-2-line"></i> Export Orders CSV
         </button>
       </div>
@@ -8840,11 +9354,12 @@ function renderApOrders() {
               <tr>
                 <td><strong>${o.orderId}</strong></td>
                 <td>${o.customerName || o.name || 'Customer'}</td>
-                <td>${o.phone || '+91 8886662334'}</td>
-                <td><strong>₹${o.grandTotal || o.totalAmount || 1299}</strong></td>
+                <td>${apEscHtml(o.phone || '—')}</td>
+                <td><strong>₹${(o.grandTotal || o.totalAmount || 0).toLocaleString('en-IN')}</strong></td>
                 <td><span class="ap-badge ap-badge-info">${o.paymentMethod || 'UPI'}</span></td>
                 <td>
                   <select style="padding:4px 6px; border-radius:6px; border:1px solid #cbd5e1; font-size:11px; font-weight:700;" onchange="updateApOrderStatus('${o.orderId}', this.value)">
+                    <option value="Order Confirmed" ${o.status === 'Order Confirmed' ? 'selected' : ''}>Order Confirmed</option>
                     <option value="Processing" ${o.status === 'Processing' ? 'selected' : ''}>Processing</option>
                     <option value="Confirmed" ${o.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
                     <option value="Out for Delivery" ${o.status === 'Out for Delivery' ? 'selected' : ''}>Out for Delivery</option>
@@ -8870,79 +9385,57 @@ function updateApOrderStatus(orderId, newStatus) {
   const o = userOrders.find(item => item.orderId === orderId);
   if (o) {
     o.status = newStatus;
+    localStorage.setItem('ue_orders', JSON.stringify(userOrders));
     syncStorefrontState();
+    if (typeof sbUpdateOrderStatus === 'function') {
+      sbUpdateOrderStatus(orderId, newStatus, o.stepIndex || 0).catch(err =>
+        console.warn('[UE] Order status sync failed:', err)
+      );
+    }
     showApToast(`Order ${orderId} status updated to ${newStatus}`, 'success');
+    switchApTab('orders');
   }
 }
 
 function viewApOrderDetail(orderId) {
-  const o = userOrders.find(item => item.orderId === orderId) || {
-    orderId: orderId,
-    name: 'G Mounika Durga',
-    phone: '+91 8886662334',
-    address: 'Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041',
-    grandTotal: 1299,
-    status: 'Processing'
-  };
-  showToast(`📦 Order Details for ${o.orderId}:\nCustomer: ${o.name || o.customerName}\nPhone: ${o.phone}\nAddress: ${o.address}\nTotal Amount: ₹${o.grandTotal || o.totalAmount}\nStatus: ${o.status}`, 'info');
+  openApOrderDetailModal(orderId);
 }
 
 function viewApOrderInvoice(orderId) {
-  const o = userOrders.find(item => item.orderId === orderId) || {
-    orderId: orderId,
-    name: 'G Mounika Durga',
-    phone: '+91 8886662334',
-    address: 'Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041',
-    grandTotal: 1299
-  };
+  const o = userOrders.find(item => item.orderId === orderId);
+  if (!o) { showApToast('Order not found.', 'info'); return; }
+  const items = o.items || [];
+  const rows = items.length ? items.map(it => `
+    <tr><td>${apEscHtml(it.title)}</td><td>${cartItemQty(it)}</td><td>₹${it.price}</td><td>₹${cartItemQty(it) * it.price}</td></tr>
+  `).join('') : `<tr><td colspan="4">Store purchase</td><td>1</td><td>₹${o.totalAmount || o.grandTotal}</td><td>₹${o.totalAmount || o.grandTotal}</td></tr>`;
   const invoiceWindow = window.open('', '_blank');
   invoiceWindow.document.write(`
-    <html>
-      <head>
-        <title>GST Invoice - ${o.orderId}</title>
-        <style>
-          body { font-family: sans-serif; padding: 40px; color: #0f172a; }
-          .header { border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; }
-          .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          .table th, .table td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
-          .table th { background: #f8fafc; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div>
-            <h2 style="margin:0; color:#d82b7d;">UNIQUE EXPRESSIONS</h2>
-            <p style="margin:4px 0 0 0; font-size:12px;">Official GST Tax Invoice</p>
-            <p style="margin:2px 0 0 0; font-size:11px;">GSTIN: 37BVTPG7761F1Z1</p>
-          </div>
-          <div style="text-align:right;">
-            <h3 style="margin:0;">INVOICE #${o.orderId}</h3>
-            <p style="margin:4px 0 0 0; font-size:12px;">Date: ${new Date().toLocaleDateString('en-IN')}</p>
-          </div>
-        </div>
-        <p><strong>Billed To:</strong> ${o.customerName || o.name}<br>Phone: ${o.phone}<br>Address: ${o.address || 'Visakhapatnam Store'}</p>
-        <table class="table">
-          <thead>
-            <tr><th>Item Description</th><th>Qty</th><th>Price</th><th>Total</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Bespoke Store Collection Item</td><td>1</td><td>₹${o.grandTotal || o.totalAmount || 1299}</td><td>₹${o.grandTotal || o.totalAmount || 1299}</td></tr>
-          </tbody>
-        </table>
-        <h3 style="text-align:right; margin-top:20px;">Grand Total: ₹${o.grandTotal || o.totalAmount || 1299}</h3>
-        <script>window.print();</script>
-      </body>
-    </html>
-  `);
+    <html><head><title>GST Invoice - ${o.orderId}</title>
+    <style>body{font-family:sans-serif;padding:40px;color:#0f172a}.header{border-bottom:2px solid #0f172a;padding-bottom:20px;margin-bottom:20px;display:flex;justify-content:space-between}.table{width:100%;border-collapse:collapse;margin-top:20px}.table th,.table td{border:1px solid #cbd5e1;padding:10px;text-align:left}.table th{background:#f8fafc}</style></head>
+    <body><div class="header"><div><h2 style="margin:0;color:#d82b7d;">UNIQUE EXPRESSIONS</h2>
+    <p style="margin:4px 0;font-size:12px;">GSTIN: ${STORE_SETTINGS.gstin}</p></div>
+    <div style="text-align:right;"><h3 style="margin:0;">INVOICE #${o.orderId}</h3>
+    <p style="font-size:12px;">${o.date || new Date().toLocaleDateString('en-IN')}</p></div></div>
+    <p><strong>Billed To:</strong> ${o.customerName || o.name}<br>Phone: ${o.phone}<br>${o.address || ''}</p>
+    <table class="table"><thead><tr><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>
+    ${o.discountAmount ? `<p>Discount: -₹${o.discountAmount}</p>` : ''}
+    ${o.shippingFee ? `<p>Shipping: ₹${o.shippingFee}</p>` : ''}
+    <h3 style="text-align:right;">Grand Total: ₹${o.totalAmount || o.grandTotal}</h3>
+    <script>window.print();</script></body></html>`);
 }
 
 function cancelApOrder(orderId) {
-  if (confirm(`Are you sure you want to cancel Order ${orderId}?`)) {
+  if (confirm(`Cancel order ${orderId}? Stock will be restored.`)) {
     const o = userOrders.find(item => item.orderId === orderId);
-    if (o) o.status = 'Cancelled';
-    syncStorefrontState();
+    if (o) {
+      o.status = 'Cancelled';
+      restoreStockForOrder(o.items);
+      localStorage.setItem('ue_orders', JSON.stringify(userOrders));
+      if (typeof sbUpdateOrderStatus === 'function') sbUpdateOrderStatus(orderId, 'Cancelled', o.stepIndex || 0);
+      syncStorefrontState();
+    }
     switchApTab('orders');
-    showApToast(`Order ${orderId} has been cancelled!`, 'error');
+    showApToast(`Order ${orderId} cancelled. Stock restored.`, 'error');
   }
 }
 
@@ -9009,22 +9502,36 @@ async function bulkDeleteProducts() {
 }
 
 function bulkChangeCategoryModal() {
-  if (apSelectedProductIds.length === 0) return;
-  const newCat = prompt(`Enter target Category for ${apSelectedProductIds.length} items (${CATEGORIES.join(', ')}):`, CATEGORIES[0]);
-  if (newCat && newCat.trim()) {
-    const cat = newCat.trim();
-    ALL_PRODUCTS.forEach(p => {
-      if (apSelectedProductIds.includes(p.id)) p.category = cat;
-    });
-    apSelectedProductIds = [];
-    syncStorefrontState();
-    switchApTab('products');
-    showApToast(`Bulk updated category to ${cat}!`, 'success');
-  }
+  openBulkCategoryPickerModal();
 }
 
 function bulkExportCSV() {
-  showApToast(`Exported ${apSelectedProductIds.length || ALL_PRODUCTS.length} products to CSV!`, 'success');
+  const items = apSelectedProductIds.length
+    ? ALL_PRODUCTS.filter(p => apSelectedProductIds.includes(p.id))
+    : ALL_PRODUCTS;
+  const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const headers = ['SKU', 'Title', 'Category', 'Price', 'Original Price', 'Stock Qty', 'In Stock', 'Featured'];
+  const rows = items.map(p => [
+    esc(p.sku || `UE-SKU-${p.id}`),
+    esc(p.title),
+    esc(p.category),
+    p.price,
+    p.originalPrice || '',
+    p.stockQty ?? 0,
+    p.inStock !== false ? 'Yes' : 'No',
+    p.isFeatured ? 'Yes' : 'No'
+  ].join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `unique-expressions-products-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showApToast(`Exported ${items.length} products to CSV`, 'success');
 }
 
 function handleApProductsSearch(inputEl) {
@@ -9059,8 +9566,8 @@ function renderApProducts() {
 
   return `
     <div class="ap-card">
-      <div style="font-size:12px; color:#64748b; margin-top:-8px; margin-bottom:16px; font-weight:600;">
-        ${ALL_PRODUCTS.length} Total Products • ${CATEGORIES.length} Categories • ₹8.4L Inventory Value • Synced Just Now
+      <div style="font-size:12px; color:#64748b; margin-bottom:16px; font-weight:600;">
+        ${ALL_PRODUCTS.length} Total Products • ${CATEGORIES.length} Categories • Stock: edit in Inventory or per-product form
       </div>
 
       <!-- Bulk Action Bar -->
@@ -9108,10 +9615,11 @@ function renderApProducts() {
               <tr><td colspan="9" style="text-align:center; padding:40px; color:#64748b;">No products found in catalog.</td></tr>
             ` : paginated.map(p => {
               const isChecked = apSelectedProductIds.includes(p.id);
-              const stockVal = p.stockQty || 12;
+              const stockVal = getAvailableStock(p);
               let stockHealth = `<span style="color:#10b981; font-weight:700;">🟢 Healthy (${stockVal})</span>`;
-              if (stockVal < 5) stockHealth = `<span style="color:#ef4444; font-weight:800;">🔴 Out of Stock (${stockVal})</span>`;
-              else if (stockVal < 15) stockHealth = `<span style="color:#b45309; font-weight:700;">🟡 Low Stock (${stockVal})</span>`;
+              if (stockVal <= 0) stockHealth = `<span style="color:#ef4444; font-weight:800;">🔴 Out of Stock (0)</span>`;
+              else if (stockVal < 5) stockHealth = `<span style="color:#ef4444; font-weight:800;">🔴 Low Stock (${stockVal})</span>`;
+              else if (stockVal < 15) stockHealth = `<span style="color:#b45309; font-weight:700;">🟡 Moderate (${stockVal})</span>`;
 
               let statusBadge = `<span class="ap-badge ap-badge-success">Published</span>`;
               if (p.inStock === false) statusBadge = `<span class="ap-badge ap-badge-danger">Out of Stock</span>`;
@@ -9119,7 +9627,7 @@ function renderApProducts() {
 
               return `
                 <tr style="${isChecked ? 'background:#f1f5f9 !important;' : ''}">
-                  <td><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectProduct(${JSON.stringify(p.id)}, this.checked)"></td>
+                  <td><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectProduct(${apJsAttr(p.id)}, this.checked)"></td>
                   <td><code style="font-size:11px; font-weight:700;">${p.sku || `UE-SKU-${p.id}`}</code></td>
                   <td><img src="${p.image}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #e2e8f0;"></td>
                   <td>
@@ -9132,26 +9640,26 @@ function renderApProducts() {
                   <td>${statusBadge}</td>
                   <td>
                     <div style="display:flex; gap:6px; align-items:center;">
-                      <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="openApProductModal(${JSON.stringify(p.id)})">Edit</button>
+                      <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="openApProductModal(${apJsAttr(p.id)})">Edit</button>
                       
                       <!-- Popover ⋮ More Menu -->
                       <div class="ap-dropdown-wrapper">
-                        <button class="ap-btn ap-btn-secondary" style="height:26px; width:26px; padding:0; justify-content:center; font-weight:800;" onclick="toggleApRowDropdown(event, ${JSON.stringify(p.id)})">⋮</button>
+                        <button class="ap-btn ap-btn-secondary" style="height:26px; width:26px; padding:0; justify-content:center; font-weight:800;" onclick="toggleApRowDropdown(event, ${apJsAttr(p.id)})">⋮</button>
                         <div id="apRowDropdown-${p.id}" class="ap-dropdown-menu">
-                          <button class="ap-dropdown-item" onclick="duplicateApProduct(${JSON.stringify(p.id)})">
+                          <button class="ap-dropdown-item" onclick="duplicateApProduct(${apJsAttr(p.id)})">
                             <i class="ri-file-copy-line"></i> Duplicate
                           </button>
-                          <button class="ap-dropdown-item" onclick="switchView('pdp', {productId: ${JSON.stringify(p.id)}})">
+                          <button class="ap-dropdown-item" onclick="switchView('pdp', {productId: ${apJsAttr(p.id)}})">
                             <i class="ri-eye-line"></i> Preview PDP
                           </button>
-                          <button class="ap-dropdown-item" onclick="toggleApFeatured(${JSON.stringify(p.id)})">
+                          <button class="ap-dropdown-item" onclick="toggleApFeatured(${apJsAttr(p.id)})">
                             <i class="ri-star-line"></i> ${p.isFeatured ? 'Unfeature' : 'Make Featured'}
                           </button>
-                          <button class="ap-dropdown-item" onclick="toggleApStock(${JSON.stringify(p.id)})">
+                          <button class="ap-dropdown-item" onclick="toggleApStock(${apJsAttr(p.id)})">
                             <i class="ri-stack-line"></i> Toggle Stock
                           </button>
                           <div style="border-top:1px solid #e2e8f0; margin:4px 0;"></div>
-                          <button class="ap-dropdown-item danger" onclick="deleteApProduct(${JSON.stringify(p.id)})">
+                          <button class="ap-dropdown-item danger" onclick="deleteApProduct(${apJsAttr(p.id)})">
                             <i class="ri-delete-bin-line"></i> Delete Product
                           </button>
                         </div>
@@ -9182,23 +9690,27 @@ function toggleApStock(id) {
   if (p) {
     p.inStock = !(p.inStock !== false);
     syncStorefrontState();
+    if (typeof sbAdminUpdateProduct === 'function') {
+      sbAdminUpdateProduct(p).catch(err => console.warn('[UE] Stock toggle sync failed:', err));
+    }
     switchApTab('products');
     showApToast(`Stock status updated for ${p.title}`, 'success');
   }
 }
 
 function toggleApFeatured(id) {
-  const p = ALL_PRODUCTS.find(item => item.id === id);
+  const p = ALL_PRODUCTS.find(item => String(item.id) === String(id));
   if (p) {
     p.isFeatured = !p.isFeatured;
     syncStorefrontState();
+    if (typeof sbAdminUpdateProduct === 'function') sbAdminUpdateProduct(p).catch(() => {});
     switchApTab('products');
     showApToast(`Featured status toggled for ${p.title}`, 'success');
   }
 }
 
 function duplicateApProduct(id) {
-  const p = ALL_PRODUCTS.find(item => item.id === id);
+  const p = ALL_PRODUCTS.find(item => String(item.id) === String(id));
   if (p) {
     const copy = { ...p, id: Date.now(), title: `${p.title} (Copy)`, sku: `UE-SKU-${Date.now()}` };
     ALL_PRODUCTS.unshift(copy);
@@ -9237,32 +9749,43 @@ function toggleSelectAllCategories(checked) {
 }
 
 function toggleSelectCategory(id, checked) {
+  const sid = String(id);
   if (checked) {
-    if (!apSelectedCategoryIds.includes(id)) apSelectedCategoryIds.push(id);
+    if (!apSelectedCategoryIds.some(i => String(i) === sid)) apSelectedCategoryIds.push(id);
   } else {
-    apSelectedCategoryIds = apSelectedCategoryIds.filter(i => i !== id);
+    apSelectedCategoryIds = apSelectedCategoryIds.filter(i => String(i) !== sid);
   }
   switchApTab('categories');
 }
 
 function bulkHideCategories() {
   if (apSelectedCategoryIds.length === 0) return;
+  const touched = [];
   CATEGORIES_DATA.forEach(c => {
-    if (apSelectedCategoryIds.includes(c.id)) c.isVisible = false;
+    if (apSelectedCategoryIds.some(i => String(i) === String(c.id))) {
+      c.isVisible = false;
+      touched.push(c);
+    }
   });
   apSelectedCategoryIds = [];
   syncStorefrontState();
+  if (typeof sbUpsertCategory === 'function') touched.forEach(c => sbUpsertCategory(c).catch(() => {}));
   switchApTab('categories');
   showApToast(`Selected categories hidden!`, 'warning');
 }
 
 function bulkFeatureCategories() {
   if (apSelectedCategoryIds.length === 0) return;
+  const touched = [];
   CATEGORIES_DATA.forEach(c => {
-    if (apSelectedCategoryIds.includes(c.id)) c.isFeatured = true;
+    if (apSelectedCategoryIds.some(i => String(i) === String(c.id))) {
+      c.isFeatured = true;
+      touched.push(c);
+    }
   });
   apSelectedCategoryIds = [];
   syncStorefrontState();
+  if (typeof sbUpsertCategory === 'function') touched.forEach(c => sbUpsertCategory(c).catch(() => {}));
   switchApTab('categories');
   showApToast(`Selected categories marked as featured!`, 'success');
 }
@@ -9270,7 +9793,7 @@ function bulkFeatureCategories() {
 function bulkDeleteCategories() {
   if (apSelectedCategoryIds.length === 0) return;
   if (confirm(`Are you sure you want to delete ${apSelectedCategoryIds.length} selected categories?`)) {
-    CATEGORIES_DATA = CATEGORIES_DATA.filter(c => !apSelectedCategoryIds.includes(c.id));
+    CATEGORIES_DATA = CATEGORIES_DATA.filter(c => !apSelectedCategoryIds.some(i => String(i) === String(c.id)));
     CATEGORIES = CATEGORIES_DATA.map(c => c.name);
     apSelectedCategoryIds = [];
     syncStorefrontState();
@@ -9280,31 +9803,37 @@ function bulkDeleteCategories() {
 }
 
 function toggleCategoryFeatured(id) {
-  const c = CATEGORIES_DATA.find(item => item.id === id);
-  if (c) {
-    c.isFeatured = !c.isFeatured;
-    syncStorefrontState();
-    switchApTab('categories');
-    showApToast(`Featured status toggled for ${c.name}`, 'success');
+  const c = CATEGORIES_DATA.find(item => String(item.id) === String(id));
+  if (!c) {
+    showApToast('Category not found. Refresh and try again.', 'info');
+    return;
   }
+  c.isFeatured = !c.isFeatured;
+  syncStorefrontState();
+  if (typeof sbUpsertCategory === 'function') sbUpsertCategory(c).catch(() => {});
+  switchApTab('categories');
+  showApToast(`${c.name} is now ${c.isFeatured ? 'Featured' : 'Standard'}`, 'success');
 }
 
 function toggleCategoryVisibility(id) {
-  const c = CATEGORIES_DATA.find(item => item.id === id);
-  if (c) {
-    c.isVisible = !(c.isVisible !== false);
-    syncStorefrontState();
-    switchApTab('categories');
-    showApToast(`Visibility status toggled for ${c.name}`, 'success');
+  const c = CATEGORIES_DATA.find(item => String(item.id) === String(id));
+  if (!c) {
+    showApToast('Category not found. Refresh and try again.', 'info');
+    return;
   }
+  c.isVisible = !(c.isVisible !== false);
+  syncStorefrontState();
+  if (typeof sbUpsertCategory === 'function') sbUpsertCategory(c).catch(() => {});
+  switchApTab('categories');
+  showApToast(`${c.name} is now ${c.isVisible !== false ? 'Visible' : 'Hidden'} on the storefront`, 'success');
 }
 
-function duplicateApCategory(id) {
-  const c = CATEGORIES_DATA.find(item => item.id === id);
+async function duplicateApCategory(id) {
+  const c = CATEGORIES_DATA.find(item => String(item.id) === String(id));
   if (c) {
     const copy = {
       ...c,
-      id: Date.now(),
+      id: `cat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       name: `${c.name} (Copy)`,
       sortOrder: CATEGORIES_DATA.length + 1,
       createdAt: new Date().toISOString().split('T')[0]
@@ -9312,13 +9841,14 @@ function duplicateApCategory(id) {
     CATEGORIES_DATA.push(copy);
     CATEGORIES = CATEGORIES_DATA.map(item => item.name);
     syncStorefrontState();
+    if (typeof sbUpsertCategory === 'function') await sbUpsertCategory(copy);
     switchApTab('categories');
     showApToast(`Category ${c.name} duplicated!`, 'success');
   }
 }
 
 function reorderCategoryItem(id, direction) {
-  const idx = CATEGORIES_DATA.findIndex(c => c.id === id);
+  const idx = CATEGORIES_DATA.findIndex(c => String(c.id) === String(id));
   if (idx === -1) return;
   if (direction === 'up' && idx > 0) {
     const temp = CATEGORIES_DATA[idx - 1];
@@ -9332,6 +9862,9 @@ function reorderCategoryItem(id, direction) {
   CATEGORIES_DATA.forEach((c, i) => c.sortOrder = i + 1);
   CATEGORIES = CATEGORIES_DATA.map(c => c.name);
   syncStorefrontState();
+  if (typeof sbUpsertCategory === 'function') {
+    CATEGORIES_DATA.forEach(c => sbUpsertCategory(c).catch(() => {}));
+  }
   switchApTab('categories');
   showApToast(`Category order updated!`, 'success');
 }
@@ -9370,7 +9903,7 @@ function openApCategoryProductsModal(catName) {
                   <div style="font-size:11px; color:#64748b;">SKU: ${p.sku || `UE-SKU-${p.id}`} • ₹${p.price}</div>
                 </div>
               </div>
-              <button class="ap-btn ap-btn-secondary" style="height:28px; padding:0 10px; font-size:11px;" onclick="document.getElementById('apCatProductsModalOverlay').classList.remove('active'); openApProductModal(${JSON.stringify(p.id)});">Edit Product</button>
+              <button class="ap-btn ap-btn-secondary" style="height:28px; padding:0 10px; font-size:11px;" onclick="document.getElementById('apCatProductsModalOverlay').classList.remove('active'); openApProductModal(${apJsAttr(p.id)});">Edit Product</button>
             </div>
           `).join('')}
         </div>
@@ -9413,8 +9946,8 @@ function renderApCategories() {
   if (apCategorySortOrder === 'name') filtered.sort((a, b) => a.name.localeCompare(b.name));
   else if (apCategorySortOrder === 'products') {
     filtered.sort((a, b) => {
-      const cntA = ALL_PRODUCTS.filter(p => p.category === a.name).length;
-      const cntB = ALL_PRODUCTS.filter(p => p.category === b.name).length;
+      const cntA = productsInCategory(a.name).length;
+      const cntB = productsInCategory(b.name).length;
       return cntB - cntA;
     });
   } else {
@@ -9424,7 +9957,7 @@ function renderApCategories() {
   const activeCount = CATEGORIES_DATA.filter(c => c.isVisible !== false).length;
   const featuredCount = CATEGORIES_DATA.filter(c => c.isFeatured).length;
   const hiddenCount = CATEGORIES_DATA.filter(c => c.isVisible === false).length;
-  const isAllSelected = filtered.length > 0 && filtered.every(c => apSelectedCategoryIds.includes(c.id));
+  const isAllSelected = filtered.length > 0 && filtered.every(c => apSelectedCategoryIds.some(i => String(i) === String(c.id)));
 
   return `
     <!-- Top KPI Summary Cards -->
@@ -9513,19 +10046,20 @@ function renderApCategories() {
             ${filtered.length === 0 ? `
               <tr><td colspan="9" style="text-align:center; padding:40px; color:#64748b;">No categories match search filters.</td></tr>
             ` : filtered.map((c, idx) => {
-              const isChecked = apSelectedCategoryIds.includes(c.id);
-              const pCount = ALL_PRODUCTS.filter(p => p.category === c.name).length;
+              const isChecked = apSelectedCategoryIds.some(i => String(i) === String(c.id));
+              const pCount = productsInCategory(c.name).length;
               const subcats = c.subcategories || [];
+              const catDropId = apSafeDomId('cat-', c.id);
 
               return `
                 <tr style="${isChecked ? 'background:#f1f5f9 !important;' : ''}">
-                  <td><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectCategory(${c.id}, this.checked)"></td>
+                  <td><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectCategory(${apJsAttr(c.id)}, this.checked)"></td>
                   <td>
                     <div style="display:flex; align-items:center; gap:4px;">
                       <span style="font-size:11px; font-weight:800; color:#64748b;">#${c.sortOrder || idx + 1}</span>
                       <div style="display:flex; flex-direction:column;">
-                        <button style="border:none; background:none; cursor:pointer; padding:0; font-size:10px; color:#64748b;" onclick="reorderCategoryItem(${c.id}, 'up')">▲</button>
-                        <button style="border:none; background:none; cursor:pointer; padding:0; font-size:10px; color:#64748b;" onclick="reorderCategoryItem(${c.id}, 'down')">▼</button>
+                        <button style="border:none; background:none; cursor:pointer; padding:0; font-size:10px; color:#64748b;" onclick="reorderCategoryItem(${apJsAttr(c.id)}, 'up')">▲</button>
+                        <button style="border:none; background:none; cursor:pointer; padding:0; font-size:10px; color:#64748b;" onclick="reorderCategoryItem(${apJsAttr(c.id)}, 'down')">▼</button>
                       </div>
                     </div>
                   </td>
@@ -9533,13 +10067,13 @@ function renderApCategories() {
                     <img src="${c.image || 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop'}" style="width:44px; height:44px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">
                   </td>
                   <td>
-                    <div style="cursor:pointer;" onclick="openApCategoryProductsModal('${c.name.replace(/'/g, "\\'")}')">
+                    <div style="cursor:pointer;" onclick="openApCategoryProductsModal(${apJsAttr(c.name)})">
                       <strong style="font-size:13px; color:#0f172a; display:block;">${c.name}</strong>
                       <span style="font-size:11px; color:#64748b; font-weight:500;">${c.description || 'Bespoke store collection category.'}</span>
                     </div>
                   </td>
                   <td>
-                    <button class="ap-btn ap-btn-secondary" style="height:24px; padding:0 8px; font-size:11px; font-weight:800;" onclick="openApCategoryProductsModal('${c.name.replace(/'/g, "\\'")}')">
+                    <button class="ap-btn ap-btn-secondary" style="height:24px; padding:0 8px; font-size:11px; font-weight:800;" onclick="openApCategoryProductsModal(${apJsAttr(c.name)})">
                       ${pCount} Products
                     </button>
                   </td>
@@ -9550,34 +10084,34 @@ function renderApCategories() {
                     </div>
                   </td>
                   <td>
-                    <button class="ap-btn ap-btn-secondary" style="height:24px; padding:0 6px; font-size:10px;" onclick="toggleCategoryFeatured(${c.id})">
+                    <button class="ap-btn ap-btn-secondary" style="height:24px; padding:0 6px; font-size:10px;" onclick="toggleCategoryFeatured(${apJsAttr(c.id)})">
                       ${c.isFeatured ? '⭐ Featured' : '☆ Standard'}
                     </button>
                   </td>
                   <td>
-                    <button class="ap-btn ap-btn-secondary" style="height:24px; padding:0 6px; font-size:10px;" onclick="toggleCategoryVisibility(${c.id})">
+                    <button class="ap-btn ap-btn-secondary" style="height:24px; padding:0 6px; font-size:10px;" onclick="toggleCategoryVisibility(${apJsAttr(c.id)})">
                       ${c.isVisible !== false ? '👁️ Visible' : '🙈 Hidden'}
                     </button>
                   </td>
                   <td>
                     <div style="display:flex; gap:6px; align-items:center;">
-                      <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="openApCategoryModal(${c.id})">Edit</button>
+                      <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="openApCategoryModal(${apJsAttr(c.id)})">Edit</button>
                       
                       <!-- Popover ⋮ More Menu -->
                       <div class="ap-dropdown-wrapper">
-                        <button class="ap-btn ap-btn-secondary" style="height:26px; width:26px; padding:0; justify-content:center; font-weight:800;" onclick="toggleApRowDropdown(event, 'cat-${c.id}')">⋮</button>
-                        <div id="apRowDropdown-cat-${c.id}" class="ap-dropdown-menu">
-                          <button class="ap-dropdown-item" onclick="switchView('plp', {category:'${c.name}'})">
+                        <button class="ap-btn ap-btn-secondary" style="height:26px; width:26px; padding:0; justify-content:center; font-weight:800;" onclick="toggleApRowDropdown(event, ${apJsAttr(catDropId)})">⋮</button>
+                        <div id="apRowDropdown-${catDropId}" class="ap-dropdown-menu">
+                          <button class="ap-dropdown-item" onclick="switchView('plp', {category:${apJsAttr(c.name)}})">
                             <i class="ri-external-link-line"></i> View on Store
                           </button>
-                          <button class="ap-dropdown-item" onclick="duplicateApCategory(${c.id})">
+                          <button class="ap-dropdown-item" onclick="duplicateApCategory(${apJsAttr(c.id)})">
                             <i class="ri-file-copy-line"></i> Duplicate
                           </button>
-                          <button class="ap-dropdown-item" onclick="toggleCategoryVisibility(${c.id})">
+                          <button class="ap-dropdown-item" onclick="toggleCategoryVisibility(${apJsAttr(c.id)})">
                             <i class="ri-eye-off-line"></i> ${c.isVisible !== false ? 'Archive / Hide' : 'Unhide'}
                           </button>
                           <div style="border-top:1px solid #e2e8f0; margin:4px 0;"></div>
-                          <button class="ap-dropdown-item danger" onclick="deleteApCategory(${c.id})">
+                          <button class="ap-dropdown-item danger" onclick="deleteApCategory(${apJsAttr(c.id)})">
                             <i class="ri-delete-bin-line"></i> Delete Category
                           </button>
                         </div>
@@ -9603,20 +10137,28 @@ function renderApCategories() {
   `;
 }
 
-function deleteApCategory(id) {
-  const c = typeof id === 'number' ? CATEGORIES_DATA.find(item => item.id === id) : CATEGORIES_DATA.find(item => item.name === id);
+async function deleteApCategory(id) {
+  const c = CATEGORIES_DATA.find(item => String(item.id) === String(id));
   if (c && confirm(`Are you sure you want to delete category "${c.name}"?`)) {
-    CATEGORIES_DATA = CATEGORIES_DATA.filter(item => item.id !== c.id);
+    CATEGORIES_DATA = CATEGORIES_DATA.filter(item => String(item.id) !== String(c.id));
     CATEGORIES = CATEGORIES_DATA.map(item => item.name);
     syncStorefrontState();
+    if (typeof sbDeleteCategory === 'function') {
+      await sbDeleteCategory(c.id);
+    }
     switchApTab('categories');
     showApToast(`Category ${c.name} deleted!`, 'error');
   }
 }
 
 function openApCategoryModal(catId = null) {
+  const catIdJs = catId != null ? apJsAttr(catId) : 'null';
   let c = catId != null ? CATEGORIES_DATA.find(item => String(item.id) === String(catId)) : null;
-  const catIdJs = c ? JSON.stringify(c.id) : 'null';
+
+  if (catId != null && !c) {
+    showApToast('Category not found. Refresh and try again.', 'info');
+    return;
+  }
 
   let modalBackdrop = document.getElementById('apCategoryModalOverlay');
   if (!modalBackdrop) {
@@ -9626,8 +10168,9 @@ function openApCategoryModal(catId = null) {
     document.body.appendChild(modalBackdrop);
   }
 
+  modalBackdrop.onclick = () => closeApCategoryModal();
   modalBackdrop.innerHTML = `
-    <div class="ap-modal-container" style="max-width:540px;">
+    <div class="ap-modal-container" style="max-width:540px;" onclick="event.stopPropagation()">
       <div class="ap-modal-header">
         <h3 class="ap-modal-title">${c ? '✏️ Edit Category Details' : '➕ Add New Category'}</h3>
         <button class="ap-btn-icon" onclick="closeApCategoryModal()"><i class="ri-close-line" style="font-size:18px;"></i></button>
@@ -9637,18 +10180,18 @@ function openApCategoryModal(catId = null) {
           <div style="display:flex; flex-direction:column; gap:14px;">
             <div>
               <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Category Name *</label>
-              <input type="text" id="apFormCatName" class="ap-search-input" style="width:100%;" required value="${c ? c.name.replace(/"/g, '&quot;') : ''}" placeholder="e.g. Toys, Handicrafts, Gadgets">
+              <input type="text" id="apFormCatName" class="ap-search-input" style="width:100%;" required value="${c ? apEscHtml(c.name) : ''}" placeholder="e.g. RC Toys, Return Gifts">
             </div>
 
             <div>
               <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Short Description</label>
-              <textarea id="apFormCatDesc" class="ap-search-input" style="width:100%; height:50px; padding:8px;" placeholder="Brief summary for storefront banner...">${c ? (c.description || '') : ''}</textarea>
+              <textarea id="apFormCatDesc" class="ap-search-input" style="width:100%; height:50px; padding:8px;" placeholder="Brief summary for storefront banner...">${c ? apEscHtml(c.description || '') : ''}</textarea>
             </div>
 
             <div>
               <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Thumbnail Image URL or Upload</label>
               <div style="display:flex; gap:10px; align-items:center;">
-                <input type="text" id="apFormCatImg" class="ap-search-input" style="flex:1;" value="${c ? (c.image || '') : ''}" placeholder="https://images.unsplash.com/..." oninput="document.getElementById('apFormCatImgPrev').src=this.value">
+                <input type="text" id="apFormCatImg" class="ap-search-input" style="flex:1;" value="${c ? apEscHtml(c.image || '') : ''}" placeholder="https://images.unsplash.com/..." oninput="document.getElementById('apFormCatImgPrev').src=this.value">
                 <label class="ap-btn ap-btn-secondary" style="height:38px; font-size:11px; padding:0 10px; cursor:pointer; margin:0; display:flex; align-items:center; gap:4px;">
                   ☁️ Upload
                   <input type="file" accept="image/*" style="display:none;" onchange="uploadImageToCloudinary(this, 'apFormCatImg', 'apFormCatImgPrev')">
@@ -9659,7 +10202,7 @@ function openApCategoryModal(catId = null) {
 
             <div>
               <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Subcategories (Comma Separated)</label>
-              <input type="text" id="apFormCatSub" class="ap-search-input" style="width:100%;" value="${c && c.subcategories ? c.subcategories.join(', ') : ''}" placeholder="e.g. Sarees, Handbags, Jewellery">
+              <input type="text" id="apFormCatSub" class="ap-search-input" style="width:100%;" value="${c && c.subcategories ? apEscHtml(c.subcategories.join(', ')) : ''}" placeholder="e.g. RC Cars, Stunt Cars">
             </div>
 
             <div style="display:flex; gap:20px; padding:6px 0;">
@@ -9690,27 +10233,43 @@ function closeApCategoryModal() {
   if (modalBackdrop) modalBackdrop.classList.remove('active');
 }
 
-function saveApCategoryForm(catId = null) {
-  const name = document.getElementById('apFormCatName').value.trim();
-  const description = document.getElementById('apFormCatDesc').value.trim();
-  const image = document.getElementById('apFormCatImg').value.trim();
-  const subStr = document.getElementById('apFormCatSub').value.trim();
-  const isFeatured = document.getElementById('apFormCatFeatured').checked;
-  const isVisible = document.getElementById('apFormCatVisible').checked;
-
-  if (!name) {
-    showToast('Please enter a category name.', 'info');
+async function saveApCategoryForm(catId = null) {
+  const nameEl = document.getElementById('apFormCatName');
+  if (!nameEl) {
+    showApToast('Category form not found. Please try again.', 'info');
     return;
   }
 
-  const subcategories = subStr ? subStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const name = nameEl.value.trim();
+  const description = (document.getElementById('apFormCatDesc')?.value || '').trim();
+  const image = (document.getElementById('apFormCatImg')?.value || '').trim();
+  const subStr = (document.getElementById('apFormCatSub')?.value || '').trim();
+  const isFeatured = document.getElementById('apFormCatFeatured')?.checked !== false;
+  const isVisible = document.getElementById('apFormCatVisible')?.checked !== false;
+
+  if (!name) {
+    showApToast('Please enter a category name.', 'info');
+    return;
+  }
+
+  const duplicate = CATEGORIES_DATA.find(item =>
+    item.name.toLowerCase() === name.toLowerCase() && String(item.id) !== String(catId)
+  );
+  if (duplicate) {
+    showApToast(`Category "${name}" already exists.`, 'info');
+    return;
+  }
+
+  const subcategories = subStr ? subStr.split(',').map(s => s.trim()).filter(Boolean) : [name];
   const finalImage = image || getCategoryDisplayImage(name);
 
   let c = catId != null ? CATEGORIES_DATA.find(item => String(item.id) === String(catId)) : null;
+  let savedCategory;
+
   if (c) {
     const oldName = c.name;
     c.name = name;
-    c.description = description;
+    c.description = description || `${name} collection at UNIQUE EXPRESSIONS`;
     c.image = finalImage;
     c.subcategories = subcategories;
     c.isFeatured = isFeatured;
@@ -9720,26 +10279,38 @@ function saveApCategoryForm(catId = null) {
     ALL_PRODUCTS.forEach(p => {
       if (p.category === oldName) p.category = name;
     });
+    savedCategory = c;
   } else {
-    CATEGORIES_DATA.push({
-      id: Date.now(),
-      name: name,
-      description: description || `Curated boutique ${name} items.`,
+    savedCategory = {
+      id: `cat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      name,
+      description: description || `${name} collection at UNIQUE EXPRESSIONS`,
       image: finalImage,
-      subcategories: subcategories,
-      isFeatured: isFeatured,
-      isVisible: isVisible,
+      subcategories,
+      isFeatured,
+      isVisible,
       sortOrder: CATEGORIES_DATA.length + 1,
       createdAt: new Date().toISOString().split('T')[0],
       updatedAt: new Date().toISOString().split('T')[0]
-    });
+    };
+    CATEGORIES_DATA.push(savedCategory);
+
+    apCategorySearchQuery = '';
+    apCategoryVisibilityFilter = 'All';
+    apCategoryFeaturedFilter = 'All';
   }
 
   CATEGORIES = CATEGORIES_DATA.map(item => item.name);
   syncStorefrontState();
   closeApCategoryModal();
+
+  if (typeof sbUpsertCategory === 'function') {
+    const ok = await sbUpsertCategory(savedCategory);
+    if (!ok) showApToast('Saved locally; cloud sync failed — check Supabase categories table.', 'info');
+  }
+
   switchApTab('categories');
-  showApToast(`Category saved successfully!`, 'success');
+  showApToast(`Category "${name}" saved successfully!`, 'success');
 }
 
 /* 5. Inventory Matrix Module Renderer */
@@ -9751,7 +10322,7 @@ function renderApInventory() {
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:16px;">
         <div>
           <h3 style="font-size:16px; font-weight:800; margin:0;">🏬 Real-Time Inventory & Stock Matrix</h3>
-          <span style="font-size:12px; color:#64748b;">${lowStockProducts.length} items flagged as Low Stock (&lt; 5 units)</span>
+          <span style="font-size:12px; color:#64748b;">${lowStockProducts.length} items flagged as Low Stock (&lt; 5 units) · Updates product stock everywhere</span>
         </div>
         <button class="ap-btn ap-btn-primary" onclick="saveApInventoryMatrix()">
           <i class="ri-save-3-line"></i> Save Stock Matrix
@@ -9785,7 +10356,7 @@ function renderApInventory() {
                   ${(p.stockQty || 0) < 5 ? `<span class="ap-badge ap-badge-danger">⚠️ LOW STOCK</span>` : `<span class="ap-badge ap-badge-success">OK</span>`}
                 </td>
                 <td>
-                  <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="toggleApStock(${JSON.stringify(p.id)})">
+                  <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="toggleApStock(${apJsAttr(p.id)})">
                     ${p.inStock !== false ? '🟢 Available' : '🔴 Out of Stock'}
                   </button>
                 </td>
@@ -9803,10 +10374,18 @@ function saveApInventoryMatrix() {
     const input = document.getElementById(`apInvStock-${p.id}`);
     if (input) {
       const val = parseInt(input.value, 10);
-      if (!isNaN(val)) p.stockQty = val;
+      if (!isNaN(val)) {
+        p.stockQty = val;
+        p.inStock = val > 0;
+      }
     }
   });
   syncStorefrontState();
+  ALL_PRODUCTS.forEach(p => {
+    if (typeof sbAdminUpdateProduct === 'function') {
+      sbAdminUpdateProduct(p).catch(err => console.warn('[UE] Inventory sync failed:', err));
+    }
+  });
   switchApTab('inventory');
   showApToast(`Bulk Inventory Matrix saved successfully!`, 'success');
 }
@@ -9988,71 +10567,40 @@ function deleteApBannerSlide(idx) {
 
 /* 7. Customers Directory Module Renderer */
 function renderApCustomers() {
+  syncCustomersFromOrders();
+  const customers = STORE_CUSTOMERS;
   return `
     <div class="ap-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h3 style="font-size:16px; font-weight:800; margin:0;">👥 Customer Profiles Directory</h3>
-        <button class="ap-btn ap-btn-primary" onclick="openApCustomerModal()">
-          <i class="ri-add-line"></i> + Add Customer Profile
-        </button>
+        <div>
+          <h3 style="font-size:16px; font-weight:800; margin:0;">👥 Customer Directory</h3>
+          <span style="font-size:12px; color:#64748b;">Auto-built from real store orders</span>
+        </div>
       </div>
-
       <div class="ap-table-wrapper">
         <table class="ap-table">
           <thead>
-            <tr>
-              <th>Customer Name</th>
-              <th>Phone</th>
-              <th>Email</th>
-              <th>City</th>
-              <th>Total Orders</th>
-              <th>Lifetime Spend</th>
-              <th>Tier Status</th>
-              <th>Actions</th>
-            </tr>
+            <tr><th>Customer Name</th><th>Phone</th><th>City</th><th>Total Orders</th><th>Lifetime Spend</th><th>Tier</th></tr>
           </thead>
           <tbody>
-            ${STORE_CUSTOMERS.map(c => `
+            ${customers.length === 0 ? `<tr><td colspan="6" style="text-align:center;padding:40px;color:#64748b;">No customers yet — orders will populate this list.</td></tr>` :
+            customers.map(c => `
               <tr>
-                <td><strong>${c.name}</strong></td>
-                <td>${c.phone}</td>
-                <td>${c.email}</td>
-                <td>${c.city}</td>
-                <td><span class="ap-badge ap-badge-info">${c.ordersCount} Orders</span></td>
+                <td><strong>${apEscHtml(c.name)}</strong></td>
+                <td>${apEscHtml(c.phone)}</td>
+                <td>${apEscHtml(c.city)}</td>
+                <td><span class="ap-badge ap-badge-info">${c.ordersCount}</span></td>
                 <td><strong>₹${c.totalSpend.toLocaleString('en-IN')}</strong></td>
                 <td><span class="ap-badge ${c.status === 'VIP' ? 'ap-badge-purple' : 'ap-badge-success'}">${c.status}</span></td>
-                <td><button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="openApCustomerModal(${c.id})">Edit Profile</button></td>
-              </tr>
-            `).join('')}
+              </tr>`).join('')}
           </tbody>
         </table>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
-function openApCustomerModal(id = null) {
-  const c = STORE_CUSTOMERS.find(item => item.id === id);
-  const name = prompt(`Enter Customer Name:`, c ? c.name : '');
-  if (name && name.trim()) {
-    if (c) {
-      c.name = name.trim();
-    } else {
-      STORE_CUSTOMERS.push({
-        id: Date.now(),
-        name: name.trim(),
-        phone: "+91 8886662334",
-        email: "customer@gmail.com",
-        city: "Visakhapatnam",
-        ordersCount: 1,
-        totalSpend: 799,
-        status: "Active"
-      });
-    }
-    syncStorefrontState();
-    switchApTab('customers');
-    showApToast(`Customer profile saved!`, 'success');
-  }
+function openApCustomerModal() {
+  showApToast('Customers are auto-created from orders.', 'info');
 }
 
 /* 8. Coupons & Promotions Module Renderer */
@@ -10089,6 +10637,7 @@ function renderApCoupons() {
                 <td>${c.expiry}</td>
                 <td><span class="ap-badge ap-badge-success">${c.status}</span></td>
                 <td>
+                  <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="openApCouponModal(${idx})">Edit</button>
                   <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px; color:#ef4444;" onclick="deleteApCoupon(${idx})">Delete</button>
                 </td>
               </tr>
@@ -10100,21 +10649,114 @@ function renderApCoupons() {
   `;
 }
 
-function openApCouponModal() {
-  const code = prompt(`Enter Promo Coupon Code (e.g. FESTIVE25):`, '');
-  if (code && code.trim()) {
-    STORE_COUPONS.push({
-      code: code.trim().toUpperCase(),
-      discount: "20% OFF",
-      minSpend: 499,
-      usedCount: 0,
-      expiry: "31 Dec 2026",
-      status: "Active"
-    });
-    syncStorefrontState();
-    switchApTab('coupons');
-    showApToast(`Coupon ${code.toUpperCase()} created!`, 'success');
+function openApCouponModal(editIdx = null) {
+  const c = editIdx != null ? STORE_COUPONS[editIdx] : null;
+  const editIdxJs = editIdx != null ? editIdx : 'null';
+
+  let modalBackdrop = document.getElementById('apCouponModalOverlay');
+  if (!modalBackdrop) {
+    modalBackdrop = document.createElement('div');
+    modalBackdrop.id = 'apCouponModalOverlay';
+    modalBackdrop.className = 'ap-modal-backdrop';
+    document.body.appendChild(modalBackdrop);
   }
+
+  modalBackdrop.innerHTML = `
+    <div class="ap-modal-container" style="max-width:480px;" onclick="event.stopPropagation()">
+      <div class="ap-modal-header">
+        <h3 class="ap-modal-title">${c ? '✏️ Edit Coupon Code' : '➕ Create Promo Coupon'}</h3>
+        <button class="ap-btn-icon" onclick="closeApCouponModal()"><i class="ri-close-line" style="font-size:18px;"></i></button>
+      </div>
+      <div class="ap-modal-body">
+        <form onsubmit="event.preventDefault(); saveApCouponForm(${editIdxJs});">
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div>
+              <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Coupon Code *</label>
+              <input type="text" id="apFormCouponCode" class="ap-search-input" style="width:100%; text-transform:uppercase;" required value="${c ? apEscHtml(c.code) : ''}" placeholder="e.g. FESTIVE20" ${c ? 'readonly' : ''}>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Discount Type *</label>
+                <select id="apFormCouponType" class="ap-search-input" style="width:100%; padding-left:12px;">
+                  <option value="percent" ${!c || c.type === 'percent' ? 'selected' : ''}>Percentage Off</option>
+                  <option value="fixed" ${c && c.type === 'fixed' ? 'selected' : ''}>Fixed ₹ Off</option>
+                  <option value="shipping" ${c && c.type === 'shipping' ? 'selected' : ''}>Free Shipping</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Value *</label>
+                <input type="number" id="apFormCouponValue" class="ap-search-input" style="width:100%;" min="0" value="${c ? (c.value ?? 10) : 10}" placeholder="e.g. 20">
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Min Order (₹)</label>
+                <input type="number" id="apFormCouponMin" class="ap-search-input" style="width:100%;" min="0" value="${c ? c.minSpend : 499}">
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Expiry Date</label>
+                <input type="text" id="apFormCouponExpiry" class="ap-search-input" style="width:100%;" value="${c ? apEscHtml(c.expiry) : '31 Dec 2026'}" placeholder="31 Dec 2026">
+              </div>
+            </div>
+            <div>
+              <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Status</label>
+              <select id="apFormCouponStatus" class="ap-search-input" style="width:100%; padding-left:12px;">
+                <option value="Active" ${!c || c.status === 'Active' ? 'selected' : ''}>Active</option>
+                <option value="Inactive" ${c && c.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="ap-modal-footer">
+        <button type="button" class="ap-btn ap-btn-secondary" onclick="closeApCouponModal()">Cancel</button>
+        <button type="button" class="ap-btn ap-btn-primary" onclick="saveApCouponForm(${editIdxJs})">
+          <i class="ri-check-line"></i> Save Coupon
+        </button>
+      </div>
+    </div>
+  `;
+
+  modalBackdrop.classList.add('active');
+}
+
+function closeApCouponModal() {
+  document.getElementById('apCouponModalOverlay')?.classList.remove('active');
+}
+
+function saveApCouponForm(editIdx = null) {
+  const code = document.getElementById('apFormCouponCode')?.value.trim().toUpperCase();
+  const type = document.getElementById('apFormCouponType')?.value || 'percent';
+  const value = parseInt(document.getElementById('apFormCouponValue')?.value, 10) || 0;
+  const minSpend = parseInt(document.getElementById('apFormCouponMin')?.value, 10) || 0;
+  const expiry = document.getElementById('apFormCouponExpiry')?.value.trim() || '31 Dec 2026';
+  const status = document.getElementById('apFormCouponStatus')?.value || 'Active';
+
+  if (!code) {
+    showApToast('Please enter a coupon code.', 'info');
+    return;
+  }
+
+  const discountLabel = type === 'percent' ? `${value}% OFF` : type === 'fixed' ? `₹${value} OFF` : 'FREE Shipping';
+  const payload = { code, type, value, discount: discountLabel, minSpend, expiry, status, usedCount: 0 };
+
+  if (editIdx != null && STORE_COUPONS[editIdx]) {
+    payload.usedCount = STORE_COUPONS[editIdx].usedCount || 0;
+    STORE_COUPONS[editIdx] = payload;
+    showApToast(`Coupon ${code} updated!`, 'success');
+  } else {
+    if (STORE_COUPONS.some(c => c.code === code)) {
+      showApToast('This coupon code already exists.', 'info');
+      return;
+    }
+    STORE_COUPONS.push(payload);
+    showApToast(`Coupon ${code} created!`, 'success');
+  }
+
+  normalizeStoreCoupons();
+  closeApCouponModal();
+  syncStorefrontState();
+  switchApTab('coupons');
 }
 
 function deleteApCoupon(idx) {
@@ -10148,7 +10790,8 @@ function renderApReviews() {
             </tr>
           </thead>
           <tbody>
-            ${STORE_REVIEWS.map((r, idx) => `
+            ${STORE_REVIEWS.length === 0 ? `<tr><td colspan="7" style="text-align:center;padding:40px;color:#64748b;">No reviews yet. Customer submissions will appear here for moderation.</td></tr>` :
+            STORE_REVIEWS.map((r, idx) => `
               <tr>
                 <td><strong>${r.name}</strong></td>
                 <td><span style="color:#f59e0b; font-weight:800;">★ ${r.rating}.0</span></td>
@@ -10177,6 +10820,7 @@ function renderApReviews() {
 
 function approveApReview(idx) {
   STORE_REVIEWS[idx].status = 'Approved';
+  syncAdminReviewToUser(STORE_REVIEWS[idx]);
   syncStorefrontState();
   switchApTab('reviews');
   showApToast(`Review approved and published!`, 'success');
@@ -10184,6 +10828,7 @@ function approveApReview(idx) {
 
 function toggleApReviewFeatured(idx) {
   STORE_REVIEWS[idx].featured = !STORE_REVIEWS[idx].featured;
+  syncAdminReviewToUser(STORE_REVIEWS[idx]);
   syncStorefrontState();
   switchApTab('reviews');
   showApToast(`Review featured status updated!`, 'success');
@@ -10191,7 +10836,10 @@ function toggleApReviewFeatured(idx) {
 
 function deleteApReview(idx) {
   if (confirm(`Delete review from ${STORE_REVIEWS[idx].name}?`)) {
+    const revId = STORE_REVIEWS[idx].id;
     STORE_REVIEWS.splice(idx, 1);
+    userReviews = userReviews.filter(r => r.id !== revId);
+    localStorage.setItem('ue_reviews', JSON.stringify(userReviews));
     syncStorefrontState();
     switchApTab('reviews');
     showApToast(`Review removed!`, 'error');
@@ -10260,6 +10908,10 @@ function renderApSettings() {
           <label style="font-size:11px; font-weight:700; color:#475569;">Store Email</label>
           <input type="email" id="apStEmail" class="ap-search-input" value="${STORE_SETTINGS.email}">
         </div>
+        <div>
+          <label style="font-size:11px; font-weight:700; color:#475569;">Admin Panel PIN (4 digits)</label>
+          <input type="password" maxlength="4" id="apStAdminPin" class="ap-search-input" value="${STORE_SETTINGS.adminPin || '1234'}" placeholder="••••">
+        </div>
       </div>
 
       <div style="margin-bottom:16px;">
@@ -10300,6 +10952,10 @@ function saveApStoreSettings() {
   STORE_SETTINGS.freeShippingMin = parseInt(document.getElementById('apStMinFree').value, 10) || 499;
   STORE_SETTINGS.shippingFee = parseInt(document.getElementById('apStShipFee').value, 10) || 50;
   STORE_SETTINGS.giftWrapFee = parseInt(document.getElementById('apStWrapFee').value, 10) || 30;
+  const newPin = (document.getElementById('apStAdminPin')?.value || '').trim();
+  if (newPin.length === 4 && /^\d{4}$/.test(newPin)) {
+    STORE_SETTINGS.adminPin = newPin;
+  }
 
   syncStorefrontState();
   switchApTab('settings');
@@ -10374,46 +11030,6 @@ function renderApUsers() {
 }
 
 /* Global Product Modal Form Handler */
-function openApProductModal(editId = null) {
-  const p = ALL_PRODUCTS.find(item => item.id === editId);
-  const title = prompt(`Product Title:`, p ? p.title : '');
-  if (!title || !title.trim()) return;
-
-  const priceStr = prompt(`Selling Price (₹):`, p ? p.price : '499');
-  const price = parseInt(priceStr, 10) || 499;
-  const category = prompt(`Category (${CATEGORIES.join(', ')}):`, p ? p.category : CATEGORIES[0]) || CATEGORIES[0];
-  const image = prompt(`Image URL:`, p ? p.image : 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop');
-
-  if (p) {
-    p.title = title.trim();
-    p.price = price;
-    p.originalPrice = Math.round(price * 1.2);
-    p.category = category;
-    p.image = image;
-  } else {
-    ALL_PRODUCTS.unshift({
-      id: Date.now(),
-      sku: `UE-SKU-${Date.now()}`,
-      title: title.trim(),
-      category: category,
-      price: price,
-      originalPrice: Math.round(price * 1.2),
-      discount: 20,
-      image: image,
-      rating: "5.0",
-      reviewsCount: 1,
-      description: `${title} offered by UNIQUE EXPRESSIONS, Visakhapatnam.`,
-      stockQty: 25,
-      inStock: true,
-      isFeatured: true
-    });
-  }
-
-  syncStorefrontState();
-  if (apActiveTab === 'products') switchApTab('products');
-  showApToast(`Product saved successfully!`, 'success');
-}
-
 // ─── Modal & Action Helpers ───────────────────────────────────────────────────
 function openAdminProductModal(productId = null) {
   const modal = document.getElementById('adminProductModalBackdrop');
@@ -10437,10 +11053,10 @@ function openAdminProductModal(productId = null) {
   if (productId) {
     const p = ALL_PRODUCTS.find(item => item.id === productId);
     if (p) {
+      populateAdminCategorySelect(catSelect, p.category);
       if (titleHeader) titleHeader.innerText = `Edit Product #${p.id}`;
       if (hiddenId) hiddenId.value = p.id;
       if (titleInput) titleInput.value = p.title;
-      if (catSelect) catSelect.value = p.category;
       if (priceInput) priceInput.value = p.price;
       if (origPriceInput) origPriceInput.value = p.originalPrice || Math.round(p.price * 1.25);
       if (discountInput) discountInput.value = p.discount || 20;
@@ -10458,6 +11074,7 @@ function openAdminProductModal(productId = null) {
   }
 
   // Add Mode Reset
+  populateAdminCategorySelect(catSelect);
   if (titleHeader) titleHeader.innerText = 'Add New Product';
   if (hiddenId) hiddenId.value = '';
   if (titleInput) titleInput.value = '';
@@ -10611,14 +11228,7 @@ async function adminDeleteProduct(id) {
 }
 
 function adminAddNewCategory() {
-  const catName = document.getElementById('admCatNameInput')?.value.trim();
-  if (!catName) { showToast('Please enter category name!', 'info'); return; }
-  if (CATEGORIES.includes(catName)) { showApToast('Category already exists!', 'info'); return; }
-
-  CATEGORIES.push(catName);
-  showApToast(`✅ Category "${catName}" added!`, 'info');
-  switchAdminTab('categories');
-  renderAllSections();
+  openApCategoryModal();
 }
 
 function adminAddNewBanner() {
@@ -10761,7 +11371,7 @@ function renderDrawerCartItems() {
         </button>
         <div class="cart-qty-pill-box" style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:3px 8px; border-radius:99px; border:1px solid #cbd5e1;">
           <button onclick="updateCartQty(${idx}, -1)" style="width:20px; height:20px; border-radius:50%; border:none; background:#ffffff; font-weight:800; font-size:12px; cursor:pointer; color:#0f172a; box-shadow:0 1px 3px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; outline:none;">-</button>
-          <span style="font-size:12px; font-weight:800; color:#0f172a; min-width:14px; text-align:center;">${item.quantity}</span>
+          <span style="font-size:12px; font-weight:800; color:#0f172a; min-width:14px; text-align:center;">${cartItemQty(item)}</span>
           <button onclick="updateCartQty(${idx}, 1)" style="width:20px; height:20px; border-radius:50%; border:none; background:#ffffff; font-weight:800; font-size:12px; cursor:pointer; color:#0f172a; box-shadow:0 1px 3px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; outline:none;">+</button>
         </div>
       </div>
@@ -10794,8 +11404,15 @@ function toggleGiftWrap(val) {
 }
 
 function updateCartQty(idx, change) {
-  cart[idx].qty += change;
-  if (cart[idx].qty <= 0) cart.splice(idx, 1);
+  const item = cart[idx];
+  if (!item) return;
+  const newQty = cartItemQty(item) + change;
+  if (change > 0) {
+    const check = validateStockForCart(item.id, change);
+    if (!check.ok) { showToast(check.msg, 'info'); return; }
+  }
+  item.qty = newQty;
+  if (item.qty <= 0) cart.splice(idx, 1);
   saveCart();
   renderDrawerCartItems();
 }
@@ -10803,6 +11420,12 @@ function updateCartQty(idx, change) {
 function quickAddToCart(productId) {
   const product = ALL_PRODUCTS.find(p => p.id === productId);
   if (!product) return;
+
+  const check = validateStockForCart(productId, 1);
+  if (!check.ok) {
+    showToast(check.msg, 'info');
+    return;
+  }
 
   const effectivePrice = getEffectivePrice(product.price);
   const existing = cart.find(i => i.id === productId);
@@ -10814,6 +11437,7 @@ function quickAddToCart(productId) {
 }
 
 function saveCart() {
+  normalizeCartItems();
   localStorage.setItem('ue_cart', JSON.stringify(cart));
   updateBadges();
 }
@@ -10846,10 +11470,6 @@ function updateBadges() {
   }
 }
 
-function filterCategory(categoryName) {
-  activeCategory = categoryName;
-  switchView('plp', { category: categoryName });
-}
 
 function updateActiveCategoryThumbnails() {
   document.querySelectorAll('.m-cat-pill-thumb').forEach(el => el.classList.remove('active-cat'));
@@ -10892,7 +11512,8 @@ function closeAdminPinModal() {
 
 function verifyAdminPin() {
   const pin = (document.getElementById('adminPinInput')?.value || '').trim();
-  if (pin === '1234') {
+  const expected = String(STORE_SETTINGS.adminPin || '1234');
+  if (pin === expected) {
     apIsAuthenticated = true;
     sessionStorage.setItem('ue_admin_auth', '1');
     closeAdminPinModal();
@@ -10911,15 +11532,18 @@ function switchAdminTab(tabId) {
 function closeAllModals() {
   document.getElementById('modalBackdrop')?.classList.remove('active');
   document.getElementById('adminPinBackdrop')?.classList.remove('active');
+  document.getElementById('adminProductModalBackdrop')?.classList.remove('active');
   document.getElementById('addressModalBackdrop')?.classList.remove('active');
   document.getElementById('editProfileModalBackdrop')?.classList.remove('active');
   document.getElementById('invoiceModalBackdrop')?.classList.remove('active');
-}
-
-function openWhatsAppChat(customMsg) {
-  const phone = "918886662334";
-  const msg = customMsg || "Hello UNIQUE EXPRESSIONS! I am interested in placing an order.";
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  document.getElementById('apCategoryModalOverlay')?.classList.remove('active');
+  document.getElementById('apProductModalOverlay')?.classList.remove('active');
+  document.getElementById('apOrderDetailOverlay')?.classList.remove('active');
+  document.getElementById('apBulkCatOverlay')?.classList.remove('active');
+  document.getElementById('apCouponModalOverlay')?.classList.remove('active');
+  document.getElementById('forgotPasswordOverlay')?.classList.remove('active');
+  document.getElementById('resetPasswordOverlay')?.classList.remove('active');
+  document.getElementById('userAuthModalBackdrop')?.classList.remove('active');
 }
 
 /* ==========================================================================
@@ -11398,7 +12022,7 @@ async function submitCustomerReview() {
   const rating = parseInt(document.getElementById('revRatingValue').value || '5');
   const title = document.getElementById('revTitleInput').value.trim();
   const comment = document.getElementById('revCommentInput').value.trim();
-  const name = document.getElementById('revNameInput').value.trim() || 'G Mounika Durga';
+  const name = document.getElementById('revNameInput').value.trim() || 'Customer';
   const customPhoto = document.getElementById('revPhotoUrl')?.value;
 
   if (!title || !comment) {
@@ -11426,6 +12050,8 @@ async function submitCustomerReview() {
   // Save locally first
   userReviews.unshift(newRev);
   localStorage.setItem('ue_reviews', JSON.stringify(userReviews));
+  syncReviewsForAdmin();
+  localStorage.setItem('ue_reviews_v5', JSON.stringify(STORE_REVIEWS));
 
   // Sync to Supabase (non-blocking)
   sbInsertReview(newRev).catch(err => console.warn('[UE] Review sync failed:', err));
@@ -11847,7 +12473,7 @@ function submitSampleKitRequest() {
    ========================================================================== */
 function openApProductModal(editId = null) {
   const p = ALL_PRODUCTS.find(item => String(item.id) === String(editId)) || null;
-  const editIdJs = editId != null ? JSON.stringify(editId) : 'null';
+  const editIdJs = editId != null ? apJsAttr(editId) : 'null';
   
   let modalBackdrop = document.getElementById('apProductModalOverlay');
   if (!modalBackdrop) {
@@ -11857,7 +12483,7 @@ function openApProductModal(editId = null) {
     document.body.appendChild(modalBackdrop);
   }
 
-  const categoryOptions = CATEGORIES.map(c => `<option value="${c}" ${p && p.category === c ? 'selected' : ''}>${c}</option>`).join('');
+  const categoryOptions = getAdminCategoryNames().map(c => `<option value="${apEscHtml(c)}" ${p && p.category === c ? 'selected' : ''}>${apEscHtml(c)}</option>`).join('');
 
   modalBackdrop.innerHTML = `
     <div class="ap-modal-container" style="max-width:680px;">
@@ -11897,7 +12523,8 @@ function openApProductModal(editId = null) {
               </div>
               <div>
                 <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Stock Quantity *</label>
-                <input type="number" id="apFormStock" class="ap-search-input" style="width:100%;" required value="${p ? p.stockQty : ''}" placeholder="e.g. 25">
+                <input type="number" id="apFormStock" class="ap-search-input" style="width:100%;" required min="0" value="${p ? p.stockQty : ''}" placeholder="e.g. 25">
+                <span style="font-size:10px; color:#64748b;">Same count shown in Inventory tab — bulk updates there.</span>
               </div>
             </div>
 
@@ -12027,7 +12654,7 @@ async function saveApProductForm(editId = null) {
     existing.stockQty = stockQty;
     existing.image = image;
     existing.description = description;
-    existing.inStock = inStock;
+    existing.inStock = inStock && stockQty > 0;
     existing.isFeatured = isFeatured;
     existing.videoUrl = videoUrl;
     existing.images = images;
@@ -12048,7 +12675,7 @@ async function saveApProductForm(editId = null) {
       reviewsCount: 1,
       description: description || `${title} offered by UNIQUE EXPRESSIONS, Visakhapatnam.`,
       stockQty,
-      inStock,
+      inStock: inStock && stockQty > 0,
       isFeatured,
       videoUrl,
       images,
@@ -12258,23 +12885,22 @@ function toggleAuthPasswordVisibility() {
 function handleUserLogin(e) {
   if (e) e.preventDefault();
   const id = document.getElementById('authLoginId')?.value.trim();
-  const pass = document.getElementById('authLoginPassword')?.value.trim();
-
+  const pass = document.getElementById('authLoginPassword')?.value;
   if (!id || !pass) {
     showToast('Please enter your email/phone and password.', 'info');
     return;
   }
-
-  // Set user profile state
-  userProfile.name = id.includes('@') ? id.split('@')[0] : 'G Mounika Durga';
-  userProfile.email = id.includes('@') ? id : 'uniqueexpressions@gmail.com';
-  userProfile.phone = !id.includes('@') ? id : '+91 8886662334';
-  
-  localStorage.setItem('ue_user_session_v1', JSON.stringify({ isLoggedIn: true, profile: userProfile }));
-  closeUserAuthModal();
-  showToast(`Welcome back, ${userProfile.name}! VIP Account active.`, 'success');
-  
-  if (currentView === 'profile') renderProfileView();
+  sbSignIn(id, pass).then(async (result) => {
+    if (result.error) {
+      showToast(result.error === 'Invalid login credentials' ? 'Wrong email/phone or password.' : result.error, 'info');
+      return;
+    }
+    await applyAuthSession(result.session);
+    closeUserAuthModal();
+    showToast(`Welcome back, ${userProfile.name}!`, 'success');
+    if (currentView === 'profile') renderProfileView();
+    if (currentView === 'checkout') renderCheckoutView();
+  });
 }
 
 function handleUserSignup(e) {
@@ -12282,68 +12908,31 @@ function handleUserSignup(e) {
   const name = document.getElementById('authSignupName')?.value.trim();
   const phone = document.getElementById('authSignupPhone')?.value.trim();
   const email = document.getElementById('authSignupEmail')?.value.trim();
-  const city = 'Visakhapatnam';
-
-  if (!name || !phone || !email) {
-    showToast('Please complete all required registration fields.', 'info');
+  const pass = document.getElementById('authSignupPassword')?.value || '';
+  if (!name || !phone || !email || pass.length < 6) {
+    showToast('Complete all fields. Password min 6 characters.', 'info');
     return;
   }
-
-  userProfile.name = name;
-  userProfile.phone = phone;
-  userProfile.email = email;
-  userProfile.city = city;
-
-  localStorage.setItem('ue_user_session_v1', JSON.stringify({ isLoggedIn: true, profile: userProfile }));
-  closeUserAuthModal();
-  showToast(`Registration Successful! Welcome to UNIQUE EXPRESSIONS, ${name}!`, 'success');
-
-  if (currentView === 'profile') renderProfileView();
+  sbSignUp({ email, password: pass, name, phone }).then(async (result) => {
+    if (result.error) { showToast(result.error, 'info'); return; }
+    if (result.session) {
+      await applyAuthSession(result.session);
+      closeUserAuthModal();
+      showToast(`Welcome ${name}!`, 'success');
+      if (currentView === 'profile') renderProfileView();
+    } else {
+      showToast('Account created! Check email to verify, then login.', 'success');
+      switchAuthTab('login');
+    }
+  });
 }
 
 function handleSendOtpCode() {
-  const row = document.getElementById('otpInputRow');
-  const timer = document.getElementById('otpTimerText');
-  const btn = document.getElementById('sendOtpSubmitBtn');
-
-  if (row) {
-    if (row.style.display === 'none') {
-      row.style.display = 'flex';
-      if (timer) timer.style.display = 'block';
-      if (btn) {
-        btn.innerText = 'Verify 4-Digit OTP Code →';
-        btn.onclick = handleVerifyOtpCode;
-      }
-      showToast('WhatsApp OTP Sent to +91 8886662334! Code: 1 2 3 4', 'info');
-    }
-  }
-}
-
-function focusNextOtp(idx) {
-  const cur = document.getElementById(`otpBox${idx}`);
-  if (cur && cur.value.length === 1 && idx < 4) {
-    const nxt = document.getElementById(`otpBox${idx + 1}`);
-    if (nxt) nxt.focus();
-  }
+  showToast('Use Email + Password login, or register a new account. WhatsApp help: +91 8886662334', 'info');
 }
 
 function handleVerifyOtpCode() {
-  const o1 = document.getElementById('otpBox1')?.value.trim();
-  const o2 = document.getElementById('otpBox2')?.value.trim();
-  const o3 = document.getElementById('otpBox3')?.value.trim();
-  const o4 = document.getElementById('otpBox4')?.value.trim();
-  const otp = `${o1}${o2}${o3}${o4}`;
-
-  if (otp.length < 4) {
-    showToast('Please enter complete 4-digit OTP code.', 'info');
-    return;
-  }
-
-  localStorage.setItem('ue_user_session_v1', JSON.stringify({ isLoggedIn: true, profile: userProfile }));
-  closeUserAuthModal();
-  showToast('WhatsApp OTP Verified! Logged in as G Mounika Durga.', 'success');
-
-  if (currentView === 'profile') renderProfileView();
+  handleSendOtpCode();
 }
 
 // 3. Native Lightbox / Fullscreen Viewer

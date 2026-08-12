@@ -28,7 +28,8 @@ async function sbGetProducts() {
       rating: String(p.rating),
       reviewsCount: p.reviews_count,
       description: p.description,
-      inStock: p.in_stock
+      inStock: p.in_stock,
+      stockQty: p.stock_qty != null ? p.stock_qty : 12
     }));
   } catch (err) {
     console.warn('[Supabase] getProducts failed:', err.message);
@@ -49,7 +50,8 @@ async function sbSeedProducts(products) {
       rating: parseFloat(p.rating),
       reviews_count: p.reviewsCount,
       description: p.description,
-      in_stock: p.inStock !== false
+      in_stock: p.inStock !== false,
+      stock_qty: Math.max(0, parseInt(p.stockQty, 10) || 0)
     }));
     const { error } = await _supabase.from('products').upsert(rows, { onConflict: 'id' });
     if (error) throw error;
@@ -75,7 +77,8 @@ async function sbAdminInsertProduct(product) {
         rating: parseFloat(product.rating) || 4.5,
         reviews_count: product.reviewsCount || 0,
         description: product.description || '',
-        in_stock: true
+        in_stock: product.inStock !== false,
+        stock_qty: Math.max(0, parseInt(product.stockQty, 10) || 0)
       })
       .select()
       .single();
@@ -99,7 +102,8 @@ async function sbAdminUpdateProduct(product) {
       rating: parseFloat(product.rating) || 4.5,
       reviews_count: product.reviewsCount || 0,
       description: product.description || '',
-      in_stock: product.inStock !== false
+      in_stock: product.inStock !== false,
+      stock_qty: Math.max(0, parseInt(product.stockQty, 10) || 0)
     };
     const { data, error } = await _supabase
       .from('products')
@@ -126,11 +130,94 @@ async function sbAdminDeleteProduct(id) {
   }
 }
 
+/* ─────────────────────────────── CATEGORIES ─────────────────────────────── */
+
+function mapCategoryFromRow(c) {
+  return {
+    id: c.id,
+    name: c.name,
+    description: c.description || '',
+    image: c.image || '',
+    subcategories: Array.isArray(c.subcategories) ? c.subcategories : [],
+    isFeatured: c.is_featured !== false,
+    isVisible: c.is_visible !== false,
+    sortOrder: c.sort_order || 1,
+    createdAt: c.created_at,
+    updatedAt: c.updated_at
+  };
+}
+
+function mapCategoryToRow(c) {
+  return {
+    id: String(c.id),
+    name: c.name,
+    description: c.description || '',
+    image: c.image || '',
+    subcategories: c.subcategories || [],
+    is_featured: c.isFeatured !== false,
+    is_visible: c.isVisible !== false,
+    sort_order: c.sortOrder || 1,
+    updated_at: new Date().toISOString()
+  };
+}
+
+async function sbGetCategories() {
+  try {
+    const { data, error } = await _supabase
+      .from('categories')
+      .select('*')
+      .order('sort_order', { ascending: true });
+    if (error) throw error;
+    return (data || []).map(mapCategoryFromRow);
+  } catch (err) {
+    console.warn('[Supabase] getCategories failed:', err.message);
+    return null;
+  }
+}
+
+async function sbUpsertCategory(category) {
+  try {
+    const { error } = await _supabase
+      .from('categories')
+      .upsert(mapCategoryToRow(category), { onConflict: 'id' });
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.warn('[Supabase] upsertCategory failed:', err.message);
+    return false;
+  }
+}
+
+async function sbSeedCategories(categories) {
+  try {
+    const rows = (categories || []).map(mapCategoryToRow);
+    if (!rows.length) return true;
+    const { error } = await _supabase.from('categories').upsert(rows, { onConflict: 'id' });
+    if (error) throw error;
+    console.log('[Supabase] Seeded ' + rows.length + ' categories');
+    return true;
+  } catch (err) {
+    console.warn('[Supabase] seedCategories failed:', err.message);
+    return false;
+  }
+}
+
+async function sbDeleteCategory(id) {
+  try {
+    const { error } = await _supabase.from('categories').delete().eq('id', String(id));
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.warn('[Supabase] deleteCategory failed:', err.message);
+    return false;
+  }
+}
+
 /* ─────────────────────────────── ORDERS ─────────────────────────────── */
 
 async function sbInsertOrder(order) {
   try {
-    const { error } = await _supabase.from('orders').insert({
+    const row = {
       order_id: order.orderId,
       customer_name: order.customerName,
       phone: order.phone,
@@ -144,7 +231,9 @@ async function sbInsertOrder(order) {
       step_index: order.stepIndex || 0,
       payment_method: order.paymentMethod || 'Online',
       gstin: '37BVTPG7761F1Z1'
-    });
+    };
+    if (order.userId) row.user_id = order.userId;
+    const { error } = await _supabase.from('orders').insert(row);
     if (error) throw error;
     console.log('[Supabase] Order ' + order.orderId + ' saved');
     return true;
@@ -376,32 +465,176 @@ async function sbGetTickets() {
   }
 }
 
-/* ─────────────────────────────── CUSTOMER PROFILES ─────────────────────── */
-
-async function sbInsertProfile(profile) {
+async function sbGetOrdersForUser(userId, phone) {
   try {
-    const { error } = await _supabase.from('profiles').upsert({
-      email: profile.email || `${Date.now()}@customer.com`,
-      name: profile.name,
-      phone: profile.phone || '',
-      city: profile.city || 'Visakhapatnam',
-      address: profile.address || '',
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'email' });
-    if (error) {
-      await _supabase.from('customers').upsert({
-        email: profile.email || `${Date.now()}@customer.com`,
-        name: profile.name,
-        phone: profile.phone || '',
-        city: profile.city || 'Visakhapatnam'
-      }, { onConflict: 'email' });
+    let query = _supabase.from('orders').select('*').order('created_at', { ascending: false });
+    if (userId) query = query.eq('user_id', userId);
+    else if (phone) query = query.eq('phone', phone);
+    else return [];
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data || []).map(o => ({
+      orderId: o.order_id,
+      date: new Date(o.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      status: o.status,
+      stepIndex: o.step_index,
+      customerName: o.customer_name,
+      phone: o.phone,
+      address: o.address,
+      paymentMethod: o.payment_method,
+      totalAmount: o.total_amount,
+      subtotal: o.subtotal,
+      discountAmount: o.discount_amount,
+      shippingFee: o.shipping_fee,
+      gstin: o.gstin,
+      items: o.items,
+      userId: o.user_id
+    }));
+  } catch (err) {
+    console.warn('[Supabase] getOrdersForUser failed:', err.message);
+    return [];
+  }
+}
+
+/* ─────────────────────────────── CUSTOMER AUTH (Supabase Auth) ─────────── */
+
+const UE_CUSTOMER_EMAIL_DOMAIN = '@customers.uniqueexpressions.in';
+
+function sbNormalizePhone(phone) {
+  let d = String(phone || '').replace(/\D/g, '');
+  if (d.length === 10) d = '91' + d;
+  return d;
+}
+
+function sbResolveAuthEmail(identifier) {
+  const id = String(identifier || '').trim().toLowerCase();
+  if (!id) return '';
+  if (id.includes('@')) return id;
+  return sbNormalizePhone(id) + UE_CUSTOMER_EMAIL_DOMAIN;
+}
+
+async function sbSignUp({ email, password, name, phone, city }) {
+  try {
+    const authEmail = email.includes('@') ? email.toLowerCase() : sbResolveAuthEmail(phone);
+    const { data, error } = await _supabase.auth.signUp({
+      email: authEmail,
+      password,
+      options: {
+        data: { name, phone: sbNormalizePhone(phone), email: email.toLowerCase(), city: city || 'Visakhapatnam' }
+      }
+    });
+    if (error) throw error;
+    if (data.user) {
+      await sbUpsertProfile(data.user.id, { name, phone: sbNormalizePhone(phone), email: email.toLowerCase(), city: city || 'Visakhapatnam' });
     }
-    console.log('[Supabase] Profile for ' + profile.name + ' saved to Supabase');
+    return { user: data.user, session: data.session, error: null };
+  } catch (err) {
+    return { user: null, session: null, error: err.message || 'Sign up failed' };
+  }
+}
+
+async function sbSignIn(identifier, password) {
+  try {
+    let authEmail = sbResolveAuthEmail(identifier);
+    try {
+      const { data: rpcEmail } = await _supabase.rpc('lookup_auth_email', { login_id: identifier.trim() });
+      if (rpcEmail) authEmail = String(rpcEmail).toLowerCase();
+    } catch (_) { /* RPC optional until migration run */ }
+    const { data, error } = await _supabase.auth.signInWithPassword({ email: authEmail, password });
+    if (error) throw error;
+    return { user: data.user, session: data.session, error: null };
+  } catch (err) {
+    return { user: null, session: null, error: err.message || 'Login failed' };
+  }
+}
+
+async function sbSignOut() {
+  try {
+    const { error } = await _supabase.auth.signOut();
+    if (error) throw error;
     return true;
   } catch (err) {
-    console.warn('[Supabase] insertProfile note:', err.message);
+    console.warn('[Supabase] signOut failed:', err.message);
     return false;
   }
+}
+
+async function sbGetAuthSession() {
+  try {
+    const { data, error } = await _supabase.auth.getSession();
+    if (error) throw error;
+    return data.session;
+  } catch (err) {
+    return null;
+  }
+}
+
+function sbOnAuthStateChange(callback) {
+  return _supabase.auth.onAuthStateChange((event, session) => callback(event, session));
+}
+
+async function sbResetPassword(identifier) {
+  try {
+    const authEmail = sbResolveAuthEmail(identifier);
+    const { error } = await _supabase.auth.resetPasswordForEmail(authEmail, {
+      redirectTo: window.location.origin + window.location.pathname + '#view=profile&reset=1'
+    });
+    if (error) throw error;
+    return { ok: true, error: null };
+  } catch (err) {
+    return { ok: false, error: err.message || 'Could not send reset email' };
+  }
+}
+
+async function sbUpdatePassword(newPassword) {
+  try {
+    const { error } = await _supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+    return { ok: true, error: null };
+  } catch (err) {
+    return { ok: false, error: err.message || 'Could not update password' };
+  }
+}
+
+async function sbGetProfile(userId) {
+  try {
+    const { data, error } = await _supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.warn('[Supabase] getProfile failed:', err.message);
+    return null;
+  }
+}
+
+async function sbUpsertProfile(userId, profile) {
+  try {
+    const row = {
+      id: userId,
+      name: profile.name || '',
+      phone: profile.phone || '',
+      email: profile.email || '',
+      city: profile.city || 'Visakhapatnam',
+      address: profile.address || '',
+      pincode: profile.pincode || '',
+      addresses: profile.addresses || [],
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await _supabase.from('profiles').upsert(row, { onConflict: 'id' });
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.warn('[Supabase] upsertProfile failed:', err.message);
+    return false;
+  }
+}
+
+/* ─────────────────────────────── LEGACY PROFILE HELPER ─────────────────── */
+
+async function sbInsertProfile(profile) {
+  const session = await sbGetAuthSession();
+  if (session?.user) return sbUpsertProfile(session.user.id, profile);
+  return false;
 }
 
 /* ─────────────────────────────── PING TEST ─────────────────────────────── */
