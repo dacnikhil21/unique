@@ -8589,25 +8589,6 @@ function renderProfileView() {
           </form>
 
           <div style="display:flex; align-items:center; gap:10px; margin:16px 0;">
-            <div style="flex:1; height:1px; background:#e2e8f0;"></div>
-            <span style="font-size:11px; color:#94a3b8; font-weight:700;">OR CONNECT VIA WHATSAPP</span>
-            <div style="flex:1; height:1px; background:#e2e8f0;"></div>
-          </div>
-
-          <button type="button" onclick="openWhatsAppChat('Hi, I need help logging into my UNIQUE EXPRESSIONS account.')" style="width:100%; height:46px; display:flex; align-items:center; justify-content:center; gap:8px; background:#25D366; color:#ffffff; font-weight:800; font-size:13.5px; border:none; border-radius:12px; cursor:pointer; box-shadow:0 4px 12px rgba(37,211,102,0.25);">
-            <i class="ri-whatsapp-fill" style="font-size:20px;"></i> Need Help? Chat on WhatsApp
-          </button>
-        </div>
-
-        <div id="profAuthBoxRegister" style="display:none; background:#ffffff; border-radius:18px; border:1px solid #e2e8f0; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.04);">
-          <form onsubmit="handleProfilePageRegister(event)">
-            <div class="form-group" style="margin-bottom:12px;">
-              <label class="form-label" style="font-size:12px; font-weight:800; color:#475569;">Full Name</label>
-              <input type="text" id="regFullName" class="form-input" style="height:42px; font-size:13px;" placeholder="e.g. G Mounika Durga" required>
-            </div>
-            <div class="form-group" style="margin-bottom:12px;">
-              <label class="form-label" style="font-size:12px; font-weight:800; color:#475569;">Mobile Number (WhatsApp)</label>
-              <input type="tel" id="regMobile" class="form-input" style="height:42px; font-size:13px;" placeholder="+91 9876543210" required>
             </div>
             <div class="form-group" style="margin-bottom:12px;">
               <label class="form-label" style="font-size:12px; font-weight:800; color:#475569;">Email Address</label>
