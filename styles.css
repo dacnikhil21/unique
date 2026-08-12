@@ -1124,6 +1124,11 @@ body {
   height: 34px;
   width: auto;
   margin-bottom: 10px;
+  background: #ffffff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  object-fit: contain;
 }
 
 .m-footer-text-p {
@@ -3308,6 +3313,7 @@ body {
     height: 52px;
     width: auto;
     object-fit: contain;
+    mix-blend-mode: multiply;
   }
 
   /* Desktop Centered Search & Instant Results Dropdown */
@@ -6133,7 +6139,7 @@ body {
   width: auto !important;
   max-width: 250px !important;
   object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
+  mix-blend-mode: multiply;
 }
 
 /* Remove unwanted floating black line / hero indicator dots */

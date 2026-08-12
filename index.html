@@ -1252,6 +1252,44 @@
     if (window.feather) feather.replace();
     if (window.lucide) lucide.createIcons();
   </script>
+
+  <!-- ── Floating WhatsApp Button ──────────────────────────────── -->
+  <a id="floatingWhatsappBtn"
+     href="https://wa.me/917799747575?text=Hi%20UNIQUE%20EXPRESSIONS%2C%20I%20need%20help%20with%20my%20order!"
+     target="_blank"
+     rel="noopener noreferrer"
+     aria-label="Chat on WhatsApp"
+     style="
+       position: fixed;
+       bottom: 80px;
+       right: 20px;
+       z-index: 9999;
+       width: 56px;
+       height: 56px;
+       border-radius: 50%;
+       background: linear-gradient(135deg, #25D366, #128C7E);
+       color: #fff;
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       box-shadow: 0 4px 20px rgba(37, 211, 102, 0.5);
+       text-decoration: none;
+       transition: transform 0.25s ease, box-shadow 0.25s ease;
+       animation: waPulse 2.5s ease-in-out infinite;
+     "
+     onmouseover="this.style.transform='scale(1.12)'; this.style.boxShadow='0 6px 28px rgba(37,211,102,0.7)';"
+     onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 20px rgba(37,211,102,0.5)';">
+    <i class="ri-whatsapp-line" style="font-size: 28px; line-height:1;"></i>
+  </a>
+
+  <style>
+    @keyframes waPulse {
+      0%   { box-shadow: 0 4px 20px rgba(37,211,102,0.5); }
+      50%  { box-shadow: 0 4px 32px rgba(37,211,102,0.85), 0 0 0 10px rgba(37,211,102,0.12); }
+      100% { box-shadow: 0 4px 20px rgba(37,211,102,0.5); }
+    }
+  </style>
+
 </body>
 </html>
 

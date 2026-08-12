@@ -68,24 +68,27 @@ function safeParseStorage(key, fallback = null) {
     return JSON.parse(raw);
   } catch (e) {
     console.warn('[UE] Corrupt localStorage cleared:', key);
-    try { localStorage.removeItem(key); } catch (_) { /* quota */ }
+    try { localStorage.removeItem(key); } catch (_) {}
     return fallback;
   }
+}
+
+// ── WhatsApp Support Helper ────────────────────────────────────────
+function openWhatsAppChat(message) {
+  const waNumber = '917799747575';
+  const text = message
+    ? encodeURIComponent(message)
+    : encodeURIComponent('Hi UNIQUE EXPRESSIONS, I need help with my order!');
+  window.open(`https://wa.me/${waNumber}?text=${text}`, '_blank', 'noopener,noreferrer');
 }
 
 // ── Production Schema Migrator & Enhancer ────────────────────────
 function enhanceProductSchema(products) {
   if (!Array.isArray(products)) return [];
   return products.map((p, idx) => {
-    const images = Array.isArray(p.images) && p.images.length > 0 
-      ? p.images 
-      : [p.image, p.image, p.image].filter(Boolean); // duplicate fallback for demo if single image
-
-    // Add extra sample images if only 1 image exists for rich gallery testing
-    if (images.length === 1) {
-      images.push('https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600');
-      images.push('https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?q=80&w=600');
-    }
+    const images = Array.isArray(p.images) && p.images.length > 0
+      ? p.images
+      : [p.image].filter(Boolean);
 
     const reviews = Array.isArray(p.reviews) ? p.reviews : [
       { id: 'rev-1-' + p.id, name: "Sowmya Rao", rating: 5, comment: "Exceptional quality and prompt same-day delivery in Madhurawada!", date: "28 Jul 2026", verified: true },
