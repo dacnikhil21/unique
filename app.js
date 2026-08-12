@@ -11908,15 +11908,66 @@ function updateActiveCategoryThumbnails() {
 
 function handleSearchInput(query) {
   const q = query.toLowerCase().trim();
-  if (currentView !== 'home') switchView('home');
 
-  const mobileContainer = document.getElementById('mobileProductGrid');
-  if (q.length === 0) { renderAllSections(); return; }
+  // Desktop Live Suggestions
+  const dtLiveItems = document.getElementById('dtSearchLiveItems');
+  if (dtLiveItems) {
+    if (q.length === 0) {
+      dtLiveItems.innerHTML = '';
+    } else {
+      const matches = ALL_PRODUCTS.filter(p => p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)).slice(0, 5);
+      if (matches.length === 0) {
+        dtLiveItems.innerHTML = `<div style="padding:12px; font-size:12px; color:#64748b; text-align:center;">No products found</div>`;
+      } else {
+        dtLiveItems.innerHTML = matches.map(p => `
+          <div class="dt-search-suggestion-item" onclick="openProductPage('${p.id}'); showSearchSuggestions(false);" onmouseover="this.style.background='#f8fafc';" onmouseout="this.style.background='transparent';" style="display:flex; align-items:center; gap:12px; padding:10px; cursor:pointer; border-radius:10px; transition: background 0.2s; border-bottom: 1px solid #f1f5f9;">
+            <img src="${p.image_url || p.image || 'logo.png'}" style="width:40px; height:40px; object-fit:cover; border-radius:8px;">
+            <div style="flex:1; min-width:0; text-align:left;">
+              <div style="font-size:13px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
+              <div style="font-size:11px; color:#64748b;">${p.category} • ₹${p.price}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+  }
 
-  const results = ALL_PRODUCTS.filter(p => p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)).slice(0, 16);
-  if (mobileContainer) mobileContainer.innerHTML = results.map(p => createMobileTileHTML(p)).join('');
-  if (window.feather) feather.replace();
-  if (window.lucide) lucide.createIcons();
+  // Mobile sticky search input legacy behavior (only trigger if screen width is mobile)
+  if (window.innerWidth < 1024) {
+    if (currentView !== 'home') switchView('home');
+    const mobileContainer = document.getElementById('mobileProductGrid');
+    if (q.length === 0) { renderAllSections(); return; }
+    const results = ALL_PRODUCTS.filter(p => p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)).slice(0, 16);
+    if (mobileContainer) mobileContainer.innerHTML = results.map(p => createMobileTileHTML(p)).join('');
+    if (window.feather) feather.replace();
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function showSearchSuggestions(show) {
+  const dropdown = document.getElementById('dtSearchDropdown');
+  if (!dropdown) return;
+  if (show) {
+    dropdown.classList.add('active');
+  } else {
+    dropdown.classList.remove('active');
+  }
+}
+
+function applySearchQuery(term) {
+  const dtInput = document.getElementById('dtSearchInput');
+  if (dtInput) dtInput.value = term;
+  switchView('search', { query: term });
+  showSearchSuggestions(false);
+}
+
+function triggerDesktopSearch() {
+  const dtInput = document.getElementById('dtSearchInput');
+  const query = dtInput ? dtInput.value.trim() : '';
+  if (query) {
+    switchView('search', { query: query });
+  }
+  showSearchSuggestions(false);
 }
 
 function openAdminPinModal() {

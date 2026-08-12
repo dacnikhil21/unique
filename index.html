@@ -81,7 +81,7 @@
 
         <div class="dt-search-container">
           <i class="ri-search-2-line dt-search-icon"></i>
-          <input type="text" class="dt-search-input" id="dtSearchInput" placeholder="Search 200+ Educational Toys, Smart Gadgets, Return Gifts, Handicrafts..." oninput="handleSearchInput(this.value)" onfocus="showSearchSuggestions(true)" onblur="setTimeout(() => showSearchSuggestions(false), 200)">
+          <input type="text" class="dt-search-input" id="dtSearchInput" placeholder="Search 200+ Educational Toys, Smart Gadgets, Return Gifts, Handicrafts..." oninput="handleSearchInput(this.value)" onfocus="showSearchSuggestions(true)" onblur="setTimeout(() => showSearchSuggestions(false), 200)" onkeydown="if(event.key === 'Enter') triggerDesktopSearch()">
           <button class="dt-search-btn" onclick="triggerDesktopSearch()">Search</button>
 
           <!-- Search Dropdown Box -->
@@ -155,7 +155,7 @@
     <div class="m-search-wrap-sticky">
       <div class="m-search-pill-input">
         <i class="ri-search-2-line" style="font-size:16px; color:var(--brand-magenta);"></i>
-        <input type="text" class="m-search-input" placeholder="Search Toys, Gifts, Gadgets..." oninput="handleSearchInput(this.value)">
+        <input type="text" class="m-search-input" placeholder="Search Toys, Gifts, Gadgets..." oninput="handleSearchInput(this.value)" onkeydown="if(event.key === 'Enter') switchView('search', { query: this.value })">
         <i class="ri-mic-2-line" style="font-size:16px; color:#64748b; cursor:pointer;" onclick="showToast('Voice search coming soon! Use text search above.', 'info')" title="Voice search coming soon"></i>
       </div>
     </div>
