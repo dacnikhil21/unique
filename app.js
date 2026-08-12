@@ -8731,6 +8731,7 @@ function renderProfileView() {
         <span style="font-size:12px; color:#94a3b8;">→</span>
       </div>
 
+      ${(['uniqueexpressions@gmail.com','uniqueexpressions.in@gmail.com','dacnikhil121@gmail.com'].includes((userProfile.email||'').toLowerCase().trim())) ? `
       <div class="profile-menu-tile" onclick="openAdminPinModal()">
         <div class="profile-menu-left">
           <div class="profile-menu-icon" style="background:#fce7f3; color:#9d174d;"><i class="ri-shield-keyhole-line"></i></div>
@@ -8741,6 +8742,7 @@ function renderProfileView() {
         </div>
         <span style="font-size:12px; color:#94a3b8;">→</span>
       </div>
+      ` : ''}
 
       <div style="margin-top:20px; margin-bottom:30px;">
         <button class="m-hero-cta-button" style="width:100%; justify-content:center; min-height:44px; background:#f1f5f9; color:#dc2626; border:1px solid #cbd5e1; box-shadow:none; font-weight:800;" onclick="handleUserLogout()">
