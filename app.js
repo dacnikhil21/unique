@@ -1,4 +1,55 @@
 
+let STORE_SETTINGS = (() => {
+  try {
+    const raw = localStorage.getItem('ue_store_settings_v5');
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return {
+    storeName: "UNIQUE EXPRESSIONS",
+    ownerName: "G MOUNIKA DURGA",
+    phone: "7799747575",
+    whatsapp: "7799747575",
+    gstin: "37BVTPG7761F1Z1",
+    email: "uniqueexpressions.in@gmail.com",
+    address: "2nd floor LIG 347, 2-115/9/1, near Shivalayam, Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041",
+    freeShippingMin: 499,
+    shippingFee: 50,
+    giftWrapFee: 30,
+    instagram: "uniqueexpressions.in",
+    youtube: "@UNIQUEEXPRESSIONS-25",
+    adminPin: "1234"
+  };
+})();
+
+let STORE_CUSTOMERS = (() => {
+  try {
+    const raw = localStorage.getItem('ue_customers_v5');
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return [];
+})();
+
+let STORE_COUPONS = (() => {
+  try {
+    const raw = localStorage.getItem('ue_coupons_v5');
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return [
+    { code: "WELCOME100", type: "fixed", value: 100, discount: "₹100 OFF", minSpend: 499, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
+    { code: "VIZAGFREE", type: "shipping", value: 0, discount: "FREE Shipping", minSpend: 299, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
+    { code: "FESTIVE20", type: "percent", value: 20, discount: "20% OFF", minSpend: 999, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
+    { code: "UNIQUE10", type: "percent", value: 10, discount: "10% OFF", minSpend: 399, usedCount: 0, expiry: "31 Dec 2026", status: "Active" }
+  ];
+})();
+
+let STORE_REVIEWS = (() => {
+  try {
+    const raw = localStorage.getItem('ue_reviews_v5');
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return [];
+})();
+
 // ── Ensure LocalStorage Sync is Always Up to Date ────────────────────────
 try {
   const cachedProds = JSON.parse(localStorage.getItem('ue_products_v9'));
@@ -326,6 +377,9 @@ function deductStockForOrder(items) {
 function migrateCategoriesForProduction() {
   let changed = false;
 
+  // Filter out any auto-created category objects that were injected by legacy product imports
+  CATEGORIES_DATA = (CATEGORIES_DATA || []).filter(c => c && c.name && !String(c.id || '').startsWith('cat-auto-'));
+
   CATEGORIES_DATA.forEach(c => {
     if (CATEGORY_RENAME_MAP[c.name]) {
       c.name = CATEGORY_RENAME_MAP[c.name];
@@ -336,23 +390,6 @@ function migrateCategoriesForProduction() {
     }
     if (c.description && CATEGORY_RENAME_MAP[c.description.split(' collection')[0]]) {
       c.description = `${c.name} collection at UNIQUE EXPRESSIONS`;
-      changed = true;
-    }
-  });
-
-  const productCats = [...new Set((ALL_PRODUCTS || []).map(p => p.category).filter(Boolean))];
-  productCats.forEach((name, i) => {
-    if (!CATEGORIES_DATA.some(c => c.name === name)) {
-      CATEGORIES_DATA.push({
-        id: `cat-auto-${Date.now()}-${i}`,
-        name,
-        description: `${name} collection at UNIQUE EXPRESSIONS`,
-        image: getCategoryDisplayImage({ name }),
-        subcategories: [name],
-        isFeatured: false,
-        isVisible: true,
-        sortOrder: CATEGORIES_DATA.length + 1
-      });
       changed = true;
     }
   });
@@ -381,13 +418,33 @@ function apSafeDomId(prefix, id) {
   return prefix + String(id ?? '').replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 
+function dedupeCategoriesData() {
+  if (!Array.isArray(CATEGORIES_DATA)) return;
+  const seen = new Set();
+  const unique = [];
+  CATEGORIES_DATA.forEach(c => {
+    if (!c || !c.name || String(c.id || '').startsWith('cat-auto-')) return;
+    const nameKey = String(c.name).trim().toLowerCase();
+    if (!seen.has(nameKey)) {
+      seen.add(nameKey);
+      unique.push(c);
+    }
+  });
+  CATEGORIES_DATA = unique;
+  CATEGORIES = CATEGORIES_DATA.map(c => c.name);
+  try {
+    localStorage.setItem('ue_categories_data_v5', JSON.stringify(CATEGORIES_DATA));
+  } catch (e) {}
+}
+
 function renderDynamicNavCategories() {
+  dedupeCategoriesData();
   const visible = getVisibleCategories();
   const esc = (s) => String(s).replace(/'/g, "\\'");
 
   const pills = document.getElementById('dtNavCategoryLinks');
   if (pills) {
-    pills.innerHTML = visible.slice(0, 6).map(c =>
+    pills.innerHTML = visible.slice(0, 4).map(c =>
       `<a href="#" class="dt-nav-link" onclick="filterCategory('${esc(c.name)}'); return false;">${getCategoryEmoji(c.name)} ${c.name}</a>`
     ).join('');
   }
@@ -860,4830 +917,5043 @@ function generateSeedProducts() {
   }));
 }
 
-let ALL_PRODUCTS = enhanceProductSchema(safeParseStorage('ue_products_v9') || [
-  {
-    "id": "-Opqr9zjYihHIsQMkg4_",
-    "title": "RC Police NEED FOR SPPED Racing",
-    "category": "RC Toys",
-    "sku": "UE-SKU-Opqr9zjYih",
-    "price": 2499,
-    "originalPrice": 3500,
-    "discount": 29,
-    "rating": "4.9",
-    "reviewsCount": 18,
-    "description": "RC Police NEED FOR SPPED Racing - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvR.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvR.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opqr9zjYihHIsQMkg4a",
-    "title": "RC Defending Climbing",
-    "category": "RC Toys",
-    "sku": "UE-SKU-Opqr9zjYih",
-    "price": 1199,
-    "originalPrice": 1500,
-    "discount": 20,
-    "rating": "4.9",
-    "reviewsCount": 21,
-    "description": "RC Defending Climbing - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvS.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvS.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opqr9zjYihHIsQMkg4b",
-    "title": "RC Cross country off road R/C car",
-    "category": "RC Toys",
-    "sku": "UE-SKU-Opqr9zjYih",
-    "price": 1539,
-    "originalPrice": 2500,
-    "discount": 38,
-    "rating": "4.9",
-    "reviewsCount": 24,
-    "description": "RC Cross country off road R/C car - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvT.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvT.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opqr9zjYihHIsQMkg4c",
-    "title": "RC  5 in 1 Follow me Car",
-    "category": "RC Toys",
-    "sku": "UE-SKU-Opqr9zjYih",
-    "price": 1999,
-    "originalPrice": 2499,
-    "discount": 20,
-    "rating": "4.9",
-    "reviewsCount": 27,
-    "description": "<a href=\"https://www.instagram.com/reel/DWDepMSzkT3/?igsh=aDNtdW42N242aTc3\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DWDepMSzkT3/?igsh=aDNtdW42N242aTc3</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlkYecJocp73ppzbFzW.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlkYecJocp73ppzbFzW.jpg",
-    "stockQty": 3,
-    "inStock": true,
-    "isFeatured": true
-  },
+let ALL_PRODUCTS = (() => {
+  try {
+    const stored = JSON.parse(localStorage.getItem('ue_products_v12'));
+    if (Array.isArray(stored) && stored.length >= 200) return stored;
+  } catch (e) {}
+  return null;
+})() || [
   {
     "id": "-Opqr9zjYihHIsQMkg4e",
+    "sku": "UE-SKU--Opqr9zjYihHIsQMkg4e",
     "title": "360 Stunt Car",
     "category": "RC Toys",
-    "sku": "UE-SKU-Opqr9zjYih",
     "price": 799,
     "originalPrice": 900,
     "discount": 11,
-    "rating": "4.9",
-    "reviewsCount": 30,
-    "description": "360 Stunt Car - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_v2Sh1o2nbMLPq0-9A.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_v2Sh1o2nbMLPq0-9A.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_v2Sh1o2nbMLPq0-9A.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "360 Stunt Car offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opqu8dQQPJ7UXswTaiX",
+    "sku": "UE-SKU--Opqu8dQQPJ7UXswTaiX",
+    "title": "RC F1 Car",
+    "category": "RC Toys",
+    "price": 1099,
+    "originalPrice": 1500,
+    "discount": 27,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvK.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvK.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "RC F1 Car offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-Opqr9zjYihHIsQMkg4T",
+    "sku": "UE-SKU--Opqr9zjYihHIsQMkg4T",
     "title": "RC  MOKA Buggy Car with camera",
     "category": "RC Toys",
-    "sku": "UE-SKU-Opqr9zjYih",
     "price": 1199,
     "originalPrice": 1599,
     "discount": 25,
-    "rating": "4.9",
-    "reviewsCount": 33,
-    "description": "Watch Full video here <a href=\"https://www.instagram.com/reel/DWoN1U3knTS/?igsh=MTh2amc0OXRtcnNxZQ==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DWoN1U3knTS/?igsh=MTh2amc0OXRtcnNxZQ==</a>",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGv.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGv.jpg",
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpSjWowzQdxCNe7AkfM.jpg",
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpSjWpJk88gtyHFkI1r.jpg",
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpSjWpauFgoVRmrvCvb.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGv.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here https://www.instagram.com/reel/DWoN1U3knTS/?igsh=MTh2amc0OXRtcnNxZQ==",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Opqr9zjYihHIsQMkg4U",
-    "title": "RC F1 Racing Car",
+    "id": "-Opqr9zjYihHIsQMkg4a",
+    "sku": "UE-SKU--Opqr9zjYihHIsQMkg4a",
+    "title": "RC Defending Climbing",
     "category": "RC Toys",
-    "sku": "UE-SKU-Opqr9zjYih",
-    "price": 1859,
-    "originalPrice": 2599,
-    "discount": 28,
-    "rating": "4.9",
-    "reviewsCount": 36,
-    "description": "RC F1 Racing Car - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "price": 1199,
+    "originalPrice": 1500,
+    "discount": 20,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvS.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgRKreLkAizzt_en4n.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvS.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgRKreLkAizzt_en4n.jpg",
-    "stockQty": 20,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "RC Defending Climbing offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-Opqr9zjYihHIsQMkg4W",
+    "sku": "UE-SKU--Opqr9zjYihHIsQMkg4W",
     "title": "RC Racing Stunt car",
     "category": "RC Toys",
-    "sku": "UE-SKU-Opqr9zjYih",
     "price": 1459,
     "originalPrice": 2000,
     "discount": 27,
-    "rating": "4.9",
-    "reviewsCount": 39,
-    "description": "RC Racing Stunt car - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPR4JKolX6G9K4-.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPR4JKolX6G9K4-.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPR4JKolX6G9K4-.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "RC Racing Stunt car offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Opqr9zjYihHIsQMkg4X",
-    "title": "RC MOKA Cyber Truck ROCK CRAWLER (With Camera)",
+    "id": "-Opqr9zjYihHIsQMkg4b",
+    "sku": "UE-SKU--Opqr9zjYihHIsQMkg4b",
+    "title": "RC Cross country off road R/C car",
     "category": "RC Toys",
-    "sku": "UE-SKU-Opqr9zjYih",
-    "price": 1999,
+    "price": 1539,
     "originalPrice": 2500,
-    "discount": 20,
-    "rating": "4.9",
-    "reviewsCount": 42,
-    "description": "<a href=\"https://www.instagram.com/reel/DVSkVpuksG2/?igsh=MTQ1N3h6ZmNyOXF4Yw==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVSkVpuksG2/?igsh=MTQ1N3h6ZmNyOXF4Yw==</a>",
+    "discount": 38,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvT.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvP.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvT.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvP.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opqr9zjYihHIsQMkg4Y",
-    "title": "RC  Bumper Cars",
-    "category": "RC Toys",
-    "sku": "UE-SKU-Opqr9zjYih",
-    "price": 2899,
-    "originalPrice": 3500,
-    "discount": 17,
     "rating": "4.9",
-    "reviewsCount": 45,
-    "description": "<a href=\"https://www.instagram.com/reel/DV5LdrkE0wv/?igsh=bHJ0cGVjZm9wNW9n\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DV5LdrkE0wv/?igsh=bHJ0cGVjZm9wNW9n</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvO.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvO.jpg",
-    "stockQty": 20,
+    "reviewsCount": 18,
+    "description": "RC Cross country off road R/C car offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-Opqr9zjYihHIsQMkg4Z",
+    "sku": "UE-SKU--Opqr9zjYihHIsQMkg4Z",
     "title": "RC Drift Racing(Yellow)",
     "category": "RC Toys",
-    "sku": "UE-SKU-Opqr9zjYih",
     "price": 1759,
     "originalPrice": 2000,
     "discount": 12,
-    "rating": "4.9",
-    "reviewsCount": 48,
-    "description": "<a href=\"https://www.instagram.com/reel/DWLJmqXT5Rs/?igsh=bnM1ejVxeXZmMGly\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DWLJmqXT5Rs/?igsh=bnM1ejVxeXZmMGly</a>",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvQ.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvQ.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvQ.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DWLJmqXT5Rs/?igsh=bnM1ejVxeXZmMGly",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OpqtprhF8QeiCpCXoPk",
+    "sku": "UE-SKU--OpqtprhF8QeiCpCXoPk",
     "title": "RC Mini Drift Car",
     "category": "RC Toys",
-    "sku": "UE-SKU-OpqtprhF8Q",
     "price": 1799,
     "originalPrice": 2299,
     "discount": 22,
-    "rating": "4.9",
-    "reviewsCount": 51,
-    "description": "Watch Full video here <a href=\"https://www.instagram.com/reel/DWapR1kEmH6/?igsh=MXJpbGM4Z2R0d2g2Nw==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DWapR1kEmH6/?igsh=MXJpbGM4Z2R0d2g2Nw==</a>",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPR4JKolX6G9K3z.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPR4JKolX6G9K3z.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPR4JKolX6G9K3z.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here https://www.instagram.com/reel/DWapR1kEmH6/?igsh=MXJpbGM4Z2R0d2g2Nw==",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Opqu8dQQPJ7UXswTaiX",
-    "title": "RC F1 Car",
+    "id": "-Opqr9zjYihHIsQMkg4U",
+    "sku": "UE-SKU--Opqr9zjYihHIsQMkg4U",
+    "title": "RC F1 Racing Car",
     "category": "RC Toys",
-    "sku": "UE-SKU-Opqu8dQQPJ",
-    "price": 1099,
-    "originalPrice": 1500,
-    "discount": 27,
-    "rating": "4.9",
-    "reviewsCount": 54,
-    "description": "RC F1 Car - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "price": 1859,
+    "originalPrice": 2599,
+    "discount": 28,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgRKreLkAizzt_en4n.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvK.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgRKreLkAizzt_en4n.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvK.jpg",
-    "stockQty": 1,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "RC F1 Racing Car offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opqr9zjYihHIsQMkg4X",
+    "sku": "UE-SKU--Opqr9zjYihHIsQMkg4X",
+    "title": "RC MOKA Cyber Truck ROCK CRAWLER (With Camera)",
+    "category": "RC Toys",
+    "price": 1999,
+    "originalPrice": 2500,
+    "discount": 20,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvP.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvP.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DVSkVpuksG2/?igsh=MTQ1N3h6ZmNyOXF4Yw==",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opqr9zjYihHIsQMkg4c",
+    "sku": "UE-SKU--Opqr9zjYihHIsQMkg4c",
+    "title": "RC  5 in 1 Follow me Car",
+    "category": "RC Toys",
+    "price": 1999,
+    "originalPrice": 2499,
+    "discount": 20,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlkYecJocp73ppzbFzW.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlkYecJocp73ppzbFzW.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DWDepMSzkT3/?igsh=aDNtdW42N242aTc3",
+    "videoUrl": "",
+    "stockQty": 3,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opqr9zjYihHIsQMkg4_",
+    "sku": "UE-SKU--Opqr9zjYihHIsQMkg4_",
+    "title": "RC Police NEED FOR SPPED Racing",
+    "category": "RC Toys",
+    "price": 2499,
+    "originalPrice": 3500,
+    "discount": 29,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvR.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvR.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "RC Police NEED FOR SPPED Racing offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opqr9zjYihHIsQMkg4Y",
+    "sku": "UE-SKU--Opqr9zjYihHIsQMkg4Y",
+    "title": "RC  Bumper Cars",
+    "category": "RC Toys",
+    "price": 2899,
+    "originalPrice": 3500,
+    "discount": 17,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvO.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvO.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DV5LdrkE0wv/?igsh=bHJ0cGVjZm9wNW9n",
+    "videoUrl": "",
+    "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-Opqzh-pQGRG_gzVpmHd",
+    "sku": "UE-SKU--Opqzh-pQGRG_gzVpmHd",
     "title": "Flying Spinner",
     "category": "RC Flying Toys",
-    "sku": "UE-SKU-OpqzhpQGRG",
     "price": 360,
     "originalPrice": 360,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 18,
-    "description": "Watch Full video here <a href=\"https://www.instagram.com/reel/DWYvL-3j6QZ/?igsh=MWVobW12aG1tMGthdg==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DWYvL-3j6QZ/?igsh=MWVobW12aG1tMGthdg==</a>",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGk.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGk.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGk.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here https://www.instagram.com/reel/DWYvL-3j6QZ/?igsh=MWVobW12aG1tMGthdg==",
+    "videoUrl": "",
     "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opqzh-qUVxckfe6Wlpe",
-    "title": "RC Fighter Jet Drone",
-    "category": "RC Flying Toys",
-    "sku": "UE-SKU-OpqzhqUVxc",
-    "price": 1440,
-    "originalPrice": 1800,
-    "discount": 20,
-    "rating": "4.9",
-    "reviewsCount": 21,
-    "description": "<a href=\"https://www.instagram.com/reel/DWNx2_zTbB8/?igsh=MXI1M255cTZ3ZjY2cw==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DWNx2_zTbB8/?igsh=MXI1M255cTZ3ZjY2cw==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGx.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGx.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opqzh-qUVxckfe6Wlpf",
-    "title": "J2 Drone",
-    "category": "RC Flying Toys",
-    "sku": "UE-SKU-OpqzhqUVxc",
-    "price": 2499,
-    "originalPrice": 3000,
-    "discount": 17,
-    "rating": "4.9",
-    "reviewsCount": 24,
-    "description": "<a href=\"https://www.instagram.com/reel/DVBXtCeEizL/?igsh=OG0xZjVvYnFlcmZo\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVBXtCeEizL/?igsh=OG0xZjVvYnFlcmZo</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeud.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeud.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opw9lwdgM99nQhS9ywi",
-    "title": "RC Flying Car",
-    "category": "RC Flying Toys",
-    "sku": "UE-SKU-Opw9lwdgM9",
-    "price": 3299,
-    "originalPrice": 3900,
-    "discount": 15,
-    "rating": "4.9",
-    "reviewsCount": 27,
-    "description": "<a href=\"https://www.instagram.com/reel/DVV1Lzykuxi/?igsh=MWZuZzVyd3A4c2pwOQ==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVV1Lzykuxi/?igsh=MWZuZzVyd3A4c2pwOQ==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGz.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGz.jpg",
-    "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-Opw9lweUZvJ4A8MYvJj",
+    "sku": "UE-SKU--Opw9lweUZvJ4A8MYvJj",
     "title": "RC Flying Bike",
     "category": "RC Flying Toys",
-    "sku": "UE-SKU-Opw9lweUZv",
     "price": 1299,
     "originalPrice": 1500,
     "discount": 13,
-    "rating": "4.9",
-    "reviewsCount": 30,
-    "description": "RC Flying Bike - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGy.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGy.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGy.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "RC Flying Bike offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
+    "id": "-Opqzh-qUVxckfe6Wlpe",
+    "sku": "UE-SKU--Opqzh-qUVxckfe6Wlpe",
+    "title": "RC Fighter Jet Drone",
+    "category": "RC Flying Toys",
+    "price": 1440,
+    "originalPrice": 1800,
+    "discount": 20,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGx.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGx.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DWNx2_zTbB8/?igsh=MXI1M255cTZ3ZjY2cw==",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
     "id": "-Opw9Ww7aaNnie7G6uBQ",
+    "sku": "UE-SKU--Opw9Ww7aaNnie7G6uBQ",
     "title": "Fighter Plane Interstellar",
     "category": "RC Flying Toys",
-    "sku": "UE-SKU-Opw9Ww7aaN",
     "price": 1599,
     "originalPrice": 1999,
     "discount": 20,
-    "rating": "4.9",
-    "reviewsCount": 33,
-    "description": "Fighter Plane Interstellar - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnW5YliJ7IA-rxkVb.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7UmW.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnW5YliJ7IA-rxkVb.jpg",
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnW5EHtrQ90TCm0ML.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnW5YliJ7IA-rxkVb.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7UmW.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7UmW.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Fighter Plane Interstellar offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-Opw9Ww7aaNnie7G6uBR",
+    "sku": "UE-SKU--Opw9Ww7aaNnie7G6uBR",
     "title": "Y-Series Plane",
     "category": "RC Flying Toys",
-    "sku": "UE-SKU-Opw9Ww7aaN",
     "price": 1599,
     "originalPrice": 1999,
     "discount": 20,
-    "rating": "4.9",
-    "reviewsCount": 36,
-    "description": "Y-Series Plane - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7Umc.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7Umc.jpg",
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxndFOi01ctFz-hKHs.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7Umc.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OdNrJoCJV-nQYS5t8kI",
-    "title": "7 in 1 Education Board",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-OdNrJoCJVn",
-    "price": 999,
-    "originalPrice": 1178.82,
-    "discount": 15,
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Watch Full video here: \n\n<a href=\"https://www.instagram.com/reel/DQs_3JxEqyl/?igsh=YWE1b2RmbXYyOW9u\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DQs_3JxEqyl/?igsh=YWE1b2RmbXYyOW9u</a>\n\nToys and Games\nFEATURES: Dual-sided magnetic whiteboard & blackboard. Abacus & clock may help boost a child's creativity & intelligence. Foldable design to create slim profile for storage.; No assembly required; ideal for both standing or seated positions; shelf on both sides\nPROVIDES SCREEN FREE FUN: Uses a stylus to draw on the erasable sketch pad, writes and plays games to encourage children's creativity. Perfect height for Toddlers and Younger Children; Keep Your Kids Busy with Art Instead of TV.\nCULTIVATES ARTISTIC ABILITY: Help them Learning how to express themselves visually, the drawing board develops the child's artistic ability and demonstrates the ability of their thinking.\nEMBEDDED ERASER: This children's drawing board is very convenient, which is good for cultivating children's hobbies and improving their painting skills. The magnetic tablet has a sliding eraser that erases the drawing quickly and easily.\nDEVELOPS PAINTING SKILLS: This children's drawing board is very convenient, which is good for cultivating children's hobbies and improving their painting skills. This art easel is an exceptional gift for kids ages 3 to 6 years.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OdNrJozEUidWT3AzEWh.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OdNrJozEUidWT3AzEWh.jpg",
-    "stockQty": 14,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OgqaVy0IO3frefrDtsJ",
-    "title": "WATCH REMOTE CAR",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-OgqaVy0IO3",
-    "price": 699,
-    "originalPrice": 699,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 21,
-    "description": "Watch Full video here: \n\n<a href=\"https://www.instagram.com/reel/DTE7wQjEkcE/?igsh=c2t2NmRla3FidjBh\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DTE7wQjEkcE/?igsh=c2t2NmRla3FidjBh</a>\n\nMini Remote Control Car Watch Toys】 The body of the mini remote control car watch toys is made of high-quality ABS and Alloy material, which gives the car a strong anti-collision ability. The RC car strap use safe, comfortable, skin-friendly, durable and easy weared Silicone material, and kids can adjust the strap at will\n【2.4GHz Independent Signal】Small Rc watch cars toys with 30 meters remote control distance, infrared emission in a wide range, can be effectively controlled within a maximum 30 meters linear infrared distance. Offer a stable signal linear infrared control, two or more cars race together without remote confusion.\n【Usb Charging】The car watch toys support usb charging. Worry-free battery life, it can be connected to socket power banks, computers and other common usb devices to charge.\n【Child Friendly Remote】 The RC watch cars toys only 3 buttons on the watch, control with two buttons to move the car forward and in rotation. You can control the toy car to drive in any direction from your watch. easy to learn, the baby can easily grasp. The third button is to pop open the cover, dust-proof, comes with a dust-proof cover, one-button button pops open the cover to protect the car from damage\n【Perfect Gifts】 If you are looking for an exciting and cool gift, then you will love it. Mini remote control car watch toys is the best gift for children on birthdays, Christmas, Halloween and other festivals, your children will love this watch remote control car toy. Package Includes: comes with a watch remote control car toy, a usb charging cable.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Ogqa_QRZ0oDithujOBc.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqaVy0IO3frefrDtsJ.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Ogqa_QRZ0oDithujOBc.jpg",
-    "stockQty": 0,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Ogqcd3gF4dW-id6ZesN",
-    "title": "BOUNCING CAROUSEL",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-Ogqcd3gF4d",
-    "price": 950,
-    "originalPrice": 999,
-    "discount": 5,
-    "rating": "4.9",
-    "reviewsCount": 24,
-    "description": "Watch Full video here: \n\n<a href=\"https://www.instagram.com/reel/DTU96fSkr9w/?igsh=ZXFranJhcTBmNHZ4\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DTU96fSkr9w/?igsh=ZXFranJhcTBmNHZ4</a>\n\n【Experience the Thrill with the Flying duck Launcher Toy】 Our outdoor kids toys include 10 ducks. Playing is a breeze! Kids turn on the disc to shoot the duscks into the air and then catch them with the net as they fall. With the thoughtful Anti-drop buckle design, you can snap the launcher together after playing to prevent the duck from getting lost.\n\n* 【Perfect Outdoor Toys for Boys 4-6】 Our manual capture-catching game is suitable for kids of various ages. It's an ideal outside games for kids aged 2-3, 3-5, and 4-6. This game is not only enjoyable but also promotes physical activity. It's a great yard game for boys and girls to enjoy with their friends and family.\n\n* 【Exciting Indoor and Outdoor Activity Games】 The ducks launch at different heights. Whether you're at the park, in the yard, or camping outside, this flying toy guarantees an enjoyable playtime for your child.\n\n* Easy to Use & Highly Portable-Our flying duck launcher is designed for hassle-free fun. This user-friendly feature makes it incredibly convenient to bring along on any adventure. Whether you're in the backyard, at the park, on the lawn, or even at the beach, this toy ensures your child can enjoy indoor or outdoor play to the fullest. It's lightweight and portable, allowing for on-the-go fun",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OkOUXMsTDDj3OVqwTsZ.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OkOUXMsTDDj3OVqwTsZ.jpg",
-    "stockQty": 11,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OgqNBf8odRkXNdtv1Vv",
-    "title": "self defence SAFETY ROD",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-OgqNBf8odR",
-    "price": 360,
-    "originalPrice": 360,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 27,
-    "description": "Watch Full video here: \n\n<a href=\"https://www.instagram.com/reel/DUdSTS9Em0H/?igsh=NTF6Z2Zzd3poNTlw\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DUdSTS9Em0H/?igsh=NTF6Z2Zzd3poNTlw</a>\n\nPREMIUM CONSTRUCTION: Made from high-quality stainless steel for superior durability and long-lasting performance in various conditions\nEXTENDABLE DESIGN: Foldable and extendable wand that compacts for easy storage and portability, perfect for travel and outdoor activities\nCOMFORTABLE GRIP: Features a non-slip grip handle that ensures secure hold and comfortable use during extended periods\nMULTI-PURPOSE USE: Versatile walking stick suitable for hiking, trekking, self-defence, and everyday mobility support\nCOMPACT AND PORTABLE: Lightweight foldable design allows for convenient carrying in bags or backpacks when not in use",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqNRkkHqsv8Mn934OU.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqNBf8odRkXNdtv1Vv.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqNRkkHqsv8Mn934OU.jpg",
-    "stockQty": 12,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OgqP2spHT2p1yCREPxz",
-    "title": "SPIN BUDDY",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-OgqP2spHT2",
-    "price": 450,
-    "originalPrice": 599,
-    "discount": 25,
-    "rating": "4.9",
-    "reviewsCount": 30,
-    "description": "Watch Full video here: \n\n<a href=\"https://www.instagram.com/reel/DTIVB__Em-l/?igsh=a29jaHQzYXJ2ZWVk\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DTIVB__Em-l/?igsh=a29jaHQzYXJ2ZWVk</a>\n\n Baby Spinner toys is designed for toddlers since it's has no sharp edges, BPA free, dishwasher safe.This can suck on glass, wall, and flat surface.\n\nProduct Specification - It has a suction cup which suck the toy on flat surface.Non-battery operated.\n\nPackage includes: 3* Spinner (Colours will be sent as per the availability)",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqP2spHT2p1yCREPxz.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqP2spHT2p1yCREPxz.jpg",
-    "stockQty": 3,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OgqQca8yfqEQ66GVIr3",
-    "title": "PARTY BUBBLE CAKE",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-OgqQca8yfq",
-    "price": 699,
-    "originalPrice": 999,
-    "discount": 30,
-    "rating": "4.9",
-    "reviewsCount": 33,
-    "description": "Watch Full video here: \n\n<a href=\"https://www.instagram.com/reel/DTAnXDGEnt0/?igsh=MWdmang2bnV5azIwcg==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DTAnXDGEnt0/?igsh=MWdmang2bnV5azIwcg==</a>\n\n🎂 Magical Birthday Fun – Rechargeable party bubble cake toy with lights, music, and unlimited bubble output to create a joyful celebration atmosphere.\n🎶 Plays Happy Birthday Song – Adds a special touch with cheerful music and glowing lights while bubbles fill the air.\n✨ Unlimited Bubbles & Lights – Colorful LED lights and a rotating gear keep the bubbles flowing non-stop for endless entertainment.\n🚗 Bump & Go Feature – Moves automatically in all directions, avoiding obstacles while keeping kids engaged.\n🎁 Perfect Birthday Gift – Includes DIY stickers for decoration, making it a fun and creative present for kids aged 3+.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqQca8yfqEQ66GVIr3.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqQca8yfqEQ66GVIr3.jpg",
-    "stockQty": 8,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OgqSOwxOOeurvDS-vcy",
-    "title": "PORTABLE MINI PRINTER",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-OgqSOwxOOe",
-    "price": 999,
-    "originalPrice": 999,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 36,
-    "description": "Watch Full video here: \n\n<a href=\"https://www.instagram.com/reel/DTo-3KkEiEV/?igsh=MWw2b2J2cmR1ZWx3OQ==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DTo-3KkEiEV/?igsh=MWw2b2J2cmR1ZWx3OQ==</a>\n\nThis Mini Bluetooth Thermal Printer is a portable and ink-free label printer designed for use with both Android and iOS systems. Its small size and Bluetooth connectivity make it easy to use on the go. With crisp black on white printing and a roll of print paper included, this printer is a convenient and efficient solution for all your labeling needs.&nbsp;This value pack comes with 10 rolls of print paper and stickers, making it the perfect choice for all your printing needs.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqSOwxOOeurvDS-vcy.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqSSh9uWYi3zei-OHt.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqSSgz_DxGrYSvo4VC.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqSOwxOOeurvDS-vcy.jpg",
-    "stockQty": 5,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OgqTST_jzn35FCRfmOH",
-    "title": "BALANCE DINOSAUR",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-OgqTSTjzn3",
-    "price": 1199,
-    "originalPrice": 1500,
-    "discount": 20,
-    "rating": "4.9",
-    "reviewsCount": 39,
-    "description": "Watch Full video here: \n\n<a href=\"https://www.instagram.com/reel/DTSXniQEoNf/?igsh=bWJsYWY1ZGprZnJn\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DTSXniQEoNf/?igsh=bWJsYWY1ZGprZnJn</a>\n\nDinosaur learning & educational toys:The package includes 1 balance, 2 trays, 10 colorful digital weights, 20 small dinosaur weights. Preschool learning toys for 3 4 5 6 7 8 year old.\nMath toys & games:Dinosaur's shape educational toys for kids 5-7 is cute. Kids can put the colorful number block on the left and the small dinosaur weight on the right to balance the sides. This stem toys is helpful for preschool learning activities that help children improve math skills and hand-eye coordination in the process of thinking and hands-on.\nEducational tools: A preschool math games that parents can learn and play with their kids, learn the words and numbers on the cards with your kids, match them with pictures, and fit the letter squares into the grooves on the scale.This educational toys for 3 to 6 year old boys and girls will help children learn words and recognize numbers faster.\nWe attach great importance to the quality and safety of our products. All components of the puppy balance scale cool toys set have been carefully designed and manufactured to ensure the safety and health of children. The material selection is environmentally friendly, meeting safety standards, allowing you to rest assured and allowing children to freely explore and play.\nInteresting design:Each part of the math manipulatives stem toys is designed with reference to the baby's little hand, and can be easily picked up. The cards have four algorithms of addition, subtraction, multiplication and division for boys and girls. It can be selected according to the toddler's own growth stage and development status. It's the perfect birthday gift dinosaur educational toys for 3 4 5 6 7 year old boys and girls!",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqTXmQfXZnpHDBHnvS.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqTXmiFJ8xOfKCx7dT.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqTST_jzn35FCRfmOH.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqTXmQfXZnpHDBHnvS.jpg",
-    "stockQty": 4,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OgqWs8NelNXVoury3d3",
-    "title": "30 ACTIVITY NOTEBOOK LAPTOP",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-OgqWs8NelN",
-    "price": 1899,
-    "originalPrice": 2399,
-    "discount": 21,
-    "rating": "4.9",
-    "reviewsCount": 42,
-    "description": "Watch Full video here: \n\n<a href=\"https://www.instagram.com/reel/DSxC9THkoyV/?igsh=MW1zMXNjcWhramJzNg==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DSxC9THkoyV/?igsh=MW1zMXNjcWhramJzNg==</a>\n\n\nMultiple Functions: Spelling and Identification of pictures find the word, vocabulary, mathematics and much more. Helps in alphabets recognition & pronunciation, spelling test etc. Learn the correct pronunciation and spelling of numbers, learn to write the numbers, identification (visual & verbal). Learn musical notes, play melodies, play musical notes. Recognize musical notes (visual and verbal) Play games, catch falling objects, find the matching pair, star shooting.\nDevelopment with Computers: This educational purpose computer toy for kids comes equipped with a real like laptop so your child can begin to familiarize themselves with typing. Also this laptop comes with a mouse, which can introduce basic mouse skills and develop early computer awareness skills. Click on the mouse to play music.\nVisual Learning Display: This educational laptop toy displays the letter, numbers, modes, words, and even the games on the screen to enhance your child learning development.\nSafe Material for Kids: This piano keyboard toy comes with smooth edges and surface which exterior are very delicate, with no rough workmanship, and sharp corners.\nPerfect Gift for Kids: Educational toys can be given as birthday gifts, party, holidays or festival gifts; it is suitable for kids 3+ Years boys and girls.\nPower Source: USB Charging & 3xAA Batteries Powered; DC power connector of the USB power cord is connected to the power jack at the back of the keyboard, and the other end is connected to a USB power adapter. Portable piano keyboard adopts a dual power supply, USB charging or 3xAA batteries (not included), and battery power is convenient for playing indoor and outdoor.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqX0Gm2_3vB_5_aLYj.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqX0H-txLwlti51LhZ.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqWs8NelNXVoury3d3.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqX0Gm2_3vB_5_aLYj.jpg",
-    "stockQty": 8,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OkhbOvtVkyTbXwCIdiE",
-    "title": "Bunny Magnetic Board",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-OkhbOvtVky",
-    "price": 699,
-    "originalPrice": 799,
-    "discount": 13,
-    "rating": "4.9",
-    "reviewsCount": 45,
-    "description": "Watch Full video here: \n<a href=\"https://www.instagram.com/reel/DQjhvmBkoL-/?igsh=MWtsZjY5enFza3M3OA==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DQjhvmBkoL-/?igsh=MWtsZjY5enFza3M3OA==</a>\n\n* Age Range: This toy is suitable for children aged 3 to 6 years old, encouraging developmentally appropriate play and skill-building activities.\n* Safety Features: Crafted from durable, non-toxic materials, this toy prioritizes child safety with rounded edges and exceeds all safety standards for peace of mind\n* Educational Value: Designed to stimulate cognitive development, this toy fosters creativity, problem-solving skills, and hand-eye coordination through interactive play.\n* Durability: Built to withstand hours of play, this toy boasts a sturdy construction that can endure rough handling and ensures long-lasting enjoyment.\n* Versatility: From imaginative role-playing scenarios to structured learning activities, this toy adapts to various play styles, encouraging open-ended play and fostering social interaction.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OkhbN6zb1Mdw60FcPA7.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OkhbN6Z-Q-WyyTJVu65.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OkhbN6zb1Mdw60FcPA7.jpg",
+    "description": "Y-Series Plane offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OplYgk7NgihP0Ry89e6",
-    "title": "Motor Trolley",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-OplYgk7Ngi",
-    "price": 350,
-    "originalPrice": 500,
-    "discount": 30,
-    "rating": "4.9",
-    "reviewsCount": 48,
-    "description": "Watch Video here :\n\n<a href=\"https://www.instagram.com/reel/DW5f1dtTFAu/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DW5f1dtTFAu/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==</a>",
+    "id": "-Opqzh-qUVxckfe6Wlpf",
+    "sku": "UE-SKU--Opqzh-qUVxckfe6Wlpf",
+    "title": "J2 Drone",
+    "category": "RC Flying Toys",
+    "price": 2499,
+    "originalPrice": 3000,
+    "discount": 17,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeud.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OplYgk7NgihP0Ry89e6.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxqm_CtI0LTTy8ANf7.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeud.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OplYgk7NgihP0Ry89e6.jpg",
-    "stockQty": 4,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opsf42gPq6vHj10kFN4",
-    "title": "Dino theme instant Print Cam",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-Opsf42gPq6",
-    "price": 1799,
-    "originalPrice": 1999,
-    "discount": 10,
     "rating": "4.9",
-    "reviewsCount": 51,
-    "description": "@ Capture fun moments instantly with this easy-to-use camera that prints photos on the spot. No need for a separate printer!\n@ Not just a camera, it also records 1080P videos, making it versatile for both photo-taking and video recording.\n@ Compact and lightweight design makes it perfect for travel. Kids can take it anywhere to capture memories on the go.\n@ Comes with print paper so kids can start using the camera right out of the box. Easy to reload for continuous fun! Safe and Kid-Friendly: Made with durable, non-toxic materials, this camera is built to withstand playtime while being safe for children\nComes with print paper so kids can start using the camera right out of the box. Easy to reload for continuous fun! Ideal for Christmas, birthdays, or just because. A thoughtful and exciting gift for girls and boys.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxqRqFP6KkBolJDmU8.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opsf42gPq6vHj10kFN4.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxqRqFP6KkBolJDmU8.jpg",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DVBXtCeEizL/?igsh=OG0xZjVvYnFlcmZo",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Opsf42gPq6vHj10kFN5",
-    "title": "Kids Camera(new variant)",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-Opsf42gPq6",
-    "price": 550,
-    "originalPrice": 750,
-    "discount": 27,
-    "rating": "4.9",
-    "reviewsCount": 54,
-    "description": "For reference video <a href=\"https://www.instagram.com/reel/DReyHF9ElrM/?igsh=OHhka2N5ZTd4NzQ2\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DReyHF9ElrM/?igsh=OHhka2N5ZTd4NzQ2</a>",
+    "id": "-Opw9lwdgM99nQhS9ywi",
+    "sku": "UE-SKU--Opw9lwdgM99nQhS9ywi",
+    "title": "RC Flying Car",
+    "category": "RC Flying Toys",
+    "price": 3299,
+    "originalPrice": 3900,
+    "discount": 15,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGz.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxoNC-Bt6bu0qctPdl.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxoNBfgTvScd4TVKO_.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxoNCB7B00ntCvAgHu.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opsf42gPq6vHj10kFN5.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGz.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxoNC-Bt6bu0qctPdl.jpg",
-    "stockQty": 4,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DVV1Lzykuxi/?igsh=MWZuZzVyd3A4c2pwOQ==",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwrI0gp2m1sbePE6Ja1",
+    "sku": "UE-SKU--OwrI0gp2m1sbePE6Ja1",
+    "title": "Magnetic Power Kit",
+    "category": "Educational Toys",
+    "price": 90,
+    "originalPrice": 118,
+    "discount": 24,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnJ10eqUHhmRCQg.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnJ10eqUHhmRCQg.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Magnetic Fidget Toy Set: Includes multiple magnetic balls and shapes designed for stress relief, focus, and endless fun for kids and adults.\nPremium Quality Material: Smooth, durable, and safe magnets with rounded edges for comfortable handling and long-lasting use.\nPerfect for Stress & Anxiety Relief: Helps reduce tension, improve concentration, and keep hands busy during work, study, or travel.\nEducational & Creative Play: Encourages learning about magnetism, shape recognition, and enhances fine motor skills through hands-on play.\nPack of 1 – Random Color: Comes in attractive packaging with one color selected at random (blue, mint, yellow, pink, etc.). Ideal for gifting and everyday use.",
+    "videoUrl": "",
+    "stockQty": 72,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OgqWs8NelNXVoury3d3",
+    "sku": "UE-SKU--OgqWs8NelNXVoury3d3",
+    "title": "30 ACTIVITY NOTEBOOK LAPTOP",
+    "category": "Educational Toys",
+    "price": 1899,
+    "originalPrice": 2399,
+    "discount": 21,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqX0H-txLwlti51LhZ.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqX0H-txLwlti51LhZ.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqX0Gm2_3vB_5_aLYj.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqWs8NelNXVoury3d3.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here: \n\nhttps://www.instagram.com/reel/DSxC9THkoyV/?igsh=MW1zMXNjcWhramJzNg==\n\n\nMultiple Functions: Spelling and Identification of pictures find the word, vocabulary, mathematics and much more. Helps in alphabets recognition & pronunciation, spelling test etc. Learn the correct pronunciation and spelling of numbers, learn to write the numbers, identification (visual & verbal). Learn musical notes, play melodies, play musical notes. Recognize musical notes (visual and verbal) Play games, catch falling objects, find the matching pair, star shooting.\nDevelopment with Computers: This educational purpose computer toy for kids comes equipped with a real like laptop so your child can begin to familiarize themselves with typing. Also this laptop comes with a mouse, which can introduce basic mouse skills and develop early computer awareness skills. Click on the mouse to play music.\nVisual Learning Display: This educational laptop toy displays the letter, numbers, modes, words, and even the games on the screen to enhance your child learning development.\nSafe Material for Kids: This piano keyboard toy comes with smooth edges and surface which exterior are very delicate, with no rough workmanship, and sharp corners.\nPerfect Gift for Kids: Educational toys can be given as birthday gifts, party, holidays or festival gifts; it is suitable for kids 3+ Years boys and girls.\nPower Source: USB Charging & 3xAA Batteries Powered; DC power connector of the USB power cord is connected to the power jack at the back of the keyboard, and the other end is connected to a USB power adapter. Portable piano keyboard adopts a dual power supply, USB charging or 3xAA batteries (not included), and battery power is convenient for playing indoor and outdoor.",
+    "videoUrl": "",
+    "stockQty": 7,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opsf42gPq6vHj10kFN4",
+    "sku": "UE-SKU--Opsf42gPq6vHj10kFN4",
+    "title": "Dino theme instant Print Cam",
+    "category": "Educational Toys",
+    "price": 1799,
+    "originalPrice": 1999,
+    "discount": 10,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opsf42gPq6vHj10kFN4.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opsf42gPq6vHj10kFN4.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxqRqFP6KkBolJDmU8.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "@ Capture fun moments instantly with this easy-to-use camera that prints photos on the spot. No need for a separate printer!\n@ Not just a camera, it also records 1080P videos, making it versatile for both photo-taking and video recording.\n@ Compact and lightweight design makes it perfect for travel. Kids can take it anywhere to capture memories on the go.\n@ Comes with print paper so kids can start using the camera right out of the box. Easy to reload for continuous fun! Safe and Kid-Friendly: Made with durable, non-toxic materials, this camera is built to withstand playtime while being safe for children\nComes with print paper so kids can start using the camera right out of the box. Easy to reload for continuous fun! Ideal for Christmas, birthdays, or just because. A thoughtful and exciting gift for girls and boys.",
+    "videoUrl": "",
+    "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-Opsf42gPq6vHj10kFN6",
+    "sku": "UE-SKU--Opsf42gPq6vHj10kFN6",
     "title": "Owl Instant Print Cam",
     "category": "Educational Toys",
-    "sku": "UE-SKU-Opsf42gPq6",
     "price": 1799,
     "originalPrice": 1999,
     "discount": 10,
-    "rating": "4.9",
-    "reviewsCount": 57,
-    "description": "Watch Full video here <a href=\"https://www.instagram.com/reel/DWBiTu3j_m6/?igsh=MTZuYXcxOWVwYWVqeA==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DWBiTu3j_m6/?igsh=MTZuYXcxOWVwYWVqeA==</a>",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opsf42gPq6vHj10kFN6.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opsf42gPq6vHj10kFN6.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxqdubEimdbLt-priJ.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxqduu8is52SDTzVNd.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxqduu8is52SDTzVNd.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxqdubEimdbLt-priJ.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opsf42gPq6vHj10kFN6.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here https://www.instagram.com/reel/DWBiTu3j_m6/?igsh=MTZuYXcxOWVwYWVqeA==",
+    "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-O_ulpmrIkrlm35y3t2t",
-    "title": "3 in 1 Science 150+ Experiments",
+    "id": "-OgqTST_jzn35FCRfmOH",
+    "sku": "UE-SKU--OgqTST_jzn35FCRfmOH",
+    "title": "BALANCE DINOSAUR",
     "category": "Educational Toys",
-    "sku": "UE-SKU-OulpmrIkrl",
-    "price": 885,
-    "originalPrice": 885,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 60,
-    "description": "<a href=\"https://www.instagram.com/reel/DRj0mwaEm5E/?igsh=MTBsazEzemc2dWp5bg==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DRj0mwaEm5E/?igsh=MTBsazEzemc2dWp5bg==</a>\n\n3-in-1 Complete Science Lab Kit Includes chemistry-based learning activities combined into one kit, offering over 150 fun and educational STEM experiments for hands-on learning.\n150+ STEM Projects for Ages 8–15 Specially designed to introduce kids to basic chemistry concepts through safe, guided, and age-appropriate experiments.\nEncourages Learning Through Play Promotes curiosity, critical thinking, and problem-solving skills while making science fun and interactive for children.\nSafe, Kid-Friendly Materials Made with high-quality, non-toxic components suitable for children. Adult supervision is recommended during experiments.\nIdeal Educational Gift for Kids Perfect for birthdays, holidays, school projects, and learning activities. Suitable for both boys and girls interested in science exploration.",
+    "price": 1199,
+    "originalPrice": 1500,
+    "discount": 20,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqTST_jzn35FCRfmOH.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpmy-B26oNFdsaei.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqTST_jzn35FCRfmOH.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqTXmQfXZnpHDBHnvS.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqTXmiFJ8xOfKCx7dT.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpmy-B26oNFdsaei.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here: \n\nhttps://www.instagram.com/reel/DTSXniQEoNf/?igsh=bWJsYWY1ZGprZnJn\n\nDinosaur learning & educational toys:The package includes 1 balance, 2 trays, 10 colorful digital weights, 20 small dinosaur weights. Preschool learning toys for 3 4 5 6 7 8 year old.\nMath toys & games:Dinosaur's shape educational toys for kids 5-7 is cute. Kids can put the colorful number block on the left and the small dinosaur weight on the right to balance the sides. This stem toys is helpful for preschool learning activities that help children improve math skills and hand-eye coordination in the process of thinking and hands-on.\nEducational tools: A preschool math games that parents can learn and play with their kids, learn the words and numbers on the cards with your kids, match them with pictures, and fit the letter squares into the grooves on the scale.This educational toys for 3 to 6 year old boys and girls will help children learn words and recognize numbers faster.\nWe attach great importance to the quality and safety of our products. All components of the puppy balance scale cool toys set have been carefully designed and manufactured to ensure the safety and health of children. The material selection is environmentally friendly, meeting safety standards, allowing you to rest assured and allowing children to freely explore and play.\nInteresting design:Each part of the math manipulatives stem toys is designed with reference to the baby's little hand, and can be easily picked up. The cards have four algorithms of addition, subtraction, multiplication and division for boys and girls. It can be selected according to the toddler's own growth stage and development status. It's the perfect birthday gift dinosaur educational toys for 3 4 5 6 7 year old boys and girls!",
+    "videoUrl": "",
+    "stockQty": 4,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OdNrJoCJV-nQYS5t8kI",
+    "sku": "UE-SKU--OdNrJoCJV-nQYS5t8kI",
+    "title": "7 in 1 Education Board",
+    "category": "Educational Toys",
+    "price": 999,
+    "originalPrice": 1178.82,
+    "discount": 15,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OdNrJozEUidWT3AzEWh.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OdNrJozEUidWT3AzEWh.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here: \n\nhttps://www.instagram.com/reel/DQs_3JxEqyl/?igsh=YWE1b2RmbXYyOW9u\n\nToys and Games\nFEATURES: Dual-sided magnetic whiteboard & blackboard. Abacus & clock may help boost a child's creativity & intelligence. Foldable design to create slim profile for storage.; No assembly required; ideal for both standing or seated positions; shelf on both sides\nPROVIDES SCREEN FREE FUN: Uses a stylus to draw on the erasable sketch pad, writes and plays games to encourage children's creativity. Perfect height for Toddlers and Younger Children; Keep Your Kids Busy with Art Instead of TV.\nCULTIVATES ARTISTIC ABILITY: Help them Learning how to express themselves visually, the drawing board develops the child's artistic ability and demonstrates the ability of their thinking.\nEMBEDDED ERASER: This children's drawing board is very convenient, which is good for cultivating children's hobbies and improving their painting skills. The magnetic tablet has a sliding eraser that erases the drawing quickly and easily.\nDEVELOPS PAINTING SKILLS: This children's drawing board is very convenient, which is good for cultivating children's hobbies and improving their painting skills. This art easel is an exceptional gift for kids ages 3 to 6 years.",
+    "videoUrl": "",
+    "stockQty": 14,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-O_ulpms03WrZaH4JJ4H",
+    "sku": "UE-SKU--O_ulpms03WrZaH4JJ4H",
+    "title": "DIY STEM Creative Puzzle Box",
+    "category": "Educational Toys",
+    "price": 999,
+    "originalPrice": 1178.82,
+    "discount": 15,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpn0kfDI17QEi2uD.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpn0kfDI17QEi2uD.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DP_aI7GEumq/?igsh=OGptNG84ZWJ1b3ls\n\n3D Dinosaur Puzzle Set: A creative 163-piece building set that lets kids build and customize their very own 3D dinosaur models, perfect for aspiring paleontologists.\nSTEM Learning Toy: This set encourages hands-on learning in science, technology, engineering, and math (STEM), helping children develop critical thinking, problem-solving, and fine motor skills.\nInteractive Tools Included: Comes with a drill and screwdriver, allowing kids to take on the role of a builder and engineer while assembling the dinosaur models.\nMosaic Art Board: Includes a mosaic art board that enables kids to create colorful dinosaur-themed designs, sparking creativity and artistic expression.\nSafe & Durable: Made from non-toxic, high-quality materials to ensure safety for children ages 3 and up. The sturdy pieces are easy to assemble and built for long-lasting play.\nPerfect for Ages 3+: Designed for young children, this set provides an engaging way to improve hand-eye coordination, fine motor skills, and spatial awareness while having fun.\nGreat Gift for Kids: An ideal gift for birthdays, holidays, or any special occasion, offering hours of educational and creative entertainment for dinosaur lovers.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-O_ulpms03WrZaH4JJ4V",
+    "sku": "UE-SKU--O_ulpms03WrZaH4JJ4V",
+    "title": "My First Pottery Set",
+    "category": "Educational Toys",
+    "price": 999,
+    "originalPrice": 1178.82,
+    "discount": 15,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnL-dmH2UTH1DZs.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnL-dmH2UTH1DZs.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DRY6kcwErxi/?igsh=dnBzb2lhbXhqa2l5\n\nReal Pottery Experience — Battery-powered spinning wheel lets kids center and shape clay just like a mini potter’s studio.\nComplete Starter Kit — Typically includes modelling clay, wheel plate, Sculpting tools, cutting cord, paint tray, acrylic paints and brushes for finishing.\nLearn & Play STEM — Builds fine motor control, hand-eye coordination, creativity and focus — ideal for art projects and classroom craft sessions.\nGreat Gift for Kids 6+ — Designed for beginners aged 6–10 ; perfect for birthdays, holiday gifts, and hands-on learning.",
+    "videoUrl": "",
     "stockQty": 6,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-O_ulpmrIkrlm35y3t2u",
-    "title": "3D Pen",
+    "id": "-OgqSOwxOOeurvDS-vcy",
+    "sku": "UE-SKU--OgqSOwxOOeurvDS-vcy",
+    "title": "PORTABLE MINI PRINTER",
     "category": "Educational Toys",
-    "sku": "UE-SKU-OulpmrIkrl",
-    "price": 590,
-    "originalPrice": 700,
-    "discount": 16,
-    "rating": "4.9",
-    "reviewsCount": 63,
-    "description": "<a href=\"https://www.instagram.com/reel/DQ3aHtQEqWw/?igsh=MXd3YTNkNDloajcxeg==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DQ3aHtQEqWw/?igsh=MXd3YTNkNDloajcxeg==</a>\n\n3D pen is a perfect gift for kids and adults, it can help children improve their spatial thinking and develops creative ideas, cultivate creation and artistic skills, great for quality family time\nThis 3D printing pen is temperature adjustable.The LED screen lets you monitor temperature of material and extrusion speed when you enjoy drawing 3D model.\n3D Pen Display is used to display temperature, to select ABS / PLA materials. PLA mode: 180 ～ 210 ℃; ABS mode: 210 ℃",
+    "price": 999,
+    "originalPrice": 999,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqSSgz_DxGrYSvo4VC.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpn0kfDI17QEi2uC.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqSSgz_DxGrYSvo4VC.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqSSh9uWYi3zei-OHt.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqSOwxOOeurvDS-vcy.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpn0kfDI17QEi2uC.jpg",
-    "stockQty": 2,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here: \n\nhttps://www.instagram.com/reel/DTo-3KkEiEV/?igsh=MWw2b2J2cmR1ZWx3OQ==\n\nThis Mini Bluetooth Thermal Printer is a portable and ink-free label printer designed for use with both Android and iOS systems. Its small size and Bluetooth connectivity make it easy to use on the go. With crisp black on white printing and a roll of print paper included, this printer is a convenient and efficient solution for all your labeling needs.&nbsp;This value pack comes with 10 rolls of print paper and stickers, making it the perfect choice for all your printing needs.",
+    "videoUrl": "https://duid26tx7z2bo.cloudfront.net/732f5de0-1161-11f1-9dff-d1c59baad886/MP4/732f5de0-1161-11f1-9dff-d1c59baad886.mp4",
+    "stockQty": 5,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Ogqcd3gF4dW-id6ZesN",
+    "sku": "UE-SKU--Ogqcd3gF4dW-id6ZesN",
+    "title": "BOUNCING CAROUSEL",
+    "category": "Educational Toys",
+    "price": 950,
+    "originalPrice": 999,
+    "discount": 5,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OkOUXMsTDDj3OVqwTsZ.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OkOUXMsTDDj3OVqwTsZ.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here: \n\nhttps://www.instagram.com/reel/DTU96fSkr9w/?igsh=ZXFranJhcTBmNHZ4\n\n【Experience the Thrill with the Flying duck Launcher Toy】 Our outdoor kids toys include 10 ducks. Playing is a breeze! Kids turn on the disc to shoot the duscks into the air and then catch them with the net as they fall. With the thoughtful Anti-drop buckle design, you can snap the launcher together after playing to prevent the duck from getting lost.\n\n* 【Perfect Outdoor Toys for Boys 4-6】 Our manual capture-catching game is suitable for kids of various ages. It's an ideal outside games for kids aged 2-3, 3-5, and 4-6. This game is not only enjoyable but also promotes physical activity. It's a great yard game for boys and girls to enjoy with their friends and family.\n\n* 【Exciting Indoor and Outdoor Activity Games】 The ducks launch at different heights. Whether you're at the park, in the yard, or camping outside, this flying toy guarantees an enjoyable playtime for your child.\n\n* Easy to Use & Highly Portable-Our flying duck launcher is designed for hassle-free fun. This user-friendly feature makes it incredibly convenient to bring along on any adventure. Whether you're in the backyard, at the park, on the lawn, or even at the beach, this toy ensures your child can enjoy indoor or outdoor play to the fullest. It's lightweight and portable, allowing for on-the-go fun",
+    "videoUrl": "https://duid26tx7z2bo.cloudfront.net/48afe8e0-dcd8-11f0-be80-59f8bba001f4/MP4/48afe8e0-dcd8-11f0-be80-59f8bba001f4.mp4",
+    "stockQty": 11,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-O_ulpms03WrZaH4JJ4P",
+    "sku": "UE-SKU--O_ulpms03WrZaH4JJ4P",
+    "title": "Learn & Play",
+    "category": "Educational Toys",
+    "price": 899,
+    "originalPrice": 999,
+    "discount": 10,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnH-BCXr7TQ6KcZ.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnH-BCXr7TQ6KcZ.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here: \n\nhttps://www.instagram.com/reel/DOtBzl4Ekf9/?igsh=MTF5MmJkcnBwbnZ4Ng==\n\nInteractive Sound Learning Book: Engaging audio buttons help toddlers learn words, sounds, and music while encouraging active participation and listening skills.\nMusical Educational Toy: Combines fun melodies and spoken sounds to make early learning enjoyable and improve memory and sound recognition.\nSupports Early Cognitive Development: Enhances vocabulary, concentration, coordination, and curiosity through repeated interactive play and exploration.\nEasy for Small Hands: Child-friendly design with simple buttons allows toddlers to use the book independently and confidently.\nSafe and Durable Design: Made with non-toxic, sturdy materials suitable for everyday use by young children and toddlers.",
+    "videoUrl": "",
+    "stockQty": 3,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-O_ulpmrIkrlm35y3t2t",
+    "sku": "UE-SKU--O_ulpmrIkrlm35y3t2t",
+    "title": "3 in 1 Science 150+ Experiments",
+    "category": "Educational Toys",
+    "price": 885,
+    "originalPrice": 885,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpmy-B26oNFdsaei.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpmy-B26oNFdsaei.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DRj0mwaEm5E/?igsh=MTBsazEzemc2dWp5bg==\n\n3-in-1 Complete Science Lab Kit Includes chemistry-based learning activities combined into one kit, offering over 150 fun and educational STEM experiments for hands-on learning.\n150+ STEM Projects for Ages 8–15 Specially designed to introduce kids to basic chemistry concepts through safe, guided, and age-appropriate experiments.\nEncourages Learning Through Play Promotes curiosity, critical thinking, and problem-solving skills while making science fun and interactive for children.\nSafe, Kid-Friendly Materials Made with high-quality, non-toxic components suitable for children. Adult supervision is recommended during experiments.\nIdeal Educational Gift for Kids Perfect for birthdays, holidays, school projects, and learning activities. Suitable for both boys and girls interested in science exploration.",
+    "videoUrl": "",
+    "stockQty": 6,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-O_ulpms03WrZaH4JJ4_",
+    "sku": "UE-SKU--O_ulpms03WrZaH4JJ4_",
     "title": "Science Biology 50+ Experiments",
     "category": "Educational Toys",
-    "sku": "UE-SKU-Oulpms03Wr",
     "price": 790.6,
     "originalPrice": 790.6,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 66,
-    "description": "<a href=\"https://www.instagram.com/reel/DSAEwUWEhm5/?igsh=MWx1OHZiOWc5eXJuaw==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DSAEwUWEhm5/?igsh=MWx1OHZiOWc5eXJuaw==</a>\n\nEXPLORE BIOLOGY THROUGH FUN HANDS-ON EXPERIMENTS: Perform numerous biology based experiments and understand various concepts of biology like botany, anatomy, microbiology etc. From learning about soil mulching to understanding how the lungs function, your kid can now easily play and learn at the same time.\nBOOSTS STEM LEARNING, CURIOSITY & CRITICAL THINKING: Through exciting experiments on digestion, plant growth, lung activity, and sensory functions, kids learn to ask questions, record observations, and solve problems, building skills that strengthen their love for STEM and discovery.\n50+ HANDS ON LEARNING EXPERIMENTS- Let your kids engage in 50+ biology based- experiments with Play Craft's Science biology kit. Your child can now make DIY biology-based models including lungs, heart etc and understand different concepts of botany, anatomy, ecology etc. Each activity teaches different phenomenas of biology and help your child in understanding various scientific concepts.\nEASY-TO-FOLLOW INSTRUCTIONS: The kit comes with a step-by-step, illustrated manual that simplifies tricky concepts into fun activities. Instead of overwhelming children with theory, each activity has clear visuals and simple explanations, so kids can understand not just the “how” but also the “why.” Perfect for independent learners, while still being easy enough for parents to join in.\nSAFE, AND CHILD-FRIENDLY: Made with safe, tested, ingredients, this kit is perfect for home learning, school projects, or family fun. Parents can now relax knowing their kids are experimenting with child-friendly science tools designed for ages 8 and up.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnT-P4gkuG-EE_N.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnT-P4gkuG-EE_N.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnT-P4gkuG-EE_N.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DSAEwUWEhm5/?igsh=MWx1OHZiOWc5eXJuaw==\n\nEXPLORE BIOLOGY THROUGH FUN HANDS-ON EXPERIMENTS: Perform numerous biology based experiments and understand various concepts of biology like botany, anatomy, microbiology etc. From learning about soil mulching to understanding how the lungs function, your kid can now easily play and learn at the same time.\nBOOSTS STEM LEARNING, CURIOSITY & CRITICAL THINKING: Through exciting experiments on digestion, plant growth, lung activity, and sensory functions, kids learn to ask questions, record observations, and solve problems, building skills that strengthen their love for STEM and discovery.\n50+ HANDS ON LEARNING EXPERIMENTS- Let your kids engage in 50+ biology based- experiments with Play Craft's Science biology kit. Your child can now make DIY biology-based models including lungs, heart etc and understand different concepts of botany, anatomy, ecology etc. Each activity teaches different phenomenas of biology and help your child in understanding various scientific concepts.\nEASY-TO-FOLLOW INSTRUCTIONS: The kit comes with a step-by-step, illustrated manual that simplifies tricky concepts into fun activities. Instead of overwhelming children with theory, each activity has clear visuals and simple explanations, so kids can understand not just the “how” but also the “why.” Perfect for independent learners, while still being easy enough for parents to join in.\nSAFE, AND CHILD-FRIENDLY: Made with safe, tested, ingredients, this kit is perfect for home learning, school projects, or family fun. Parents can now relax knowing their kids are experimenting with child-friendly science tools designed for ages 8 and up.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-O_ulpms03WrZaH4JJ4a",
+    "sku": "UE-SKU--O_ulpms03WrZaH4JJ4a",
     "title": "Science Lab 155+ Experiments",
     "category": "Educational Toys",
-    "sku": "UE-SKU-Oulpms03Wr",
     "price": 755.2,
     "originalPrice": 755.2,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 69,
-    "description": "<a href=\"https://www.instagram.com/reel/DRcMjeUkjX1/?igsh=aHg1eTFzYTZsZHlz\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DRcMjeUkjX1/?igsh=aHg1eTFzYTZsZHlz</a>\n\n\n✅ 150+ SCIENCE EXPERIMENTS\n✅ GIFT A JOY OF LEARNING - The 150+ Science Experiment Kit, a Gift of a Lifetime, makes for an excellent present on birthdays, Christmas, Thanksgiving, or any special occasion. This remarkable kit serves as an exciting introduction to the marvels of science, offering over 100 hours of educational fun and learning.\n✅ CLEAR STEP BY STEP INSTRUCTIONS: Our exclusive experiments guide features easy-to-follow, step-by-step instructions and illustrations for each experiment, ensuring that parents and kids can easily conduct these activities together. To enhance convenience, we have thoughtfully placed the chemical materials in separate leak-proof bottles. This setup allows kids to efficiently carry out experiments multiple times without creating any mess!",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnT-P4gkuG-EE_O.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnT-P4gkuG-EE_O.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnT-P4gkuG-EE_O.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DRcMjeUkjX1/?igsh=aHg1eTFzYTZsZHlz\n\n\n✅ 150+ SCIENCE EXPERIMENTS\n✅ GIFT A JOY OF LEARNING - The 150+ Science Experiment Kit, a Gift of a Lifetime, makes for an excellent present on birthdays, Christmas, Thanksgiving, or any special occasion. This remarkable kit serves as an exciting introduction to the marvels of science, offering over 100 hours of educational fun and learning.\n✅ CLEAR STEP BY STEP INSTRUCTIONS: Our exclusive experiments guide features easy-to-follow, step-by-step instructions and illustrations for each experiment, ensuring that parents and kids can easily conduct these activities together. To enhance convenience, we have thoughtfully placed the chemical materials in separate leak-proof bottles. This setup allows kids to efficiently carry out experiments multiple times without creating any mess!",
+    "videoUrl": "",
     "stockQty": 7,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-O_ulpms03WrZaH4JJ4f",
-    "title": "Toppal Tree",
+    "id": "-O_ulpms03WrZaH4JJ4Q",
+    "sku": "UE-SKU--O_ulpms03WrZaH4JJ4Q",
+    "title": "Magnetic Control Pen Toy (Duck Theme)",
     "category": "Educational Toys",
-    "sku": "UE-SKU-Oulpms03Wr",
-    "price": 377.6,
-    "originalPrice": 377.6,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 72,
-    "description": "<a href=\"https://www.instagram.com/reel/DNxsEuh5CkC/?igsh=cXBveHZqMWUycGht\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DNxsEuh5CkC/?igsh=cXBveHZqMWUycGht</a>\n\nIncludes sturdy plastic tower, colorful plastic pieces and game dice.\nScore points by completing rows and stacking pieces, but the more points you score, the harder it is to keep it from toppling.\nTip Topple is a fun game of skill and balance for 2-4 players\nAges 3+ Great For The Classroom, Preschool, Kindergarten, And Early Childhood Development. No Batteries Required.\nComplete a row of 5, stack 4 or more, add to existing stacks",
+    "price": 699,
+    "originalPrice": 799,
+    "discount": 13,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnOLwyDG2vEhs8W.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnYSnxOpZbDBX5J.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnOLwyDG2vEhs8W.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnYSnxOpZbDBX5J.jpg",
-    "stockQty": 1,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DOyHTBYgdz_/?igsh=NGkzOG43YjhuODZl",
+    "videoUrl": "",
+    "stockQty": 2,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-O_ulpms03WrZaH4JJ4H",
-    "title": "DIY STEM Creative Puzzle Box",
+    "id": "-OkhbOvtVkyTbXwCIdiE",
+    "sku": "UE-SKU--OkhbOvtVkyTbXwCIdiE",
+    "title": "Bunny Magnetic Board",
     "category": "Educational Toys",
-    "sku": "UE-SKU-Oulpms03Wr",
-    "price": 999,
-    "originalPrice": 1178.82,
-    "discount": 15,
-    "rating": "4.9",
-    "reviewsCount": 75,
-    "description": "<a href=\"https://www.instagram.com/reel/DP_aI7GEumq/?igsh=OGptNG84ZWJ1b3ls\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DP_aI7GEumq/?igsh=OGptNG84ZWJ1b3ls</a>\n\n3D Dinosaur Puzzle Set: A creative 163-piece building set that lets kids build and customize their very own 3D dinosaur models, perfect for aspiring paleontologists.\nSTEM Learning Toy: This set encourages hands-on learning in science, technology, engineering, and math (STEM), helping children develop critical thinking, problem-solving, and fine motor skills.\nInteractive Tools Included: Comes with a drill and screwdriver, allowing kids to take on the role of a builder and engineer while assembling the dinosaur models.\nMosaic Art Board: Includes a mosaic art board that enables kids to create colorful dinosaur-themed designs, sparking creativity and artistic expression.\nSafe & Durable: Made from non-toxic, high-quality materials to ensure safety for children ages 3 and up. The sturdy pieces are easy to assemble and built for long-lasting play.\nPerfect for Ages 3+: Designed for young children, this set provides an engaging way to improve hand-eye coordination, fine motor skills, and spatial awareness while having fun.\nGreat Gift for Kids: An ideal gift for birthdays, holidays, or any special occasion, offering hours of educational and creative entertainment for dinosaur lovers.",
+    "price": 699,
+    "originalPrice": 799,
+    "discount": 13,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OkhbN6zb1Mdw60FcPA7.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpn0kfDI17QEi2uD.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OkhbN6zb1Mdw60FcPA7.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OkhbN6Z-Q-WyyTJVu65.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpn0kfDI17QEi2uD.jpg",
-    "stockQty": 1,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here: \nhttps://www.instagram.com/reel/DQjhvmBkoL-/?igsh=MWtsZjY5enFza3M3OA==\n\n* Age Range: This toy is suitable for children aged 3 to 6 years old, encouraging developmentally appropriate play and skill-building activities.\n* Safety Features: Crafted from durable, non-toxic materials, this toy prioritizes child safety with rounded edges and exceeds all safety standards for peace of mind\n* Educational Value: Designed to stimulate cognitive development, this toy fosters creativity, problem-solving skills, and hand-eye coordination through interactive play.\n* Durability: Built to withstand hours of play, this toy boasts a sturdy construction that can endure rough handling and ensures long-lasting enjoyment.\n* Versatility: From imaginative role-playing scenarios to structured learning activities, this toy adapts to various play styles, encouraging open-ended play and fostering social interaction.",
+    "videoUrl": "",
+    "stockQty": 2,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-O_ulpms03WrZaH4JJ4I",
-    "title": "Domino 100 Pcs (Color Domino)",
+    "id": "-OgqaVy0IO3frefrDtsJ",
+    "sku": "UE-SKU--OgqaVy0IO3frefrDtsJ",
+    "title": "WATCH REMOTE CAR",
     "category": "Educational Toys",
-    "sku": "UE-SKU-Oulpms03Wr",
-    "price": 352.82,
-    "originalPrice": 352.82,
+    "price": 699,
+    "originalPrice": 699,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 78,
-    "description": "<a href=\"https://www.instagram.com/reel/DLe6RTISD3g/?igsh=YXh5bWZmbm8xajVt\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DLe6RTISD3g/?igsh=YXh5bWZmbm8xajVt</a>\n\nIt cultivates children's creativity enhance self-confidence. Parents may also participate in the game, emphasising your family relationship\nGreat and super fun toy for your kids to play, Push one of them, it will have a chain of effect with a bang !! Develop Math, Science, Spatial and Tactile Skills + it will develop your kids imagination\nExcellent for use in educational math games: Counting, Adding, Subtracting, Multiplication. Also learning valuable skills of patience and developing imagination\nMade of environment-friendly linden wood and non-toxic paint to making them harmless and safe for playing\nSmall parts. Not for children under 3 yrs",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqaVy0IO3frefrDtsJ.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnFcjfKLH2nLfz6.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqaVy0IO3frefrDtsJ.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Ogqa_QRZ0oDithujOBc.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnFcjfKLH2nLfz6.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here: \n\nhttps://www.instagram.com/reel/DTE7wQjEkcE/?igsh=c2t2NmRla3FidjBh\n\nMini Remote Control Car Watch Toys】 The body of the mini remote control car watch toys is made of high-quality ABS and Alloy material, which gives the car a strong anti-collision ability. The RC car strap use safe, comfortable, skin-friendly, durable and easy weared Silicone material, and kids can adjust the strap at will\n【2.4GHz Independent Signal】Small Rc watch cars toys with 30 meters remote control distance, infrared emission in a wide range, can be effectively controlled within a maximum 30 meters linear infrared distance. Offer a stable signal linear infrared control, two or more cars race together without remote confusion.\n【Usb Charging】The car watch toys support usb charging. Worry-free battery life, it can be connected to socket power banks, computers and other common usb devices to charge.\n【Child Friendly Remote】 The RC watch cars toys only 3 buttons on the watch, control with two buttons to move the car forward and in rotation. You can control the toy car to drive in any direction from your watch. easy to learn, the baby can easily grasp. The third button is to pop open the cover, dust-proof, comes with a dust-proof cover, one-button button pops open the cover to protect the car from damage\n【Perfect Gifts】 If you are looking for an exciting and cool gift, then you will love it. Mini remote control car watch toys is the best gift for children on birthdays, Christmas, Halloween and other festivals, your children will love this watch remote control car toy. Package Includes: comes with a watch remote control car toy, a usb charging cable.",
+    "videoUrl": "https://duid26tx7z2bo.cloudfront.net/c343df90-dcd7-11f0-9e53-af509089db1f/MP4/c343df90-dcd7-11f0-9e53-af509089db1f.mp4",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OgqQca8yfqEQ66GVIr3",
+    "sku": "UE-SKU--OgqQca8yfqEQ66GVIr3",
+    "title": "PARTY BUBBLE CAKE",
+    "category": "Educational Toys",
+    "price": 699,
+    "originalPrice": 999,
+    "discount": 30,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqQca8yfqEQ66GVIr3.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqQca8yfqEQ66GVIr3.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here: \n\nhttps://www.instagram.com/reel/DTAnXDGEnt0/?igsh=MWdmang2bnV5azIwcg==\n\n🎂 Magical Birthday Fun – Rechargeable party bubble cake toy with lights, music, and unlimited bubble output to create a joyful celebration atmosphere.\n🎶 Plays Happy Birthday Song – Adds a special touch with cheerful music and glowing lights while bubbles fill the air.\n✨ Unlimited Bubbles & Lights – Colorful LED lights and a rotating gear keep the bubbles flowing non-stop for endless entertainment.\n🚗 Bump & Go Feature – Moves automatically in all directions, avoiding obstacles while keeping kids engaged.\n🎁 Perfect Birthday Gift – Includes DIY stickers for decoration, making it a fun and creative present for kids aged 3+.",
+    "videoUrl": "https://duid26tx7z2bo.cloudfront.net/5e746500-dcd0-11f0-80fb-6f0c9dbd194e/MP4/5e746500-dcd0-11f0-80fb-6f0c9dbd194e.mp4",
+    "stockQty": 8,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-O_ulpmrIkrlm35y3t2u",
+    "sku": "UE-SKU--O_ulpmrIkrlm35y3t2u",
+    "title": "3D Pen",
+    "category": "Educational Toys",
+    "price": 590,
+    "originalPrice": 700,
+    "discount": 16,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpn0kfDI17QEi2uC.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpn0kfDI17QEi2uC.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DQ3aHtQEqWw/?igsh=MXd3YTNkNDloajcxeg==\n\n3D pen is a perfect gift for kids and adults, it can help children improve their spatial thinking and develops creative ideas, cultivate creation and artistic skills, great for quality family time\nThis 3D printing pen is temperature adjustable.The LED screen lets you monitor temperature of material and extrusion speed when you enjoy drawing 3D model.\n3D Pen Display is used to display temperature, to select ABS / PLA materials. PLA mode: 180 ～ 210 ℃; ABS mode: 210 ℃",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opsf42gPq6vHj10kFN5",
+    "sku": "UE-SKU--Opsf42gPq6vHj10kFN5",
+    "title": "Kids Camera(new variant)",
+    "category": "Educational Toys",
+    "price": 550,
+    "originalPrice": 750,
+    "discount": 27,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opsf42gPq6vHj10kFN5.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opsf42gPq6vHj10kFN5.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxoNBfgTvScd4TVKO_.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxoNC-Bt6bu0qctPdl.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxoNCB7B00ntCvAgHu.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "For reference video https://www.instagram.com/reel/DReyHF9ElrM/?igsh=OHhka2N5ZTd4NzQ2",
+    "videoUrl": "",
     "stockQty": 4,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-O_ulpms03WrZaH4JJ4J",
-    "title": "Early Learn Education Cards Device",
+    "id": "-OgqP2spHT2p1yCREPxz",
+    "sku": "UE-SKU--OgqP2spHT2p1yCREPxz",
+    "title": "SPIN BUDDY",
     "category": "Educational Toys",
-    "sku": "UE-SKU-Oulpms03Wr",
-    "price": 377.6,
-    "originalPrice": 377.6,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 81,
-    "description": "<a href=\"https://www.instagram.com/reel/DN5iMmHkuUz/?igsh=MXNsdG10MnF4Nm10Mg==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DN5iMmHkuUz/?igsh=MXNsdG10MnF4Nm10Mg==</a>. \n\n\nEDUCATIONAL FEATURES: Interactive talking flash cards designed to enhance learning through audio feedback and visual recognition for children aged 2-5 years\nRECHARGEABLE DESIGN: Battery-powered device eliminates the need for constant battery replacements, making it convenient for regular use\nCOGNITIVE DEVELOPMENT: Specifically crafted to boost memory, recognition, vocabulary, and problem-solving skills in toddlers\nAGE-APPROPRIATE CONTENT: Montessori-based learning materials suitable for babies and young children up to 5 years of age\nVERSATILE LEARNING: Sound-enabled flashcard system combines visual and auditory learning to engage multiple senses for effective education",
+    "price": 450,
+    "originalPrice": 599,
+    "discount": 25,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqP2spHT2p1yCREPxz.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnEHhMvgihoKVAG.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqP2spHT2p1yCREPxz.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnEHhMvgihoKVAG.jpg",
-    "stockQty": 10,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here: \n\nhttps://www.instagram.com/reel/DTIVB__Em-l/?igsh=a29jaHQzYXJ2ZWVk\n\n Baby Spinner toys is designed for toddlers since it's has no sharp edges, BPA free, dishwasher safe.This can suck on glass, wall, and flat surface.\n\nProduct Specification - It has a suction cup which suck the toy on flat surface.Non-battery operated.\n\nPackage includes: 3* Spinner (Colours will be sent as per the availability)",
+    "videoUrl": "",
+    "stockQty": 3,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-O_ulpms03WrZaH4JJ4U",
+    "sku": "UE-SKU--O_ulpms03WrZaH4JJ4U",
+    "title": "My Chemistry Lab",
+    "category": "Educational Toys",
+    "price": 448.4,
+    "originalPrice": 448.4,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnJ10eqUHhmRCQh.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnJ10eqUHhmRCQh.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here: \nhttps://www.instagram.com/reel/DSbsm8hElCR/?igsh=MTYwYTN2cnR4ZmFvaw==\n\nGet ready to be a scientist with my chemistry lab learn about different topics of chemistry like reactivity osmosis mixture and much more while performing fun and safe experiment at home come Equipped with all the necessary apparatus includes\nCONTENTS: Balloons, Baking Soda, Citric Acid, Food Colouring, Small Measuring Beakers, Droppers, Plastic Spatulas, Safety Goggles, Funnel, Illustrated instruction manual, Shoestring.\nSAFE & TESTED PRODUCT: Explore products are EN 71 and ASTM tested, which represents a good quality and safety of materials used in the manufacturing process. All the Explore products are developed, manufactured and packaged in India.\nEDUCATIONAL VALUE: Through it’s STEM Learner series, Explore aims at helping children take another step forward in STEM education.",
+    "videoUrl": "",
+    "stockQty": 6,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-O_ulpms03WrZaH4JJ4K",
+    "sku": "UE-SKU--O_ulpms03WrZaH4JJ4K",
     "title": "Earth Science",
     "category": "Educational Toys",
-    "sku": "UE-SKU-Oulpms03Wr",
     "price": 448.4,
     "originalPrice": 448.4,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 84,
-    "description": "<a href=\"https://www.instagram.com/reel/DSEggKokgP_/?igsh=cWJ0ZGx0OGY4dHpl\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DSEggKokgP_/?igsh=cWJ0ZGx0OGY4dHpl</a>\n\nEXPLORE EARTH SCIENCE THROUGH FUN HANDS-ON ACTIVITIES Dive into the world of geology, volcanoes, and soil with exciting hands-on experiments kit. Kids above 8 can safely explore concepts like volcano eruptions, natural phenomenas , soil testing, and oceanography, making science fun and interactive.\nBOOSTS STEM LEARNING, CURIOSITY & CRITICAL THINKING: Through exciting experiments on erosion, crystal growth, tectonic activity, and natural cycles, kids learn to ask questions, record observations, and solve problems, while building skills that strengthen their love for STEM and discovery.\nEASY-TO-FOLLOW INSTRUCTIONS: This kit comes with a step-by-step, illustrated manual that simplifies tricky concepts into fun activities. Instead of overwhelming children with theory, each activity has clear visuals and simple explanations, so kids can understand not just the “how” but also the “why.” Perfect for independent learners, while still being easy enough for parents to join in.\n70+ HANDS ON LEARNING EXPERIMENTS- Lets your child engage in 70+ earth science experiments with Play Craft's earth science kit. Your child can now watch & make different kinds of colourful volcanoes and crytsals using simple and safe components provided in the kit. Each activity teaches different earth science phenomenas and help your child in understanding various scientific concepts.\nSAFE, AND CHILD-FRIENDLY: Made with safe, tested, and ingredients, this kit is perfect for home learning, school projects, or family fun. Parents can now relax knowing their kids are experimenting with child-friendly science tools designed for ages 8 and up.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnFcjfKLH2nLfz5.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnFcjfKLH2nLfz5.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnFcjfKLH2nLfz5.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DSEggKokgP_/?igsh=cWJ0ZGx0OGY4dHpl\n\nEXPLORE EARTH SCIENCE THROUGH FUN HANDS-ON ACTIVITIES Dive into the world of geology, volcanoes, and soil with exciting hands-on experiments kit. Kids above 8 can safely explore concepts like volcano eruptions, natural phenomenas , soil testing, and oceanography, making science fun and interactive.\nBOOSTS STEM LEARNING, CURIOSITY & CRITICAL THINKING: Through exciting experiments on erosion, crystal growth, tectonic activity, and natural cycles, kids learn to ask questions, record observations, and solve problems, while building skills that strengthen their love for STEM and discovery.\nEASY-TO-FOLLOW INSTRUCTIONS: This kit comes with a step-by-step, illustrated manual that simplifies tricky concepts into fun activities. Instead of overwhelming children with theory, each activity has clear visuals and simple explanations, so kids can understand not just the “how” but also the “why.” Perfect for independent learners, while still being easy enough for parents to join in.\n70+ HANDS ON LEARNING EXPERIMENTS- Lets your child engage in 70+ earth science experiments with Play Craft's earth science kit. Your child can now watch & make different kinds of colourful volcanoes and crytsals using simple and safe components provided in the kit. Each activity teaches different earth science phenomenas and help your child in understanding various scientific concepts.\nSAFE, AND CHILD-FRIENDLY: Made with safe, tested, and ingredients, this kit is perfect for home learning, school projects, or family fun. Parents can now relax knowing their kids are experimenting with child-friendly science tools designed for ages 8 and up.",
+    "videoUrl": "",
     "stockQty": 3,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-O_ulpms03WrZaH4JJ4N",
+    "sku": "UE-SKU--O_ulpms03WrZaH4JJ4N",
     "title": "Jumbo Electromagnetic Set",
     "category": "Educational Toys",
-    "sku": "UE-SKU-Oulpms03Wr",
     "price": 436.6,
     "originalPrice": 436.6,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 87,
-    "description": "<a href=\"https://www.instagram.com/reel/DOTMEZqElF1/?igsh=NXpxb3VuNThvMnN6\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DOTMEZqElF1/?igsh=NXpxb3VuNThvMnN6</a>\n\nElectromagnetic Experiments: The Kit Includes A Range Of Materials And Components That Allow Users To Conduct Various Experiments And Observe The Principles Of Electromagnetism In Action. From Building Electromagnets To Creating Simple Circuits, This Kit Covers A Wide Range Of Engaging Activities.\nEasy-To-Use Components: The Kit Contains High-Quality, Durable Components That Are Safe And Easy To Handle. It Includes Magnets, Wires, Batteries, Switches, And Other Essential Items Required To Build Different Experiments. The Components Are Designed To Be Intuitive, Ensuring A Smooth Learning Experience For Users Of All Ages.\nDetailed Instruction Manual: A comprehensive instruction manual is included with the kit, providing step-by-step guidance for each experiment. The manual explains the scientific concepts behind each activity in a clear and concise manner, making it accessible to beginners and serving as a valuable reference for more advanced learners.\nEducational Value: The Kit Aligns With Science Education Standards And Promotes STEM (Science, Technology, Engineering, And Mathematics) Learning. It Fosters Critical Thinking, Problem-Solving Skills, And Creativity While Instilling A Passion For Scientific Exploration.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnH-BCXr7TQ6KcY.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnH-BCXr7TQ6KcY.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnH-BCXr7TQ6KcY.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DOTMEZqElF1/?igsh=NXpxb3VuNThvMnN6\n\nElectromagnetic Experiments: The Kit Includes A Range Of Materials And Components That Allow Users To Conduct Various Experiments And Observe The Principles Of Electromagnetism In Action. From Building Electromagnets To Creating Simple Circuits, This Kit Covers A Wide Range Of Engaging Activities.\nEasy-To-Use Components: The Kit Contains High-Quality, Durable Components That Are Safe And Easy To Handle. It Includes Magnets, Wires, Batteries, Switches, And Other Essential Items Required To Build Different Experiments. The Components Are Designed To Be Intuitive, Ensuring A Smooth Learning Experience For Users Of All Ages.\nDetailed Instruction Manual: A comprehensive instruction manual is included with the kit, providing step-by-step guidance for each experiment. The manual explains the scientific concepts behind each activity in a clear and concise manner, making it accessible to beginners and serving as a valuable reference for more advanced learners.\nEducational Value: The Kit Aligns With Science Education Standards And Promotes STEM (Science, Technology, Engineering, And Mathematics) Learning. It Fosters Critical Thinking, Problem-Solving Skills, And Creativity While Instilling A Passion For Scientific Exploration.",
+    "videoUrl": "",
     "stockQty": 5,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-O_ulpms03WrZaH4JJ4P",
-    "title": "Learn & Play",
+    "id": "-O_ulpms03WrZaH4JJ4J",
+    "sku": "UE-SKU--O_ulpms03WrZaH4JJ4J",
+    "title": "Early Learn Education Cards Device",
     "category": "Educational Toys",
-    "sku": "UE-SKU-Oulpms03Wr",
-    "price": 899,
-    "originalPrice": 999,
-    "discount": 10,
-    "rating": "4.9",
-    "reviewsCount": 90,
-    "description": "Watch Full video here: \n\n<a href=\"https://www.instagram.com/reel/DOtBzl4Ekf9/?igsh=MTF5MmJkcnBwbnZ4Ng==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DOtBzl4Ekf9/?igsh=MTF5MmJkcnBwbnZ4Ng==</a>\n\nInteractive Sound Learning Book: Engaging audio buttons help toddlers learn words, sounds, and music while encouraging active participation and listening skills.\nMusical Educational Toy: Combines fun melodies and spoken sounds to make early learning enjoyable and improve memory and sound recognition.\nSupports Early Cognitive Development: Enhances vocabulary, concentration, coordination, and curiosity through repeated interactive play and exploration.\nEasy for Small Hands: Child-friendly design with simple buttons allows toddlers to use the book independently and confidently.\nSafe and Durable Design: Made with non-toxic, sturdy materials suitable for everyday use by young children and toddlers.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnH-BCXr7TQ6KcZ.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnH-BCXr7TQ6KcZ.jpg",
-    "stockQty": 4,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-O_ulpms03WrZaH4JJ4Q",
-    "title": "Magnetic Control Pen Toy (Duck Theme)",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-Oulpms03Wr",
-    "price": 699,
-    "originalPrice": 799,
-    "discount": 13,
-    "rating": "4.9",
-    "reviewsCount": 93,
-    "description": "<a href=\"https://www.instagram.com/reel/DOyHTBYgdz_/?igsh=NGkzOG43YjhuODZl\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DOyHTBYgdz_/?igsh=NGkzOG43YjhuODZl</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnOLwyDG2vEhs8W.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnOLwyDG2vEhs8W.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-O_ulpms03WrZaH4JJ4U",
-    "title": "My Chemistry Lab",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-Oulpms03Wr",
-    "price": 448.4,
-    "originalPrice": 448.4,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 96,
-    "description": "Watch Full video here: \n<a href=\"https://www.instagram.com/reel/DSbsm8hElCR/?igsh=MTYwYTN2cnR4ZmFvaw==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DSbsm8hElCR/?igsh=MTYwYTN2cnR4ZmFvaw==</a>\n\nGet ready to be a scientist with my chemistry lab learn about different topics of chemistry like reactivity osmosis mixture and much more while performing fun and safe experiment at home come Equipped with all the necessary apparatus includes\nCONTENTS: Balloons, Baking Soda, Citric Acid, Food Colouring, Small Measuring Beakers, Droppers, Plastic Spatulas, Safety Goggles, Funnel, Illustrated instruction manual, Shoestring.\nSAFE & TESTED PRODUCT: Explore products are EN 71 and ASTM tested, which represents a good quality and safety of materials used in the manufacturing process. All the Explore products are developed, manufactured and packaged in India.\nEDUCATIONAL VALUE: Through it’s STEM Learner series, Explore aims at helping children take another step forward in STEM education.\n\n\n",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnJ10eqUHhmRCQh.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnJ10eqUHhmRCQh.jpg",
-    "stockQty": 6,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-O_ulpms03WrZaH4JJ4V",
-    "title": "My First Pottery Set",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-Oulpms03Wr",
-    "price": 999,
-    "originalPrice": 1178.82,
-    "discount": 15,
-    "rating": "4.9",
-    "reviewsCount": 99,
-    "description": "<a href=\"https://www.instagram.com/reel/DRY6kcwErxi/?igsh=dnBzb2lhbXhqa2l5\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DRY6kcwErxi/?igsh=dnBzb2lhbXhqa2l5</a>\n\nReal Pottery Experience — Battery-powered spinning wheel lets kids center and shape clay just like a mini potter’s studio.\nComplete Starter Kit — Typically includes modelling clay, wheel plate, Sculpting tools, cutting cord, paint tray, acrylic paints and brushes for finishing.\nLearn & Play STEM — Builds fine motor control, hand-eye coordination, creativity and focus — ideal for art projects and classroom craft sessions.\nGreat Gift for Kids 6+ — Designed for beginners aged 6–10 ; perfect for birthdays, holiday gifts, and hands-on learning.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnL-dmH2UTH1DZs.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnL-dmH2UTH1DZs.jpg",
-    "stockQty": 6,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-O_ulpms03WrZaH4JJ4X",
-    "title": "Rope Untangling Toy Board Game",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-Oulpms03Wr",
     "price": 377.6,
     "originalPrice": 377.6,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 102,
-    "description": "<a href=\"https://www.instagram.com/reel/DN0VdO25Hzi/?igsh=MWRybDFwZzR3ZzByaQ==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DN0VdO25Hzi/?igsh=MWRybDFwZzR3ZzByaQ==</a>\n\n【Fun Family Bonding Game】: \"Play this brain-teasing board game with your family! One designs the tangled challenge, the other solves it—Strengthen relationships and create memories, just like classic family board games for kids and adults, all while racing to unravel colorful knots!\"\n【How to Play】: \"Insert both ends of 10 vibrant ropes (plastic-tipped) into the board’s 22 holes, twisting into knots or crosses. Adjust difficulty with 3-10 ropes! Players move rope tips OVER others—never under—to empty holes. Remove untangled ropes and clear all to win—For detailed instructions, watch the video: How to Play – Rope Untangling Challenge.\"\n【Multi-Level Difficulty for All Ages】: \"From simple board games for kids (3-4 ropes) to complex puzzles for adults (10-rope mazes), this game grows with you! More knots = tougher challenges, perfect for fans of strategy-based board games!\"\n【A Fun Way to Keep Kids Off Screens】: \"This hands-on logic puzzle game beats screen time! Kids build spatial awareness, sharpen focus, and learn problem-solving—like a tactile upgrade to traditional board games or video games!\"\n【The Perfect Gift for All Ages】: \"Packed in a travel-ready case, this interactive family board game sparks friendly competition, boosts critical thinking, and unites everyone—ideal for playdates, holidays, or group games for kids and adults seeking screen-free fun!\"",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnEHhMvgihoKVAG.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnKIE4-3fBVRhv3.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnEHhMvgihoKVAG.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnKIE4-3fBVRhv3.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwrI0gp2m1sbePE6Ja1",
-    "title": "Magnetic Power Kit",
-    "category": "Educational Toys",
-    "sku": "UE-SKU-OwrI0gp2m1",
-    "price": 90,
-    "originalPrice": 118,
-    "discount": 24,
-    "rating": "4.9",
-    "reviewsCount": 105,
-    "description": "Magnetic Fidget Toy Set: Includes multiple magnetic balls and shapes designed for stress relief, focus, and endless fun for kids and adults.\nPremium Quality Material: Smooth, durable, and safe magnets with rounded edges for comfortable handling and long-lasting use.\nPerfect for Stress & Anxiety Relief: Helps reduce tension, improve concentration, and keep hands busy during work, study, or travel.\nEducational & Creative Play: Encourages learning about magnetism, shape recognition, and enhances fine motor skills through hands-on play.\nPack of 1 – Random Color: Comes in attractive packaging with one color selected at random (blue, mint, yellow, pink, etc.). Ideal for gifting and everyday use.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnJ10eqUHhmRCQg.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnJ10eqUHhmRCQg.jpg",
-    "stockQty": 72,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Oleps18Vt_HoESVTeu_",
-    "title": "Blix Queaky (Battery)",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-Oleps18VtH",
-    "price": 599,
-    "originalPrice": 660,
-    "discount": 9,
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "<a href=\"https://www.instagram.com/reel/DU5qzhyktIT/?igsh=MWU2anVodXhqcXV4eQ==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DU5qzhyktIT/?igsh=MWU2anVodXhqcXV4eQ==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeu_.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeu_.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Oleps18Vt_HoESVTeua",
-    "title": "Blix Queaky (Rechargable)",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-Oleps18VtH",
-    "price": 699,
-    "originalPrice": 760,
-    "discount": 8,
-    "rating": "4.9",
-    "reviewsCount": 21,
-    "description": "<a href=\"https://www.instagram.com/reel/DU5qzhyktIT/?igsh=MWU2anVodXhqcXV4eQ==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DU5qzhyktIT/?igsh=MWU2anVodXhqcXV4eQ==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeua.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeua.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Oleps18Vt_HoESVTeub",
-    "title": "Die Cast Model Frame(Premium)",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-Oleps18VtH",
-    "price": 2600,
-    "originalPrice": 2600,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 24,
-    "description": "Die Cast Model Frame(Premium) - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeub.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeub.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OlesbuVcd2XQC5UGyvI",
-    "title": "Astronaut Bluetooth Lamp Speaker",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OlesbuVcd2",
-    "price": 1200,
-    "originalPrice": 1500,
-    "discount": 20,
-    "rating": "4.9",
-    "reviewsCount": 27,
-    "description": "<a href=\"https://www.instagram.com/reel/DV7wO2mk1l6/?igsh=MWplNHB4NTJyeWRrcg==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DV7wO2mk1l6/?igsh=MWplNHB4NTJyeWRrcg==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvI.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvI.jpg",
-    "stockQty": 3,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OlesbuVcd2XQC5UGyvJ",
-    "title": "Container Cars Set",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OlesbuVcd2",
-    "price": 1600,
-    "originalPrice": 1600,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 30,
-    "description": "<a href=\"https://www.instagram.com/reel/DVYeeH9Ehfs/?igsh=YmoxaTh0YXY1YTM0\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVYeeH9Ehfs/?igsh=YmoxaTh0YXY1YTM0</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvJ.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvJ.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OlesbuVcd2XQC5UGyvM",
-    "title": "G5 gaming Console with Joystick",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OlesbuVcd2",
-    "price": 799,
-    "originalPrice": 799,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 33,
-    "description": "<a href=\"https://www.instagram.com/reel/DSO-DINkqd0/?igsh=MXB3eXRrYjVwdmkxdA==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DSO-DINkqd0/?igsh=MXB3eXRrYjVwdmkxdA==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvM.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvM.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OlgKiPQEZdwiBns7DGh",
-    "title": "Catch Game",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OlgKiPQEZd",
-    "price": 720,
-    "originalPrice": 720,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 36,
-    "description": "<a href=\"https://www.instagram.com/reel/DViwWa6kvDS/?igsh=MXJibjc0NHRtNng3NA==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DViwWa6kvDS/?igsh=MXJibjc0NHRtNng3NA==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGh.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGh.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OlgKiPQEZdwiBns7DGi",
-    "title": "Changeable Track Car",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OlgKiPQEZd",
-    "price": 700,
-    "originalPrice": 700,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 39,
-    "description": "<a href=\"https://www.instagram.com/reel/DVQtLXTEj2T/?igsh=MTdpcjg0cXF6cm9pbw==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVQtLXTEj2T/?igsh=MTdpcjg0cXF6cm9pbw==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGi.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGi.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OlgKiPQEZdwiBns7DGj",
-    "title": "Dino Egg",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OlgKiPQEZd",
-    "price": 400,
-    "originalPrice": 400,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 42,
-    "description": "<a href=\"https://www.instagram.com/reel/DVLjkCikuPt/?igsh=dGZmcTlsbjFoeGJs\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVLjkCikuPt/?igsh=dGZmcTlsbjFoeGJs</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGj.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGj.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OlgKiPQEZdwiBns7DGn",
-    "title": "Kids intelligence Book",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OlgKiPQEZd",
-    "price": 300,
-    "originalPrice": 300,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 45,
-    "description": "<a href=\"https://www.instagram.com/reel/DQeWLSCEpVs/?igsh=YTF2MGtwb3RvdGpi\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DQeWLSCEpVs/?igsh=YTF2MGtwb3RvdGpi</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGn.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGn.jpg",
-    "stockQty": 6,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OlgKiPQEZdwiBns7DGq",
-    "title": "Magnetic Digital Train",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OlgKiPQEZd",
-    "price": 720,
-    "originalPrice": 720,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 48,
-    "description": "<a href=\"https://www.instagram.com/reel/DWGDfddzwzN/?igsh=MTcwdGUxazJzcGlocQ==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DWGDfddzwzN/?igsh=MTcwdGUxazJzcGlocQ==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGq.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGq.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OlgKiPQEZdwiBns7DGs",
-    "title": "Sup Game Console",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OlgKiPQEZd",
-    "price": 580,
-    "originalPrice": 580,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 51,
-    "description": "<a href=\"https://www.instagram.com/reel/DVI_OJ6EvPG/?igsh=MTJ6enNmN3Qwcm56bw==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVI_OJ6EvPG/?igsh=MTJ6enNmN3Qwcm56bw==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGs.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGs.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OlgKiPR4JKolX6G9K43",
-    "title": "Water Gun",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OlgKiPR4JK",
-    "price": 760,
-    "originalPrice": 760,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 54,
-    "description": "<a href=\"https://www.instagram.com/reel/DVDHqcPksaz/?igsh=M3B2dWhyZTlibzE0\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVDHqcPksaz/?igsh=M3B2dWhyZTlibzE0</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPR4JKolX6G9K43.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPR4JKolX6G9K43.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Om8yWh5HXbEz9DEjeO-",
-    "title": "Space Exploration Toy Gun",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-Om8yWh5HXb",
-    "price": 320,
-    "originalPrice": 320,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 57,
-    "description": "<a href=\"https://www.instagram.com/reel/DVGapAjEt6Q/?igsh=OXo3NnR3ejlrcXJy\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVGapAjEt6Q/?igsh=OXo3NnR3ejlrcXJy</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Om8yWh5HXbEz9DEjeO-.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Om8yWh5HXbEz9DEjeO-.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OmOaVwn1QjfQyy6Y5t5",
-    "title": "Dino Bey Blade",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OmOaVwn1Qj",
-    "price": 399,
-    "originalPrice": 399,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 60,
-    "description": "<a href=\"https://www.instagram.com/reel/DVOKkaqkt_K/?igsh=MWppeGIycHNkdjU3dw==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVOKkaqkt_K/?igsh=MWppeGIycHNkdjU3dw==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwn1QjfQyy6Y5t5.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmQ7QNjpMFStcxgeUOr.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwn1QjfQyy6Y5t5.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OmOaVwo6VRBS8o47oFL",
-    "title": "Frog Catching Game",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OmOaVwo6VR",
-    "price": 660,
-    "originalPrice": 660,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 63,
-    "description": "<a href=\"https://www.instagram.com/reel/DVbCNsvkghb/?igsh=MTVzMTNiZ3NtazA2aA==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVbCNsvkghb/?igsh=MTVzMTNiZ3NtazA2aA==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFL.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFL.jpg",
-    "stockQty": 5,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OmOaVwo6VRBS8o47oFM",
-    "title": "5 in 1 My colouring Mat",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OmOaVwo6VR",
-    "price": 520,
-    "originalPrice": 520,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 66,
-    "description": "<a href=\"https://www.instagram.com/reel/DV-VBU-EhsC/?igsh=MXhpcmM2NnBnbWhmMQ==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DV-VBU-EhsC/?igsh=MXhpcmM2NnBnbWhmMQ==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFM.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFM.jpg",
-    "stockQty": 0,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OmOaVwo6VRBS8o47oFN",
-    "title": "75 pcs Magnetic Tiles",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OmOaVwo6VR",
-    "price": 950,
-    "originalPrice": 1199,
-    "discount": 21,
-    "rating": "4.9",
-    "reviewsCount": 69,
-    "description": "For Full video\n<a href=\"https://www.instagram.com/reel/DWsrW3zzh0W/?igsh=eXR6ZXIweGhsYXps\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DWsrW3zzh0W/?igsh=eXR6ZXIweGhsYXps</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFN.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFN.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OmOaVwo6VRBS8o47oFO",
-    "title": "Minecraft MyWorld lego blocks",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OmOaVwo6VR",
-    "price": 999,
-    "originalPrice": 999,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 72,
-    "description": "Minecraft MyWorld lego blocks - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFO.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFO.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-On9QjukE1Cu_lgLfcK9",
-    "title": "Dino Turn Table",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-On9QjukE1C",
-    "price": 1299,
-    "originalPrice": 1599,
-    "discount": 19,
-    "rating": "4.9",
-    "reviewsCount": 75,
-    "description": "<a href=\"https://www.instagram.com/reel/DVnJpHRj1Ni/?igsh=MTAzZTdjaGVlc3FjYg==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVnJpHRj1Ni/?igsh=MTAzZTdjaGVlc3FjYg==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-On9QjukE1Cu_lgLfcK9.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-On9QjukE1Cu_lgLfcK9.jpg",
-    "stockQty": 14,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-On9QjulMUj7LNSuI1u3",
-    "title": "Magnetic Track Electric Bus",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-On9QjulMUj",
-    "price": 599,
-    "originalPrice": 599,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 78,
-    "description": "<a href=\"https://www.instagram.com/reel/DVqa6EUkqy7/?igsh=eGxsY2FuajYxZmUz\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVqa6EUkqy7/?igsh=eGxsY2FuajYxZmUz</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-On9QjulMUj7LNSuI1u3.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-On9QjulMUj7LNSuI1u3.jpg",
-    "stockQty": 5,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OosrPo2-mBZ9DOWDI_R",
-    "title": "EDU PHONE 10 LANGUAGE",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OosrPo2mBZ",
-    "price": 350,
-    "originalPrice": 500,
-    "discount": 30,
-    "rating": "4.9",
-    "reviewsCount": 81,
-    "description": "Watch Full video here <a href=\"https://www.instagram.com/reel/DWdOsHDz8C0/?igsh=YWpwaHMzenR2Zmh4\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DWdOsHDz8C0/?igsh=YWpwaHMzenR2Zmh4</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OosrPo6bqjoicNcVZEm.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OosrPo2-mBZ9DOWDI_S.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OosrPo6bqjoicNcVZEn.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OosrPo6bqjoicNcVZEm.jpg",
-    "stockQty": 44,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OozufHXsnp8OxJGNUsN",
-    "title": "Magic Water Elf Diy Kit Creative 3D Handmade Gel Craft Set",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OozufHXsnp",
-    "price": 330,
-    "originalPrice": 330,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 84,
-    "description": "Watch Full video here <a href=\"https://www.instagram.com/reel/DWjCKjikipQ/?igsh=Z2Z3aXRmNDg5Z25r\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DWjCKjikipQ/?igsh=Z2Z3aXRmNDg5Z25r</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwgmjnFij5X8SkkFyo.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwgoEOySJJInV1SeQF.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwgklnInGp3spDO3TG.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwgmjnFij5X8SkkFyo.jpg",
+    "description": "https://www.instagram.com/reel/DN5iMmHkuUz/?igsh=MXNsdG10MnF4Nm10Mg==. \n\n\nEDUCATIONAL FEATURES: Interactive talking flash cards designed to enhance learning through audio feedback and visual recognition for children aged 2-5 years\nRECHARGEABLE DESIGN: Battery-powered device eliminates the need for constant battery replacements, making it convenient for regular use\nCOGNITIVE DEVELOPMENT: Specifically crafted to boost memory, recognition, vocabulary, and problem-solving skills in toddlers\nAGE-APPROPRIATE CONTENT: Montessori-based learning materials suitable for babies and young children up to 5 years of age\nVERSATILE LEARNING: Sound-enabled flashcard system combines visual and auditory learning to engage multiple senses for effective education",
+    "videoUrl": "",
     "stockQty": 10,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OozufHY1u6VxR3GVvmA",
-    "title": "15w bluetooth Mike and speaker",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OozufHY1u6",
-    "price": 699,
-    "originalPrice": 740,
-    "discount": 6,
-    "rating": "4.9",
-    "reviewsCount": 87,
-    "description": "Watch Full video here <a href=\"https://www.instagram.com/reel/DWqGmPNT8Jj/?igsh=MXA3ZjNjMnM0cjNheg==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DWqGmPNT8Jj/?igsh=MXA3ZjNjMnM0cjNheg==</a>",
+    "id": "-O_ulpms03WrZaH4JJ4X",
+    "sku": "UE-SKU--O_ulpms03WrZaH4JJ4X",
+    "title": "Rope Untangling Toy Board Game",
+    "category": "Educational Toys",
+    "price": 377.6,
+    "originalPrice": 377.6,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnKIE4-3fBVRhv3.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OozufHY1u6VxR3GVvmA.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnKIE4-3fBVRhv3.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OozufHY1u6VxR3GVvmA.jpg",
-    "stockQty": 3,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DN0VdO25Hzi/?igsh=MWRybDFwZzR3ZzByaQ==\n\n【Fun Family Bonding Game】: \"Play this brain-teasing board game with your family! One designs the tangled challenge, the other solves it—Strengthen relationships and create memories, just like classic family board games for kids and adults, all while racing to unravel colorful knots!\"\n【How to Play】: \"Insert both ends of 10 vibrant ropes (plastic-tipped) into the board’s 22 holes, twisting into knots or crosses. Adjust difficulty with 3-10 ropes! Players move rope tips OVER others—never under—to empty holes. Remove untangled ropes and clear all to win—For detailed instructions, watch the video: How to Play – Rope Untangling Challenge.\"\n【Multi-Level Difficulty for All Ages】: \"From simple board games for kids (3-4 ropes) to complex puzzles for adults (10-rope mazes), this game grows with you! More knots = tougher challenges, perfect for fans of strategy-based board games!\"\n【A Fun Way to Keep Kids Off Screens】: \"This hands-on logic puzzle game beats screen time! Kids build spatial awareness, sharpen focus, and learn problem-solving—like a tactile upgrade to traditional board games or video games!\"\n【The Perfect Gift for All Ages】: \"Packed in a travel-ready case, this interactive family board game sparks friendly competition, boosts critical thinking, and unites everyone—ideal for playdates, holidays, or group games for kids and adults seeking screen-free fun!\"",
+    "videoUrl": "",
+    "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OpsebbT1KVpJEaw7Umb",
-    "title": "Walkie Talkie",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OpsebbT1KV",
-    "price": 2199,
-    "originalPrice": 2500,
-    "discount": 12,
-    "rating": "4.9",
-    "reviewsCount": 90,
-    "description": "Walkie Talkie - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "id": "-O_ulpms03WrZaH4JJ4f",
+    "sku": "UE-SKU--O_ulpms03WrZaH4JJ4f",
+    "title": "Toppal Tree",
+    "category": "Educational Toys",
+    "price": 377.6,
+    "originalPrice": 377.6,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnYSnxOpZbDBX5J.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7Umb.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnFg2gCL5LKFzC5GG.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnYSnxOpZbDBX5J.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7Umb.jpg",
-    "stockQty": 20,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DNxsEuh5CkC/?igsh=cXBveHZqMWUycGht\n\nIncludes sturdy plastic tower, colorful plastic pieces and game dice.\nScore points by completing rows and stacking pieces, but the more points you score, the harder it is to keep it from toppling.\nTip Topple is a fun game of skill and balance for 2-4 players\nAges 3+ Great For The Classroom, Preschool, Kindergarten, And Early Childhood Development. No Batteries Required.\nComplete a row of 5, stack 4 or more, add to existing stacks",
+    "videoUrl": "",
+    "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OpsebbT1KVpJEaw7UmU",
-    "title": "Astronaut Bubble Gun (new variant)",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OpsebbT1KV",
-    "price": 500,
+    "id": "-OgqNBf8odRkXNdtv1Vv",
+    "sku": "UE-SKU--OgqNBf8odRkXNdtv1Vv",
+    "title": "self defence SAFETY ROD",
+    "category": "Educational Toys",
+    "price": 360,
+    "originalPrice": 360,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqNBf8odRkXNdtv1Vv.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqNBf8odRkXNdtv1Vv.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgqNRkkHqsv8Mn934OU.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here: \n\nhttps://www.instagram.com/reel/DUdSTS9Em0H/?igsh=NTF6Z2Zzd3poNTlw\n\nPREMIUM CONSTRUCTION: Made from high-quality stainless steel for superior durability and long-lasting performance in various conditions\nEXTENDABLE DESIGN: Foldable and extendable wand that compacts for easy storage and portability, perfect for travel and outdoor activities\nCOMFORTABLE GRIP: Features a non-slip grip handle that ensures secure hold and comfortable use during extended periods\nMULTI-PURPOSE USE: Versatile walking stick suitable for hiking, trekking, self-defence, and everyday mobility support\nCOMPACT AND PORTABLE: Lightweight foldable design allows for convenient carrying in bags or backpacks when not in use",
+    "videoUrl": "",
+    "stockQty": 12,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-O_ulpms03WrZaH4JJ4I",
+    "sku": "UE-SKU--O_ulpms03WrZaH4JJ4I",
+    "title": "Domino 100 Pcs (Color Domino)",
+    "category": "Educational Toys",
+    "price": 352.82,
+    "originalPrice": 352.82,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnFcjfKLH2nLfz6.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_ulpnFcjfKLH2nLfz6.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DLe6RTISD3g/?igsh=YXh5bWZmbm8xajVt\n\nIt cultivates children's creativity enhance self-confidence. Parents may also participate in the game, emphasising your family relationship\nGreat and super fun toy for your kids to play, Push one of them, it will have a chain of effect with a bang !! Develop Math, Science, Spatial and Tactile Skills + it will develop your kids imagination\nExcellent for use in educational math games: Counting, Adding, Subtracting, Multiplication. Also learning valuable skills of patience and developing imagination\nMade of environment-friendly linden wood and non-toxic paint to making them harmless and safe for playing\nSmall parts. Not for children under 3 yrs",
+    "videoUrl": "",
+    "stockQty": 4,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OplYgk7NgihP0Ry89e6",
+    "sku": "UE-SKU--OplYgk7NgihP0Ry89e6",
+    "title": "Motor Trolley",
+    "category": "Educational Toys",
+    "price": 350,
     "originalPrice": 500,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 93,
-    "description": "for reference video <a href=\"https://www.instagram.com/reel/DS45JHYEugY/?igsh=YzkyZzJncDdhc2Vx\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DS45JHYEugY/?igsh=YzkyZzJncDdhc2Vx</a>",
+    "discount": 30,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OplYgk7NgihP0Ry89e6.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxn1CNIR4PzLFg3l9q.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxn1C8VgAveWJCIVef.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7UmU.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OplYgk7NgihP0Ry89e6.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxqm_CtI0LTTy8ANf7.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxn1CNIR4PzLFg3l9q.jpg",
-    "stockQty": 5,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OpsebbT1KVpJEaw7UmV",
-    "title": "Bubble Gun Refill",
-    "category": "Standard Toys",
-    "sku": "UE-SKU-OpsebbT1KV",
-    "price": 99,
-    "originalPrice": 99,
-    "discount": 0,
     "rating": "4.9",
-    "reviewsCount": 96,
-    "description": "Bubble Gun Refill - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7UmV.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7UmV.jpg",
-    "stockQty": 0,
+    "reviewsCount": 18,
+    "description": "Watch Video here :\n\nhttps://www.instagram.com/reel/DW5f1dtTFAu/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==",
+    "videoUrl": "",
+    "stockQty": 4,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-Oug_Ixspk1Z1KfYDFIp",
+    "sku": "UE-SKU--Oug_Ixspk1Z1KfYDFIp",
     "title": "Dual Mike bluetooth Speaker",
     "category": "Standard Toys",
-    "sku": "UE-SKU-OugIxspk1Z",
     "price": 699,
     "originalPrice": 750,
     "discount": 7,
-    "rating": "4.9",
-    "reviewsCount": 99,
-    "description": "Watch Full video here: \n<a href=\"https://www.instagram.com/reel/DVvpUr3gdj9/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVvpUr3gdj9/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==</a>",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OnRkQMBJxePIeuEGpGk.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OnRkQMBJxePIeuEGpGk.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OnRkQMBJxePIeuEGpGk.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here: \nhttps://www.instagram.com/reel/DVvpUr3gdj9/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==",
+    "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugX1iuyghXxHrjULsb",
+    "sku": "UE-SKU--OugX1iuyghXxHrjULsb",
     "title": "Dancing Dog",
     "category": "Standard Toys",
-    "sku": "UE-SKU-OugX1iuygh",
     "price": 599,
     "originalPrice": 706.82,
     "discount": 15,
-    "rating": "4.9",
-    "reviewsCount": 102,
-    "description": "<a href=\"https://www.instagram.com/reel/DOgCuN_EuTO/?igsh=MWVya2FodTZtcm9xMA==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DOgCuN_EuTO/?igsh=MWVya2FodTZtcm9xMA==</a>",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_v2ShKcSvUH66IRt4n.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_v2ShKcSvUH66IRt4n.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_v2ShKcSvUH66IRt4n.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DOgCuN_EuTO/?igsh=MWVya2FodTZtcm9xMA==",
+    "videoUrl": "",
     "stockQty": 6,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugX1iuyghXxHrjULsc",
+    "sku": "UE-SKU--OugX1iuyghXxHrjULsc",
     "title": "Mini Helecopter Velocity",
     "category": "Standard Toys",
-    "sku": "UE-SKU-OugX1iuygh",
     "price": 1178.82,
     "originalPrice": 1178.82,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 105,
-    "description": "Mini Helecopter Velocity - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_v2Shgl-u73otRvXEp.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_v2Shgl-u73otRvXEp.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_v2Shgl-u73otRvXEp.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OthBqx2ahYnAGDZs8x2",
-    "title": "Veena",
-    "category": "Handicrafts",
-    "sku": "UE-SKU-OthBqx2ahY",
-    "price": 419,
-    "originalPrice": 599,
-    "discount": 30,
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Veena - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OthBqWKlOwUXJbhAjTM.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OthBqWVLJkugNQyQURA.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OthBqWKlOwUXJbhAjTM.jpg",
+    "description": "Mini Helecopter Velocity offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Oti-eW8VIL8GLQZR5P5",
-    "title": "Balaji medium variant",
-    "category": "Handicrafts",
-    "sku": "UE-SKU-OtieW8VIL8",
+    "id": "-OpsebbT1KVpJEaw7UmU",
+    "sku": "UE-SKU--OpsebbT1KVpJEaw7UmU",
+    "title": "Astronaut Bubble Gun (new variant)",
+    "category": "Standard Toys",
+    "price": 500,
+    "originalPrice": 500,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7UmU.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7UmU.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxn1C8VgAveWJCIVef.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxn1CNIR4PzLFg3l9q.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "for reference video https://www.instagram.com/reel/DS45JHYEugY/?igsh=YzkyZzJncDdhc2Vx",
+    "videoUrl": "",
+    "stockQty": 5,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OpsebbT1KVpJEaw7UmV",
+    "sku": "UE-SKU--OpsebbT1KVpJEaw7UmV",
+    "title": "Bubble Gun Refill",
+    "category": "Standard Toys",
+    "price": 99,
+    "originalPrice": 99,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7UmV.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7UmV.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Bubble Gun Refill offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OpsebbT1KVpJEaw7Umb",
+    "sku": "UE-SKU--OpsebbT1KVpJEaw7Umb",
+    "title": "Walkie Talkie",
+    "category": "Standard Toys",
+    "price": 2199,
+    "originalPrice": 2500,
+    "discount": 12,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnFg2gCL5LKFzC5GG.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnFg2gCL5LKFzC5GG.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpsebbT1KVpJEaw7Umb.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Walkie Talkie offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OozufHXsnp8OxJGNUsN",
+    "sku": "UE-SKU--OozufHXsnp8OxJGNUsN",
+    "title": "Magic Water Elf Diy Kit Creative 3D Handmade Gel Craft Set",
+    "category": "Standard Toys",
+    "price": 330,
+    "originalPrice": 330,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwgmjnFij5X8SkkFyo.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwgmjnFij5X8SkkFyo.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwgklnInGp3spDO3TG.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwgoEOySJJInV1SeQF.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here https://www.instagram.com/reel/DWjCKjikipQ/?igsh=Z2Z3aXRmNDg5Z25r",
+    "videoUrl": "",
+    "stockQty": 10,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OozufHY1u6VxR3GVvmA",
+    "sku": "UE-SKU--OozufHY1u6VxR3GVvmA",
+    "title": "15w bluetooth Mike and speaker",
+    "category": "Standard Toys",
+    "price": 699,
+    "originalPrice": 740,
+    "discount": 6,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OozufHY1u6VxR3GVvmA.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OozufHY1u6VxR3GVvmA.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here https://www.instagram.com/reel/DWqGmPNT8Jj/?igsh=MXA3ZjNjMnM0cjNheg==",
+    "videoUrl": "",
+    "stockQty": 3,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OosrPo2-mBZ9DOWDI_R",
+    "sku": "UE-SKU--OosrPo2-mBZ9DOWDI_R",
+    "title": "EDU PHONE 10 LANGUAGE",
+    "category": "Standard Toys",
+    "price": 350,
+    "originalPrice": 500,
+    "discount": 30,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OosrPo2-mBZ9DOWDI_S.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OosrPo2-mBZ9DOWDI_S.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OosrPo6bqjoicNcVZEn.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OosrPo6bqjoicNcVZEm.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here https://www.instagram.com/reel/DWdOsHDz8C0/?igsh=YWpwaHMzenR2Zmh4",
+    "videoUrl": "",
+    "stockQty": 44,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-On9QjukE1Cu_lgLfcK9",
+    "sku": "UE-SKU--On9QjukE1Cu_lgLfcK9",
+    "title": "Dino Turn Table",
+    "category": "Standard Toys",
+    "price": 1299,
+    "originalPrice": 1599,
+    "discount": 19,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-On9QjukE1Cu_lgLfcK9.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-On9QjukE1Cu_lgLfcK9.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DVnJpHRj1Ni/?igsh=MTAzZTdjaGVlc3FjYg==",
+    "videoUrl": "",
+    "stockQty": 14,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-On9QjulMUj7LNSuI1u3",
+    "sku": "UE-SKU--On9QjulMUj7LNSuI1u3",
+    "title": "Magnetic Track Electric Bus",
+    "category": "Standard Toys",
+    "price": 599,
+    "originalPrice": 599,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-On9QjulMUj7LNSuI1u3.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-On9QjulMUj7LNSuI1u3.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DVqa6EUkqy7/?igsh=eGxsY2FuajYxZmUz",
+    "videoUrl": "",
+    "stockQty": 5,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OmOaVwn1QjfQyy6Y5t5",
+    "sku": "UE-SKU--OmOaVwn1QjfQyy6Y5t5",
+    "title": "Dino Bey Blade",
+    "category": "Standard Toys",
+    "price": 399,
+    "originalPrice": 399,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmQ7QNjpMFStcxgeUOr.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmQ7QNjpMFStcxgeUOr.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwn1QjfQyy6Y5t5.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DVOKkaqkt_K/?igsh=MWppeGIycHNkdjU3dw==",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OmOaVwo6VRBS8o47oFL",
+    "sku": "UE-SKU--OmOaVwo6VRBS8o47oFL",
+    "title": "Frog Catching Game",
+    "category": "Standard Toys",
+    "price": 660,
+    "originalPrice": 660,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFL.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFL.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DVbCNsvkghb/?igsh=MTVzMTNiZ3NtazA2aA==",
+    "videoUrl": "",
+    "stockQty": 5,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OmOaVwo6VRBS8o47oFM",
+    "sku": "UE-SKU--OmOaVwo6VRBS8o47oFM",
+    "title": "5 in 1 My colouring Mat",
+    "category": "Standard Toys",
+    "price": 520,
+    "originalPrice": 520,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFM.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFM.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DV-VBU-EhsC/?igsh=MXhpcmM2NnBnbWhmMQ==",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OmOaVwo6VRBS8o47oFN",
+    "sku": "UE-SKU--OmOaVwo6VRBS8o47oFN",
+    "title": "75 pcs Magnetic Tiles",
+    "category": "Standard Toys",
+    "price": 950,
+    "originalPrice": 1199,
+    "discount": 21,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFN.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFN.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "For Full video\nhttps://www.instagram.com/reel/DWsrW3zzh0W/?igsh=eXR6ZXIweGhsYXps",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OmOaVwo6VRBS8o47oFO",
+    "sku": "UE-SKU--OmOaVwo6VRBS8o47oFO",
+    "title": "Minecraft MyWorld lego blocks",
+    "category": "Standard Toys",
     "price": 999,
-    "originalPrice": 1299,
-    "discount": 23,
-    "rating": "4.9",
-    "reviewsCount": 21,
-    "description": "Multicoloured handicrafted(44cm\n44*20(l*w)",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oti-eW4xYAkXVOIprBa.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oti0G3y1OdCSSUuqtJm.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oti-eW4xYAkXVOIprBa.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OtSye7G3T9Lpr1BSCET",
-    "title": "Joker pulling game",
-    "category": "Handicrafts",
-    "sku": "UE-SKU-OtSye7G3T9",
-    "price": 135,
-    "originalPrice": 135,
+    "originalPrice": 999,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 24,
-    "description": "Joker pulling game - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFO.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtSydpItgj0RKDQsqI5.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtSydpXIO7XaAiaroPT.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OmOaVwo6VRBS8o47oFO.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtSydpItgj0RKDQsqI5.jpg",
-    "stockQty": 1,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Minecraft MyWorld lego blocks offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OtT01tfGUJW4L9Ya739",
-    "title": "House light set",
-    "category": "Handicrafts",
-    "sku": "UE-SKU-OtT01tfGUJ",
-    "price": 499,
-    "originalPrice": 699,
-    "discount": 29,
-    "rating": "4.9",
-    "reviewsCount": 27,
-    "description": "House light set - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "id": "-Om8yWh5HXbEz9DEjeO-",
+    "sku": "UE-SKU--Om8yWh5HXbEz9DEjeO-",
+    "title": "Space Exploration Toy Gun",
+    "category": "Standard Toys",
+    "price": 320,
+    "originalPrice": 320,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Om8yWh5HXbEz9DEjeO-.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT01LnrBkN0NoE4B_p.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT01M7tkdvuIDYocb8.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Om8yWh5HXbEz9DEjeO-.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT01LnrBkN0NoE4B_p.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DVGapAjEt6Q/?igsh=OXo3NnR3ejlrcXJy",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OtT046704vFnDoMvM9v",
-    "title": "Post box money saver box",
-    "category": "Handicrafts",
-    "sku": "UE-SKU-OtT046704v",
-    "price": 1080,
-    "originalPrice": 1080,
+    "id": "-OlgKiPQEZdwiBns7DGh",
+    "sku": "UE-SKU--OlgKiPQEZdwiBns7DGh",
+    "title": "Catch Game",
+    "category": "Standard Toys",
+    "price": 720,
+    "originalPrice": 720,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 30,
-    "description": "Post box money saver box - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGh.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT03o-T7p1Xt8OTr1u.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT03nhBo94c0Gc_nFk.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGh.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT03o-T7p1Xt8OTr1u.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OtT3X7LpfqAUaykoplp",
-    "title": "Dasavatharam set",
-    "category": "Handicrafts",
-    "sku": "UE-SKU-OtT3X7Lpfq",
-    "price": 7200,
-    "originalPrice": 8000,
-    "discount": 10,
     "rating": "4.9",
-    "reviewsCount": 33,
-    "description": "Dasavatharam set - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WhHDAc6Lr7_HCvV.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WgS9N7LY6wX_1Xw.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WgxSZFNbBPIKG-Y.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3Wh8Z7N2yDwMEJlM.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3oFtJIZMf8z4rFsc.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3Wg-SK2fcFe6A2s2.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WgnpS6a3NEMcYK_.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WffGu9v7urayMBv.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WhTLP_U2tP6SjZ.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WfNDw2WGOA1_gda.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WgcmKv-StEGlVWl.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WgGt966LHJsU9Eg.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WhHDAc6Lr7_HCvV.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OtT6vXSva-Xtv1WJcUQ",
-    "title": "Rickshaw",
-    "category": "Handicrafts",
-    "sku": "UE-SKU-OtT6vXSvaX",
-    "price": 685,
-    "originalPrice": 685,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 36,
-    "description": "Rickshaw - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT6v94XySbaKlXHqCu.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT6v8pRHUKpzCte0j7.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT6v94XySbaKlXHqCu.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OugOpRqoTbO3i61p-9q",
-    "title": "Tamboolam set",
-    "category": "Handicrafts",
-    "sku": "UE-SKU-OugOpRqoTb",
-    "price": 330,
-    "originalPrice": 330,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 39,
-    "description": "Tamboolam set - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OjQ3A2qjLzdYD0m1rj5.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OjQ3A2qjLzdYD0m1rj5.jpg",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DViwWa6kvDS/?igsh=MXJibjc0NHRtNng3NA==",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OugOpRqoTbO3i61p-9r",
-    "title": "Ganesha",
-    "category": "Handicrafts",
-    "sku": "UE-SKU-OugOpRqoTb",
-    "price": 330,
-    "originalPrice": 330,
+    "id": "-OlgKiPQEZdwiBns7DGi",
+    "sku": "UE-SKU--OlgKiPQEZdwiBns7DGi",
+    "title": "Changeable Track Car",
+    "category": "Standard Toys",
+    "price": 700,
+    "originalPrice": 700,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 42,
-    "description": "Ganesha - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGi.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Olf5arPgdvLzxLJ4o41.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGi.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Olf5arPgdvLzxLJ4o41.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DVQtLXTEj2T/?igsh=MTdpcjg0cXF6cm9pbw==",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OugOpRqoTbO3i61p-9s",
-    "title": "Ganesha",
-    "category": "Handicrafts",
-    "sku": "UE-SKU-OugOpRqoTb",
-    "price": 330,
-    "originalPrice": 330,
+    "id": "-OlgKiPQEZdwiBns7DGj",
+    "sku": "UE-SKU--OlgKiPQEZdwiBns7DGj",
+    "title": "Dino Egg",
+    "category": "Standard Toys",
+    "price": 400,
+    "originalPrice": 400,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 45,
-    "description": "Ganesha - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGj.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Olf5i7bUaL2yhziXg8b.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGj.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Olf5i7bUaL2yhziXg8b.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DVLjkCikuPt/?igsh=dGZmcTlsbjFoeGJs",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OlgKiPQEZdwiBns7DGn",
+    "sku": "UE-SKU--OlgKiPQEZdwiBns7DGn",
+    "title": "Kids intelligence Book",
+    "category": "Standard Toys",
+    "price": 300,
+    "originalPrice": 300,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGn.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGn.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DQeWLSCEpVs/?igsh=YTF2MGtwb3RvdGpi",
+    "videoUrl": "",
+    "stockQty": 6,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OlgKiPQEZdwiBns7DGq",
+    "sku": "UE-SKU--OlgKiPQEZdwiBns7DGq",
+    "title": "Magnetic Digital Train",
+    "category": "Standard Toys",
+    "price": 720,
+    "originalPrice": 720,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGq.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGq.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DWGDfddzwzN/?igsh=MTcwdGUxazJzcGlocQ==",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OlgKiPQEZdwiBns7DGs",
+    "sku": "UE-SKU--OlgKiPQEZdwiBns7DGs",
+    "title": "Sup Game Console",
+    "category": "Standard Toys",
+    "price": 580,
+    "originalPrice": 580,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGs.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPQEZdwiBns7DGs.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DVI_OJ6EvPG/?igsh=MTJ6enNmN3Qwcm56bw==",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OlgKiPR4JKolX6G9K43",
+    "sku": "UE-SKU--OlgKiPR4JKolX6G9K43",
+    "title": "Water Gun",
+    "category": "Standard Toys",
+    "price": 760,
+    "originalPrice": 760,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPR4JKolX6G9K43.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlgKiPR4JKolX6G9K43.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DVDHqcPksaz/?igsh=M3B2dWhyZTlibzE0",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OlesbuVcd2XQC5UGyvI",
+    "sku": "UE-SKU--OlesbuVcd2XQC5UGyvI",
+    "title": "Astronaut Bluetooth Lamp Speaker",
+    "category": "Standard Toys",
+    "price": 1200,
+    "originalPrice": 1500,
+    "discount": 20,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvI.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvI.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DV7wO2mk1l6/?igsh=MWplNHB4NTJyeWRrcg==",
+    "videoUrl": "",
+    "stockQty": 3,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OlesbuVcd2XQC5UGyvJ",
+    "sku": "UE-SKU--OlesbuVcd2XQC5UGyvJ",
+    "title": "Container Cars Set",
+    "category": "Standard Toys",
+    "price": 1600,
+    "originalPrice": 1600,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvJ.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvJ.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DVYeeH9Ehfs/?igsh=YmoxaTh0YXY1YTM0",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OlesbuVcd2XQC5UGyvM",
+    "sku": "UE-SKU--OlesbuVcd2XQC5UGyvM",
+    "title": "G5 gaming Console with Joystick",
+    "category": "Standard Toys",
+    "price": 799,
+    "originalPrice": 799,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvM.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvM.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DSO-DINkqd0/?igsh=MXB3eXRrYjVwdmkxdA==",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Oleps18Vt_HoESVTeu_",
+    "sku": "UE-SKU--Oleps18Vt_HoESVTeu_",
+    "title": "Blix Queaky (Battery)",
+    "category": "Standard Toys",
+    "price": 599,
+    "originalPrice": 660,
+    "discount": 9,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeu_.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeu_.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DU5qzhyktIT/?igsh=MWU2anVodXhqcXV4eQ==",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Oleps18Vt_HoESVTeua",
+    "sku": "UE-SKU--Oleps18Vt_HoESVTeua",
+    "title": "Blix Queaky (Rechargable)",
+    "category": "Standard Toys",
+    "price": 699,
+    "originalPrice": 760,
+    "discount": 8,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeua.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeua.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DU5qzhyktIT/?igsh=MWU2anVodXhqcXV4eQ==",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Oleps18Vt_HoESVTeub",
+    "sku": "UE-SKU--Oleps18Vt_HoESVTeub",
+    "title": "Die Cast Model Frame(Premium)",
+    "category": "Standard Toys",
+    "price": 2600,
+    "originalPrice": 2600,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeub.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oleps18Vt_HoESVTeub.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Die Cast Model Frame(Premium) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOS2",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOS2",
     "title": "Lakshmi devi",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 510,
     "originalPrice": 510,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 48,
-    "description": "Lakshmi devi - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Olf5jDLsJ7EZKNxujXc.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Olf5jDLsJ7EZKNxujXc.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Olf5jDLsJ7EZKNxujXc.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Lakshmi devi offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOS3",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOS3",
     "title": "BALA RAMUDU",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 499,
     "originalPrice": 499,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 51,
-    "description": "BALA RAMUDU - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh01m6v7QT6hu9XmcFm.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh01m6v7QT6hu9XmcFm.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh01m6v7QT6hu9XmcFm.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "BALA RAMUDU offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 7,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOS4",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOS4",
     "title": "SEEMANTHAM SET",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 3999,
     "originalPrice": 4999,
     "discount": 20,
-    "rating": "4.9",
-    "reviewsCount": 54,
-    "description": "SEEMANTHAM SET - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzAkR5HK5SDPwjTAvn.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzAkR5HK5SDPwjTAvn.jpg",
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzAkQrWWHRBr_DWf68.jpg",
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Ohz9vpiLiS2SwPcYEyC.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzAkR5HK5SDPwjTAvn.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "SEEMANTHAM SET offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 23,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOS5",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOS5",
     "title": "BALJI FAMILY SET",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 1499,
     "originalPrice": 1499,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 57,
-    "description": "BALJI FAMILY SET - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh-v4dpsTztm7f0fjFq.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh-v4dpsTztm7f0fjFq.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh-v4dpsTztm7f0fjFq.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "BALJI FAMILY SET offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 15,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOS6",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOS6",
     "title": "STUDY GANESHA",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 425,
     "originalPrice": 425,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 60,
-    "description": "STUDY GANESHA - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh-z1ZJjIMeLdkJ1fAB.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh-z1ZJjIMeLdkJ1fAB.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh-z1ZJjIMeLdkJ1fAB.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "STUDY GANESHA offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOS7",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOS7",
     "title": "Balaji Idol",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 440,
     "originalPrice": 440,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 63,
-    "description": "Balaji Idol - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgCTDaJMaQUA-GpiFZ4.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgCTDaJMaQUA-GpiFZ4.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgCTDaJMaQUA-GpiFZ4.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Balaji Idol offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOS8",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOS8",
     "title": "Venkateshwara Swami (BALAJI) Idol LARGE GREEN",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 1599,
     "originalPrice": 1599,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 66,
-    "description": "Venkateshwara Swami (BALAJI) Idol LARGE GREEN - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgCTDaLyFwhQzIeBKB3.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgCTDaLyFwhQzIeBKB3.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OgCTDaLyFwhQzIeBKB3.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Venkateshwara Swami (BALAJI) Idol LARGE GREEN offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOS9",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOS9",
     "title": "5 in one chain’s doll",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 360,
     "originalPrice": 360,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 69,
-    "description": "5 in one chain’s doll - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh-wA0hWt9gGby4p72W.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh-wA0hWt9gGby4p72W.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh-wA0hWt9gGby4p72W.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "5 in one chain’s doll offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 5,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOSA",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOSA",
     "title": "5 in 1 Woman Doll",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 562.5,
     "originalPrice": 562.5,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 72,
-    "description": "5 in 1 Woman Doll - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNUeBc2wZEaVGaW.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNUeBc2wZEaVGaW.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNUeBc2wZEaVGaW.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "5 in 1 Woman Doll offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOSB",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOSB",
     "title": "Buddha",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 375,
     "originalPrice": 375,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 75,
-    "description": "Buddha - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNUeBc2wZEaVGaV.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNUeBc2wZEaVGaV.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNUeBc2wZEaVGaV.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Buddha offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOSC",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOSC",
     "title": "Balaji Idol Medium",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 750,
     "originalPrice": 750,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 78,
-    "description": "Balaji Idol Medium - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNcWeGK7ol8I7BJ.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNcWeGK7ol8I7BJ.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNcWeGK7ol8I7BJ.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Balaji Idol Medium offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOSD",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOSD",
     "title": "ROLLING Ganesha Idol",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 275,
     "originalPrice": 275,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 81,
-    "description": "ROLLING Ganesha Idol - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNzNKirbBvcBONJ.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNzNKirbBvcBONJ.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNzNKirbBvcBONJ.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "ROLLING Ganesha Idol offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOSE",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOSE",
     "title": "Hanuman Idol",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 387.5,
     "originalPrice": 387.5,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 84,
-    "description": "Hanuman Idol - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNyG1rMstPRyufD.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNyG1rMstPRyufD.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvNyG1rMstPRyufD.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Hanuman Idol offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOSF",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOSF",
     "title": "Krishna Idol with Flute",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 400,
     "originalPrice": 400,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 87,
-    "description": "Krishna Idol with Flute - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvO0ffMngbZtWzjb.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvO0ffMngbZtWzjb.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvO0ffMngbZtWzjb.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Krishna Idol with Flute offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOSG",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOSG",
     "title": "Mother & Child",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 600,
     "originalPrice": 600,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 90,
-    "description": "Mother & Child - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOIidNGX48rHopA.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOIidNGX48rHopA.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOIidNGX48rHopA.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Mother & Child offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOSH",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOSH",
     "title": "Radha Krishna Set",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 712.5,
     "originalPrice": 712.5,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 93,
-    "description": "Radha Krishna Set - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOb0i_3vXP8RctK.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOb0i_3vXP8RctK.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOb0i_3vXP8RctK.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Radha Krishna Set offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOSI",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOSI",
     "title": "Sarasvathi Devi",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 500,
     "originalPrice": 500,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 96,
-    "description": "Sarasvathi Devi - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOq_o4_YIsjzX5o.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOq_o4_YIsjzX5o.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOq_o4_YIsjzX5o.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Sarasvathi Devi offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOSJ",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOSJ",
     "title": "Shivalingam",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 387.5,
     "originalPrice": 387.5,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 99,
-    "description": "Shivalingam - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOuyzpLwScuRRIm.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOuyzpLwScuRRIm.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOuyzpLwScuRRIm.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Shivalingam offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOSK",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOSK",
     "title": "Venna Krishna",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 562.5,
     "originalPrice": 562.5,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 102,
-    "description": "Venna Krishna - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOyHfbPg5-yeQze.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOyHfbPg5-yeQze.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOyHfbPg5-yeQze.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Venna Krishna offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OugOvedpsbg51DhoOSL",
+    "sku": "UE-SKU--OugOvedpsbg51DhoOSL",
     "title": "Shiva Parvathi Set",
     "category": "Handicrafts",
-    "sku": "UE-SKU-OugOvedpsb",
     "price": 1000,
     "originalPrice": 1000,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 105,
-    "description": "Shiva Parvathi Set - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOsy40xJwx2vHdg.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOsy40xJwx2vHdg.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOsy40xJwx2vHdg.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Shiva Parvathi Set offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-O_bxxlU-MvxGxKVAaGi",
-    "title": "Erasable Pen",
-    "category": "Stationary",
-    "sku": "UE-SKU-ObxxlUMvxG",
-    "price": 17.7,
-    "originalPrice": 17.7,
+    "id": "-OugOpRqoTbO3i61p-9q",
+    "sku": "UE-SKU--OugOpRqoTbO3i61p-9q",
+    "title": "Tamboolam set",
+    "category": "Handicrafts",
+    "price": 330,
+    "originalPrice": 330,
     "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OjQ3A2qjLzdYD0m1rj5.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OjQ3A2qjLzdYD0m1rj5.jpg"
+    ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Watch Full video here: \n<a href=\"https://www.instagram.com/reel/DLAR4y6S2D4/?igsh=MW9uanMxbTFneXNrcw==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DLAR4y6S2D4/?igsh=MW9uanMxbTFneXNrcw==</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_bxxlU-MvxGxKVAaGi.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_bxxlU-MvxGxKVAaGi.jpg",
+    "description": "Tamboolam set offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Opset5dlkxq-hq4sYEa",
-    "title": "Eraser with Cap( glow in the dark)",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 10,
-    "originalPrice": 10,
+    "id": "-OugOpRqoTbO3i61p-9r",
+    "sku": "UE-SKU--OugOpRqoTbO3i61p-9r",
+    "title": "Ganesha",
+    "category": "Handicrafts",
+    "price": 330,
+    "originalPrice": 330,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 21,
-    "description": "Eraser with Cap( glow in the dark) - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Olf5arPgdvLzxLJ4o41.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxmn457mIIMsOZTSgC.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxmn4-XfPj-FGesvwv.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEa.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Olf5arPgdvLzxLJ4o41.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxmn457mIIMsOZTSgC.jpg",
-    "stockQty": 15,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opset5dlkxq-hq4sYEb",
-    "title": "Glow in the dark Pencil",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 10,
-    "originalPrice": 10,
-    "discount": 0,
     "rating": "4.9",
-    "reviewsCount": 24,
-    "description": "Glow in the dark Pencil - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxlaNT17gM7GqV1Iou.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxlaN9JeMp0Tjqyqde.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxlaNT17gM7GqV1Iou.jpg",
-    "stockQty": 30,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opset5dlkxq-hq4sYEe",
-    "title": "Foldable scale(slap band)random design",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 6,
-    "originalPrice": 6,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 27,
-    "description": "Foldable scale(slap band)random design - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwgCcVyMz81P7ppx6U.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwgDyVSg_OUjTQVS2e.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEe.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwgCcVyMz81P7ppx6U.jpg",
-    "stockQty": 34,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opset5dlkxq-hq4sYEf",
-    "title": "Cartoon pencil Sharpner(double Hole)",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 27,
-    "originalPrice": 27,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 30,
-    "description": "Cartoon pencil Sharpner(double Hole) - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opw_inmEgSR4EJQY7rm.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEf.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opw_kIsLRMZG3QJYGXR.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opw_inmEgSR4EJQY7rm.jpg",
-    "stockQty": 0,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opset5dlkxq-hq4sYEg",
-    "title": "Pen Shape pencil everlasting inkless pencil",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 11,
-    "originalPrice": 11,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 33,
-    "description": "Pen Shape pencil everlasting inkless pencil - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opwxjt_WF-RlAXeWYqF.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwaLiZuZ85ia9RGkrl.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwaYViQ_RLZd1UXEHQ.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwaNEPydyCw0wex1-T.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opwxjt_WF-RlAXeWYqF.jpg",
-    "stockQty": 0,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opset5dlkxq-hq4sYEh",
-    "title": "Invisible Pen",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 18,
-    "originalPrice": 18,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 36,
-    "description": "Invisible Pen - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwiOs7Cg7RwO8rvM_i.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwiQOqHSMUkAG8BCV3.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwiNROQBVqePD5pyts.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEh.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwiOs7Cg7RwO8rvM_i.jpg",
-    "stockQty": 117,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opset5dlkxq-hq4sYEi",
-    "title": "Lipstick Shape Blue Ink Pen",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 26,
-    "originalPrice": 26,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 39,
-    "description": "Lipstick Shape Blue Ink Pen - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEi.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opw_DrneKqzWB3oXRMq.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opw_3HIEALF_pKlYXV2.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEi.jpg",
-    "stockQty": 99,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opset5dlkxq-hq4sYEj",
-    "title": " Big Pouch for return Gifts(A5 Size)Random Design",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 18,
-    "originalPrice": 18,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 42,
-    "description": " Big Pouch for return Gifts(A5 Size)Random Design - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEj.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwwuM8dvnFeg8c9xqL.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEj.jpg",
+    "reviewsCount": 18,
+    "description": "Ganesha offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Opset5dlkxq-hq4sYEl",
-    "title": "Pencil with Sharpner end",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 10,
-    "originalPrice": 10,
+    "id": "-OugOpRqoTbO3i61p-9s",
+    "sku": "UE-SKU--OugOpRqoTbO3i61p-9s",
+    "title": "Ganesha",
+    "category": "Handicrafts",
+    "price": 330,
+    "originalPrice": 330,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 45,
-    "description": "Pencil with Sharpner end - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Olf5i7bUaL2yhziXg8b.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxlS2uzEDEDfEevO26.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Olf5i7bUaL2yhziXg8b.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxlS2uzEDEDfEevO26.jpg",
-    "stockQty": 19,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Ganesha offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Opset5dlkxq-hq4sYEm",
-    "title": "Crystal Ruler",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 15,
-    "originalPrice": 15,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 48,
-    "description": "Crystal Ruler - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "id": "-Oti-eW8VIL8GLQZR5P5",
+    "sku": "UE-SKU--Oti-eW8VIL8GLQZR5P5",
+    "title": "Balaji medium variant",
+    "category": "Handicrafts",
+    "price": 999,
+    "originalPrice": 1299,
+    "discount": 23,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oti0G3y1OdCSSUuqtJm.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxkQNU3xm1wFgAho1T.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxkQNa4DEv2it0tw6a.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oti0G3y1OdCSSUuqtJm.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oti-eW4xYAkXVOIprBa.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxkQNU3xm1wFgAho1T.jpg",
-    "stockQty": 5,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Multicoloured handicrafted(44cm\n44*20(l*w)",
+    "videoUrl": "",
+    "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Opset5dlkxq-hq4sYET",
-    "title": "Brick Pencil",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 10,
-    "originalPrice": 10,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 51,
-    "description": "Brick Pencil - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "id": "-OthBqx2ahYnAGDZs8x2",
+    "sku": "UE-SKU--OthBqx2ahYnAGDZs8x2",
+    "title": "Veena",
+    "category": "Handicrafts",
+    "price": 419,
+    "originalPrice": 599,
+    "discount": 30,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OthBqWVLJkugNQyQURA.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxf037vd-xlWfo4KiU.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxf03CcSgoFDwlGrVh.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYET.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OthBqWVLJkugNQyQURA.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OthBqWKlOwUXJbhAjTM.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxf037vd-xlWfo4KiU.jpg",
-    "stockQty": 6,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Veena offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Opset5dlkxq-hq4sYEU",
-    "title": "Double Hole fast Camera Sharpner",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 36,
-    "originalPrice": 36,
+    "id": "-OtT6vXSva-Xtv1WJcUQ",
+    "sku": "UE-SKU--OtT6vXSva-Xtv1WJcUQ",
+    "title": "Rickshaw",
+    "category": "Handicrafts",
+    "price": 685,
+    "originalPrice": 685,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 54,
-    "description": "Double Hole fast Camera Sharpner - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT6v94XySbaKlXHqCu.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEU.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwcXP7Kk97I1jdN2Ql.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwcVrR_fc-pOHIH3ck.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT6v94XySbaKlXHqCu.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT6v8pRHUKpzCte0j7.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEU.jpg",
-    "stockQty": 0,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Rickshaw offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Opset5dlkxq-hq4sYEW",
-    "title": "Cartoon astronaut Zipper Bag Pouches For Return Gifts",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 12,
-    "originalPrice": 12,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 57,
-    "description": "Cartoon astronaut Zipper Bag Pouches For Return Gifts - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "id": "-OtT3X7LpfqAUaykoplp",
+    "sku": "UE-SKU--OtT3X7LpfqAUaykoplp",
+    "title": "Dasavatharam set",
+    "category": "Handicrafts",
+    "price": 7200,
+    "originalPrice": 8000,
+    "discount": 10,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WgxSZFNbBPIKG-Y.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnkAPRnnjeDRGdBDJ.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwefJdJ81YCAb4bH8U.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnkA8f68Bgxvtmupg.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxnk9qrWygBdnICiWg.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnkAesSpMrtZD-l77.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WgxSZFNbBPIKG-Y.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WgS9N7LY6wX_1Xw.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WgnpS6a3NEMcYK_.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3Wg-SK2fcFe6A2s2.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3oFtJIZMf8z4rFsc.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WhHDAc6Lr7_HCvV.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3Wh8Z7N2yDwMEJlM.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WfNDw2WGOA1_gda.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WffGu9v7urayMBv.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WgcmKv-StEGlVWl.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WgGt966LHJsU9Eg.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT3WhTLP_U2tP6SjZ.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnkAPRnnjeDRGdBDJ.jpg",
-    "stockQty": 0,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Dasavatharam set offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Opset5dlkxq-hq4sYEX",
-    "title": "Cute Erasers",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 6,
-    "originalPrice": 6,
+    "id": "-OtT046704vFnDoMvM9v",
+    "sku": "UE-SKU--OtT046704vFnDoMvM9v",
+    "title": "Post box money saver box",
+    "category": "Handicrafts",
+    "price": 1080,
+    "originalPrice": 1080,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 60,
-    "description": "Cute Erasers - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT03nhBo94c0Gc_nFk.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxjbbeFRUxyqdcon3I.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxjV246lfdPgKLvzMJ.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxjV1u0ILjQEIog7Vr.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT03nhBo94c0Gc_nFk.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT03o-T7p1Xt8OTr1u.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxjbbeFRUxyqdcon3I.jpg",
-    "stockQty": 15,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Post box money saver box offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Opset5dlkxq-hq4sYEZ",
-    "title": "Doramen ,Micket Themed Cute Pens(Random Design)",
-    "category": "Stationary",
-    "sku": "UE-SKU-Opset5dlkx",
-    "price": 16,
-    "originalPrice": 16,
+    "id": "-OtT01tfGUJW4L9Ya739",
+    "sku": "UE-SKU--OtT01tfGUJW4L9Ya739",
+    "title": "House light set",
+    "category": "Handicrafts",
+    "price": 0,
+    "originalPrice": 0,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 63,
-    "description": "Doramen ,Micket Themed Cute Pens(Random Design) - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT01M7tkdvuIDYocb8.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opwls6ZCDXF-TM1Pm6t.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEZ.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT01M7tkdvuIDYocb8.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtT01LnrBkN0NoE4B_p.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opwls6ZCDXF-TM1Pm6t.jpg",
-    "stockQty": 10,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "House light set offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OpwyU_8NWCPQw9Q7pqr",
-    "title": "Transparent Pouch for Return Gifts (A4 size random design)",
-    "category": "Stationary",
-    "sku": "UE-SKU-OpwyU8NWCP",
-    "price": 9,
-    "originalPrice": 9,
+    "id": "-OtSye7G3T9Lpr1BSCET",
+    "sku": "UE-SKU--OtSye7G3T9Lpr1BSCET",
+    "title": "Joker pulling game",
+    "category": "Handicrafts",
+    "price": 135,
+    "originalPrice": 135,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 66,
-    "description": "Transparent Pouch for Return Gifts (A4 size random design) - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtSydpItgj0RKDQsqI5.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxfOijFY-srroSQLug.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwyU_8NWCPQw9Q7pqr.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtSydpItgj0RKDQsqI5.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OtSydpXIO7XaAiaroPT.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxfOijFY-srroSQLug.jpg",
-    "stockQty": 33,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OqqZBtXk0Wo1lUrgyuJ",
-    "title": "Moti Gel pen",
-    "category": "Stationary",
-    "sku": "UE-SKU-OqqZBtXk0W",
-    "price": 20,
-    "originalPrice": 20,
-    "discount": 0,
     "rating": "4.9",
-    "reviewsCount": 69,
-    "description": "Moti Gel pen - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqTv-cR8xBuaoZ05jj.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqTv-cR8xBuaoZ05jj.jpg",
-    "stockQty": 34,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OqqZBtXk0Wo1lUrgyuK",
-    "title": "Pvc pouch(mix design pvc pouch for birthday gift packig)",
-    "category": "Stationary",
-    "sku": "UE-SKU-OqqZBtXk0W",
-    "price": 16,
-    "originalPrice": 16,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 72,
-    "description": "Pvc pouch(mix design pvc pouch for birthday gift packig) - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqTKAnjKJGyXxrTgkt.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqTKAnjKJGyXxrTgkt.jpg",
-    "stockQty": 0,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OqqZBtXk0Wo1lUrgyuL",
-    "title": "Thank you Bag (Mix Designs)",
-    "category": "Stationary",
-    "sku": "UE-SKU-OqqZBtXk0W",
-    "price": 24,
-    "originalPrice": 24,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 75,
-    "description": "Thank you Bag (Mix Designs) - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqSaSBOXh2iynE_lsb.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqSaSBOXh2iynE_lsb.jpg",
-    "stockQty": 138,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OqqZBtYCOobhyng5P4C",
-    "title": "Diamond Swan pen",
-    "category": "Stationary",
-    "sku": "UE-SKU-OqqZBtYCOo",
-    "price": 32,
-    "originalPrice": 32,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 78,
-    "description": "Diamond Swan pen - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqPENvBd-KmXpCXhhY.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqPENvBd-KmXpCXhhY.jpg",
-    "stockQty": 47,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OqqZBtYCOobhyng5P4D",
-    "title": "Colour endless pencil",
-    "category": "Stationary",
-    "sku": "UE-SKU-OqqZBtYCOo",
-    "price": 16,
-    "originalPrice": 16,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 81,
-    "description": "Colour endless pencil - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqOZEqAGBkA758mxnq.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqOZEqAGBkA758mxnq.jpg",
-    "stockQty": 6,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OqqZBtYCOobhyng5P4E",
-    "title": "Mix design pencil",
-    "category": "Stationary",
-    "sku": "UE-SKU-OqqZBtYCOo",
-    "price": 16,
-    "originalPrice": 16,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 84,
-    "description": "Mix design pencil - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqNq6jeFJa2XYeOgV-.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqNq6jeFJa2XYeOgV-.jpg",
-    "stockQty": 144,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OqqZBtYCOobhyng5P4H",
-    "title": "Mix design noodles eraser ",
-    "category": "Stationary",
-    "sku": "UE-SKU-OqqZBtYCOo",
-    "price": 24,
-    "originalPrice": 24,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 87,
-    "description": "Mix design noodles eraser  - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqJ3-Z_SnPb4cG7uwN.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqJ3-Z_SnPb4cG7uwN.jpg",
-    "stockQty": 58,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OqqZBtYCOobhyng5P4K",
-    "title": "Sharpener panda and unicorn mix design",
-    "category": "Stationary",
-    "sku": "UE-SKU-OqqZBtYCOo",
-    "price": 30,
-    "originalPrice": 30,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 90,
-    "description": "Sharpener panda and unicorn mix design - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqHJVVpM1fg5WhgLAR.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqHJVVpM1fg5WhgLAR.jpg",
-    "stockQty": 6,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OqqZBtYCOobhyng5P4L",
-    "title": "Fire brigade sharpner",
-    "category": "Stationary",
-    "sku": "UE-SKU-OqqZBtYCOo",
-    "price": 28,
-    "originalPrice": 28,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 93,
-    "description": "Fire brigade sharpner - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqH-eLA9euP15liGaD.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqH-eBxrNv9oFxuWuv.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqGvrwmgG4mIiFjEa9.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqH-eLA9euP15liGaD.jpg",
-    "stockQty": 52,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OqqZBtYCOobhyng5P4N",
-    "title": "Labubu 2 hole dustbin shape sharpener",
-    "category": "Stationary",
-    "sku": "UE-SKU-OqqZBtYCOo",
-    "price": 26,
-    "originalPrice": 26,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 96,
-    "description": "Labubu 2 hole dustbin shape sharpener - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqFzuzdZeEMaVt66ow.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqFzuzdZeEMaVt66ow.jpg",
-    "stockQty": 2,
+    "reviewsCount": 18,
+    "description": "Joker pulling game offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-Owrl7uu1V6f0lZV4aIn",
+    "sku": "UE-SKU--Owrl7uu1V6f0lZV4aIn",
     "title": "MAGIC DRAWING DOODLE BOOK",
     "category": "Stationary",
-    "sku": "UE-SKU-Owrl7uu1V6",
     "price": 70,
     "originalPrice": 100,
     "discount": 30,
-    "rating": "4.9",
-    "reviewsCount": 99,
-    "description": "MAGIC DRAWING DOODLE BOOK - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Owrl7uc_De7R_R2oJkj.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwrlwhWU8Cg_ZMRcKp5.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Owrl7uc_De7R_R2oJkj.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Owrl7uc_De7R_R2oJkj.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwrlwhWU8Cg_ZMRcKp5.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwrlwhWU8Cg_ZMRcKp5.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "MAGIC DRAWING DOODLE BOOK offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OwYgtK1ZsEq075ebVb3",
+    "sku": "UE-SKU--OwYgtK1ZsEq075ebVb3",
     "title": "MECHANICAL PENCIL BOX",
     "category": "Stationary",
-    "sku": "UE-SKU-OwYgtK1ZsE",
     "price": 99,
     "originalPrice": 99,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 102,
-    "description": "MECHANICAL PENCIL BOX - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwYgtK1ZsEq075ebVb3.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwYgtK1ZsEq075ebVb3.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwYgtK1ZsEq075ebVb3.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "MECHANICAL PENCIL BOX offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 5,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OwYgtK1ZsEq075ebVb4",
+    "sku": "UE-SKU--OwYgtK1ZsEq075ebVb4",
     "title": "CUTE PENCIL POUCHES",
     "category": "Stationary",
-    "sku": "UE-SKU-OwYgtK1ZsE",
     "price": 219,
     "originalPrice": 219,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 105,
-    "description": "CUTE PENCIL POUCHES - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwYgtK1ZsEq075ebVb4.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwYgtK1ZsEq075ebVb4.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwYgtK1ZsEq075ebVb4.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "CUTE PENCIL POUCHES offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 4,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Oh9_gVE69z1N4Slb7mE",
-    "title": "350 Combo",
-    "category": "Combos",
-    "sku": "UE-SKU-Oh9gVE69z1",
-    "price": 350,
-    "originalPrice": 350,
+    "id": "-Opset5dlkxq-hq4sYEX",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYEX",
+    "title": "Cute Erasers",
+    "category": "Stationary",
+    "price": 6,
+    "originalPrice": 6,
     "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxjV1u0ILjQEIog7Vr.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxjV1u0ILjQEIog7Vr.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxjV246lfdPgKLvzMJ.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxjbbeFRUxyqdcon3I.jpg"
+    ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "<a href=\"https://www.instagram.com/reel/DMkiMUPS38K/?igsh=a2hkODgxY2Ywcmoz\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DMkiMUPS38K/?igsh=a2hkODgxY2Ywcmoz</a>",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9_gUnzo2cFuvRn7S2.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9_gUnzo2cFuvRn7S2.jpg",
+    "description": "Cute Erasers offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 15,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Oh9_IVyaKPXaQsbYApt",
-    "title": "GIFT COMBO 549",
-    "category": "Combos",
-    "sku": "UE-SKU-Oh9IVyaKPX",
-    "price": 549,
-    "originalPrice": 549,
+    "id": "-Opset5dlkxq-hq4sYEe",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYEe",
+    "title": "Foldable scale(slap band)random design",
+    "category": "Stationary",
+    "price": 6,
+    "originalPrice": 6,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 21,
-    "description": "<a href=\"https://www.instagram.com/reel/DPGBGEsE5xH/?igsh=MXVmeG81cjNoNzMxcQ==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DPGBGEsE5xH/?igsh=MXVmeG81cjNoNzMxcQ==</a>",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwgDyVSg_OUjTQVS2e.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9_IVkGAc_cxSaliHT.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwgDyVSg_OUjTQVS2e.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEe.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwgCcVyMz81P7ppx6U.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9_IVkGAc_cxSaliHT.jpg",
-    "stockQty": 8,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Foldable scale(slap band)random design offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 34,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Oh9_VH_XhrZPUzLb1d4",
-    "title": "450 combo",
-    "category": "Combos",
-    "sku": "UE-SKU-Oh9VHXhrZP",
-    "price": 450,
-    "originalPrice": 450,
+    "id": "-OpwyU_8NWCPQw9Q7pqr",
+    "sku": "UE-SKU--OpwyU_8NWCPQw9Q7pqr",
+    "title": "Transparent Pouch for Return Gifts (A4 size random design)",
+    "category": "Stationary",
+    "price": 9,
+    "originalPrice": 9,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 24,
-    "description": "<a href=\"https://www.instagram.com/reel/DPENy-9EpRF/?igsh=a3dvcXQwZjZuYmxj\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DPENy-9EpRF/?igsh=a3dvcXQwZjZuYmxj</a>",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwyU_8NWCPQw9Q7pqr.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9_VHDfu8EeTvscuiQ.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwyU_8NWCPQw9Q7pqr.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxfOijFY-srroSQLug.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9_VHDfu8EeTvscuiQ.jpg",
-    "stockQty": 7,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Transparent Pouch for Return Gifts (A4 size random design) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 33,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Oh9ZZjRP1cZ51LIQt5f",
-    "title": "500 gift combo",
-    "category": "Combos",
-    "sku": "UE-SKU-Oh9ZZjRP1c",
-    "price": 500,
-    "originalPrice": 500,
+    "id": "-Opset5dlkxq-hq4sYET",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYET",
+    "title": "Brick Pencil",
+    "category": "Stationary",
+    "price": 10,
+    "originalPrice": 10,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 27,
-    "description": "<a href=\"https://www.instagram.com/reel/DPG3gHBkpij/?igsh=MWpiNG1iaDN0cnQ1eA==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DPG3gHBkpij/?igsh=MWpiNG1iaDN0cnQ1eA==</a>",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYET.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9ZZj8j-zDV3qmhRhL.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYET.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxf03CcSgoFDwlGrVh.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxf037vd-xlWfo4KiU.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9ZZj8j-zDV3qmhRhL.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Brick Pencil offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 6,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OhA_2L3HR_6orXWU_1p",
-    "title": "499 combo",
-    "category": "Combos",
-    "sku": "UE-SKU-OhA2L3HR6o",
-    "price": 499,
-    "originalPrice": 499,
+    "id": "-Opset5dlkxq-hq4sYEa",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYEa",
+    "title": "Eraser with Cap( glow in the dark)",
+    "category": "Stationary",
+    "price": 10,
+    "originalPrice": 10,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 30,
-    "description": "<a href=\"https://www.instagram.com/reel/DNngIcOyGhK/?igsh=OTZ3bDJsbWRibzZ3\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DNngIcOyGhK/?igsh=OTZ3bDJsbWRibzZ3</a>",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEa.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhA_2Kt-F-rkur1BpFn.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEa.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxmn457mIIMsOZTSgC.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxmn4-XfPj-FGesvwv.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhA_2Kt-F-rkur1BpFn.jpg",
-    "stockQty": 9,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Eraser with Cap( glow in the dark) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 15,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OnXHeujFakcuy1zIz9d",
-    "title": "399 Combo (6 Products)",
-    "category": "Combos",
-    "sku": "UE-SKU-OnXHeujFak",
-    "price": 399,
-    "originalPrice": 399,
+    "id": "-Opset5dlkxq-hq4sYEb",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYEb",
+    "title": "Glow in the dark Pencil",
+    "category": "Stationary",
+    "price": 10,
+    "originalPrice": 10,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 33,
-    "description": "<a href=\"https://www.instagram.com/reel/DVz7hqJD2mv/?igsh=MW80bzlhMXNjaHRtdw==\"  target=\"_blank\"  rel=\"noopener\" >https://www.instagram.com/reel/DVz7hqJD2mv/?igsh=MW80bzlhMXNjaHRtdw==</a>",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxlaN9JeMp0Tjqyqde.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OnXHeujFakcuy1zIz9d.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxlaN9JeMp0Tjqyqde.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxlaNT17gM7GqV1Iou.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OnXHeujFakcuy1zIz9d.jpg",
-    "stockQty": 3,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Glow in the dark Pencil offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 30,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opset5dlkxq-hq4sYEl",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYEl",
+    "title": "Pencil with Sharpner end",
+    "category": "Stationary",
+    "price": 10,
+    "originalPrice": 10,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxlS2uzEDEDfEevO26.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxlS2uzEDEDfEevO26.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Pencil with Sharpner end offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 19,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opset5dlkxq-hq4sYEg",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYEg",
+    "title": "Pen Shape pencil everlasting inkless pencil",
+    "category": "Stationary",
+    "price": 12,
+    "originalPrice": 12,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opwxjt_WF-RlAXeWYqF.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opwxjt_WF-RlAXeWYqF.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwaYViQ_RLZd1UXEHQ.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwaLiZuZ85ia9RGkrl.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwaNEPydyCw0wex1-T.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Pen Shape pencil everlasting inkless pencil offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 240,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opset5dlkxq-hq4sYEW",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYEW",
+    "title": "Cartoon astronaut Zipper Bag Pouches For Return Gifts",
+    "category": "Stationary",
+    "price": 12,
+    "originalPrice": 12,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnkAPRnnjeDRGdBDJ.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnkAPRnnjeDRGdBDJ.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opxnk9qrWygBdnICiWg.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnkA8f68Bgxvtmupg.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxnkAesSpMrtZD-l77.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwefJdJ81YCAb4bH8U.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Cartoon astronaut Zipper Bag Pouches For Return Gifts offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opset5dlkxq-hq4sYEm",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYEm",
+    "title": "Crystal Ruler",
+    "category": "Stationary",
+    "price": 15,
+    "originalPrice": 15,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxkQNU3xm1wFgAho1T.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxkQNU3xm1wFgAho1T.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpxkQNa4DEv2it0tw6a.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Crystal Ruler offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 5,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OqqZBtXk0Wo1lUrgyuK",
+    "sku": "UE-SKU--OqqZBtXk0Wo1lUrgyuK",
+    "title": "Pvc pouch(mix design pvc pouch for birthday gift packig)",
+    "category": "Stationary",
+    "price": 16,
+    "originalPrice": 16,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqTKAnjKJGyXxrTgkt.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqTKAnjKJGyXxrTgkt.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Pvc pouch(mix design pvc pouch for birthday gift packig) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OqqZBtYCOobhyng5P4D",
+    "sku": "UE-SKU--OqqZBtYCOobhyng5P4D",
+    "title": "Colour endless pencil",
+    "category": "Stationary",
+    "price": 16,
+    "originalPrice": 16,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqOZEqAGBkA758mxnq.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqOZEqAGBkA758mxnq.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Colour endless pencil offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 6,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OqqZBtYCOobhyng5P4E",
+    "sku": "UE-SKU--OqqZBtYCOobhyng5P4E",
+    "title": "Mix design pencil",
+    "category": "Stationary",
+    "price": 16,
+    "originalPrice": 16,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqNq6jeFJa2XYeOgV-.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqNq6jeFJa2XYeOgV-.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Mix design pencil offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 144,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opset5dlkxq-hq4sYEZ",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYEZ",
+    "title": "Doramen ,Micket Themed Cute Pens(Random Design)",
+    "category": "Stationary",
+    "price": 16,
+    "originalPrice": 16,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEZ.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEZ.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opwls6ZCDXF-TM1Pm6t.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Doramen ,Micket Themed Cute Pens(Random Design) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 10,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-O_bxxlU-MvxGxKVAaGi",
+    "sku": "UE-SKU--O_bxxlU-MvxGxKVAaGi",
+    "title": "Erasable Pen",
+    "category": "Stationary",
+    "price": 17.7,
+    "originalPrice": 17.7,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_bxxlU-MvxGxKVAaGi.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-O_bxxlU-MvxGxKVAaGi.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Watch Full video here: \nhttps://www.instagram.com/reel/DLAR4y6S2D4/?igsh=MW9uanMxbTFneXNrcw==",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opset5dlkxq-hq4sYEh",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYEh",
+    "title": "Invisible Pen",
+    "category": "Stationary",
+    "price": 18,
+    "originalPrice": 18,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEh.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEh.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwiNROQBVqePD5pyts.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwiQOqHSMUkAG8BCV3.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwiOs7Cg7RwO8rvM_i.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Invisible Pen offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 117,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opset5dlkxq-hq4sYEj",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYEj",
+    "title": "Big Pouch for return Gifts(A5 Size)Random Design",
+    "category": "Stationary",
+    "price": 18,
+    "originalPrice": 18,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEj.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEj.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwwuM8dvnFeg8c9xqL.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Big Pouch for return Gifts(A5 Size)Random Design offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OqqZBtXk0Wo1lUrgyuJ",
+    "sku": "UE-SKU--OqqZBtXk0Wo1lUrgyuJ",
+    "title": "Moti Gel pen",
+    "category": "Stationary",
+    "price": 20,
+    "originalPrice": 20,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqTv-cR8xBuaoZ05jj.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqTv-cR8xBuaoZ05jj.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Moti Gel pen offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 34,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OqqZBtXk0Wo1lUrgyuL",
+    "sku": "UE-SKU--OqqZBtXk0Wo1lUrgyuL",
+    "title": "Thank you Bag (Mix Designs)",
+    "category": "Stationary",
+    "price": 24,
+    "originalPrice": 24,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqSaSBOXh2iynE_lsb.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqSaSBOXh2iynE_lsb.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Thank you Bag (Mix Designs) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 138,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OqqZBtYCOobhyng5P4H",
+    "sku": "UE-SKU--OqqZBtYCOobhyng5P4H",
+    "title": "Mix design noodles eraser",
+    "category": "Stationary",
+    "price": 24,
+    "originalPrice": 24,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqJ3-Z_SnPb4cG7uwN.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqJ3-Z_SnPb4cG7uwN.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Mix design noodles eraser offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 58,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OqqZBtYCOobhyng5P4N",
+    "sku": "UE-SKU--OqqZBtYCOobhyng5P4N",
+    "title": "Labubu 2 hole dustbin shape sharpener",
+    "category": "Stationary",
+    "price": 26,
+    "originalPrice": 26,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqFzuzdZeEMaVt66ow.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqFzuzdZeEMaVt66ow.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Labubu 2 hole dustbin shape sharpener offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opset5dlkxq-hq4sYEi",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYEi",
+    "title": "Lipstick Shape Blue Ink Pen",
+    "category": "Stationary",
+    "price": 26,
+    "originalPrice": 26,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opw_DrneKqzWB3oXRMq.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opw_DrneKqzWB3oXRMq.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opw_3HIEALF_pKlYXV2.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEi.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Lipstick Shape Blue Ink Pen offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 99,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opset5dlkxq-hq4sYEf",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYEf",
+    "title": "Cartoon pencil Sharpner(double Hole)",
+    "category": "Stationary",
+    "price": 27,
+    "originalPrice": 27,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opw_inmEgSR4EJQY7rm.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opw_inmEgSR4EJQY7rm.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opw_kIsLRMZG3QJYGXR.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEf.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Cartoon pencil Sharpner(double Hole) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OqqZBtYCOobhyng5P4L",
+    "sku": "UE-SKU--OqqZBtYCOobhyng5P4L",
+    "title": "Fire brigade sharpner",
+    "category": "Stationary",
+    "price": 28,
+    "originalPrice": 28,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqH-eLA9euP15liGaD.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqH-eLA9euP15liGaD.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqH-eBxrNv9oFxuWuv.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqGvrwmgG4mIiFjEa9.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Fire brigade sharpner offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 52,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OqqZBtYCOobhyng5P4K",
+    "sku": "UE-SKU--OqqZBtYCOobhyng5P4K",
+    "title": "Sharpener panda and unicorn mix design",
+    "category": "Stationary",
+    "price": 30,
+    "originalPrice": 30,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqHJVVpM1fg5WhgLAR.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqHJVVpM1fg5WhgLAR.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Sharpener panda and unicorn mix design offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 6,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OqqZBtYCOobhyng5P4C",
+    "sku": "UE-SKU--OqqZBtYCOobhyng5P4C",
+    "title": "Diamond Swan pen",
+    "category": "Stationary",
+    "price": 32,
+    "originalPrice": 32,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqPENvBd-KmXpCXhhY.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqqPENvBd-KmXpCXhhY.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Diamond Swan pen offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 17,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opset5dlkxq-hq4sYEU",
+    "sku": "UE-SKU--Opset5dlkxq-hq4sYEU",
+    "title": "Double Hole fast Camera Sharpner",
+    "category": "Stationary",
+    "price": 36,
+    "originalPrice": 36,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwcXP7Kk97I1jdN2Ql.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwcXP7Kk97I1jdN2Ql.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OpwcVrR_fc-pOHIH3ck.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Opset5dlkxq-hq4sYEU.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Double Hole fast Camera Sharpner offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OwwwxOUHrW1p8R4UjFS",
+    "sku": "UE-SKU--OwwwxOUHrW1p8R4UjFS",
     "title": "New 350 combo",
     "category": "Combos",
-    "sku": "UE-SKU-OwwwxOUHrW",
     "price": 350,
     "originalPrice": 350,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 36,
-    "description": "New 350 combo - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwwwxNQlkPrZFbMqTIS.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwwwxNQlkPrZFbMqTIS.jpg",
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwxhU9noRBHiy-pDiHT.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwwwxNQlkPrZFbMqTIS.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "New 350 combo offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Oh9_gVE69z1N4Slb7mE",
+    "sku": "UE-SKU--Oh9_gVE69z1N4Slb7mE",
+    "title": "350 Combo",
+    "category": "Combos",
+    "price": 350,
+    "originalPrice": 350,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9_gUnzo2cFuvRn7S2.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9_gUnzo2cFuvRn7S2.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DMkiMUPS38K/?igsh=a2hkODgxY2Ywcmoz",
+    "videoUrl": "",
+    "stockQty": 15,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OnXHeujFakcuy1zIz9d",
+    "sku": "UE-SKU--OnXHeujFakcuy1zIz9d",
+    "title": "399 Combo (6 Products)",
+    "category": "Combos",
+    "price": 399,
+    "originalPrice": 399,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OnXHeujFakcuy1zIz9d.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OnXHeujFakcuy1zIz9d.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DVz7hqJD2mv/?igsh=MW80bzlhMXNjaHRtdw==",
+    "videoUrl": "",
+    "stockQty": 3,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Oh9_VH_XhrZPUzLb1d4",
+    "sku": "UE-SKU--Oh9_VH_XhrZPUzLb1d4",
+    "title": "450 combo",
+    "category": "Combos",
+    "price": 450,
+    "originalPrice": 450,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9_VHDfu8EeTvscuiQ.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9_VHDfu8EeTvscuiQ.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DPENy-9EpRF/?igsh=a3dvcXQwZjZuYmxj",
+    "videoUrl": "",
+    "stockQty": 7,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhA_2L3HR_6orXWU_1p",
+    "sku": "UE-SKU--OhA_2L3HR_6orXWU_1p",
+    "title": "499 combo",
+    "category": "Combos",
+    "price": 499,
+    "originalPrice": 499,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhA_2Kt-F-rkur1BpFn.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhA_2Kt-F-rkur1BpFn.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DNngIcOyGhK/?igsh=OTZ3bDJsbWRibzZ3",
+    "videoUrl": "",
+    "stockQty": 9,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Oh9ZZjRP1cZ51LIQt5f",
+    "sku": "UE-SKU--Oh9ZZjRP1cZ51LIQt5f",
+    "title": "500 gift combo",
+    "category": "Combos",
+    "price": 500,
+    "originalPrice": 500,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9ZZj8j-zDV3qmhRhL.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9ZZj8j-zDV3qmhRhL.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DPG3gHBkpij/?igsh=MWpiNG1iaDN0cnQ1eA==",
+    "videoUrl": "",
+    "stockQty": 6,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Oh9_IVyaKPXaQsbYApt",
+    "sku": "UE-SKU--Oh9_IVyaKPXaQsbYApt",
+    "title": "GIFT COMBO 549",
+    "category": "Combos",
+    "price": 549,
+    "originalPrice": 549,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9_IVkGAc_cxSaliHT.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Oh9_IVkGAc_cxSaliHT.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "https://www.instagram.com/reel/DPGBGEsE5xH/?igsh=MXVmeG81cjNoNzMxcQ==",
+    "videoUrl": "",
+    "stockQty": 8,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OhzpDdOpruc1k-3yDKL",
+    "sku": "UE-SKU--OhzpDdOpruc1k-3yDKL",
     "title": "Kids Clogs",
     "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdOpru",
     "price": 439,
     "originalPrice": 878,
     "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 18,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdVlL7p61SMn4jn.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdVlL7p61SMn4jn.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdVlL7p61SMn4jn.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErO_",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 439,
-    "originalPrice": 878,
-    "discount": 50,
     "rating": "4.9",
-    "reviewsCount": 21,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdYEpMF70girReA.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdYEpMF70girReA.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOa",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 520,
-    "originalPrice": 1040,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 24,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdWgP6v-I6o66e0.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdWgP6v-I6o66e0.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOb",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 520,
-    "originalPrice": 1040,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 27,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdX64iedgeRKE7W.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdX64iedgeRKE7W.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOc",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 439,
-    "originalPrice": 878,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 30,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdh6y3kJu6tIXEh.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdh6y3kJu6tIXEh.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOd",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 557,
-    "originalPrice": 1114,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 33,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdh6y3kJu6tIXEi.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdh6y3kJu6tIXEi.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOe",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 557,
-    "originalPrice": 1114,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 36,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdgECy982_woa_X.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdgECy982_woa_X.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOf",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 557,
-    "originalPrice": 1114,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 39,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdjqhzVD3xzdc3V.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdjqhzVD3xzdc3V.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOg",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 557,
-    "originalPrice": 1114,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 42,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdkZril_BWLjXPy.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdkZril_BWLjXPy.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOh",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 557,
-    "originalPrice": 1114,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 45,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdkZril_BWLjXPx.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdkZril_BWLjXPx.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOi",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 557,
-    "originalPrice": 1114,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 48,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdmKN9iCCG8J_eg.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdmKN9iCCG8J_eg.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOj",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 557,
-    "originalPrice": 1114,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 51,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdmKN9iCCG8J_eh.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdmKN9iCCG8J_eh.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOk",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 557,
-    "originalPrice": 1114,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 54,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdoeb6l8uegNQe4.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdoeb6l8uegNQe4.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOl",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 677,
-    "originalPrice": 1354,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 57,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdn4OYEa84p32Mb.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdn4OYEa84p32Mb.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOm",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 677,
-    "originalPrice": 1354,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 60,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdoeb6l8uegNQe5.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdoeb6l8uegNQe5.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOn",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 677,
-    "originalPrice": 1354,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 63,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdn4OYEa84p32Mc.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdn4OYEa84p32Mc.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOo",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 677,
-    "originalPrice": 1354,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 66,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdiaKDc3F23sZ10.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdiaKDc3F23sZ10.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOp",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 652,
-    "originalPrice": 1304,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 69,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdpylQO6UbLJfUK.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdpylQO6UbLJfUK.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOq",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 652,
-    "originalPrice": 1304,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 72,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdxThX56qQOQNeA.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdxThX56qQOQNeA.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOr",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 652,
-    "originalPrice": 1304,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 75,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdlsQ-Vzjiwara0.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdlsQ-Vzjiwara0.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOs",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 652,
-    "originalPrice": 1304,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 78,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdtLzJSQ62QgSCi.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdtLzJSQ62QgSCi.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOt",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 557,
-    "originalPrice": 1114,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 81,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdrIOsOlGTA2GRl.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdrIOsOlGTA2GRl.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOu",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 557,
-    "originalPrice": 1114,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 84,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdsE5FdJEBinwKg.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdsE5FdJEBinwKg.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOv",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 557,
-    "originalPrice": 1114,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 87,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdsE5FdJEBinwKh.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdsE5FdJEBinwKh.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOw",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 522,
-    "originalPrice": 1044,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 90,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe19nQnqCQJTRWR.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe19nQnqCQJTRWR.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOx",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 557,
-    "originalPrice": 1114,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 93,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe2DOny7UwfQ4O_.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe2DOny7UwfQ4O_.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OhzpDdPZlTca5s7ErOy",
-    "title": "Kids Clogs",
-    "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
-    "price": 557,
-    "originalPrice": 1114,
-    "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 96,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe2DOny7UwfQ4Oa.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe2DOny7UwfQ4Oa.jpg",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OhzpDdPZlTca5s7ErOZ",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOZ",
     "title": "Kids Clogs",
     "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdPZlT",
     "price": 439,
     "originalPrice": 878,
     "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 99,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdWgP6v-I6o66dz.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdWgP6v-I6o66dz.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdWgP6v-I6o66dz.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErO_",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErO_",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 439,
+    "originalPrice": 878,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdYEpMF70girReA.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdYEpMF70girReA.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOa",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOa",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 520,
+    "originalPrice": 1040,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdWgP6v-I6o66e0.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdWgP6v-I6o66e0.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOb",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOb",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 520,
+    "originalPrice": 1040,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdX64iedgeRKE7W.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdX64iedgeRKE7W.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOc",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOc",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 439,
+    "originalPrice": 878,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdh6y3kJu6tIXEh.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdh6y3kJu6tIXEh.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOd",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOd",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 557,
+    "originalPrice": 1114,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdh6y3kJu6tIXEi.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdh6y3kJu6tIXEi.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOe",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOe",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 557,
+    "originalPrice": 1114,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdgECy982_woa_X.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdgECy982_woa_X.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOf",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOf",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 557,
+    "originalPrice": 1114,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdjqhzVD3xzdc3V.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdjqhzVD3xzdc3V.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOg",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOg",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 557,
+    "originalPrice": 1114,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdkZril_BWLjXPy.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdkZril_BWLjXPy.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOh",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOh",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 557,
+    "originalPrice": 1114,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdkZril_BWLjXPx.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdkZril_BWLjXPx.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOi",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOi",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 557,
+    "originalPrice": 1114,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdmKN9iCCG8J_eg.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdmKN9iCCG8J_eg.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOj",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOj",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 557,
+    "originalPrice": 1114,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdmKN9iCCG8J_eh.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdmKN9iCCG8J_eh.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOk",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOk",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 557,
+    "originalPrice": 1114,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdoeb6l8uegNQe4.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdoeb6l8uegNQe4.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOl",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOl",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 677,
+    "originalPrice": 1354,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdn4OYEa84p32Mb.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdn4OYEa84p32Mb.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOm",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOm",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 677,
+    "originalPrice": 1354,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdoeb6l8uegNQe5.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdoeb6l8uegNQe5.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOn",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOn",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 677,
+    "originalPrice": 1354,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdn4OYEa84p32Mc.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdn4OYEa84p32Mc.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOo",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOo",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 677,
+    "originalPrice": 1354,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdiaKDc3F23sZ10.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdiaKDc3F23sZ10.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOp",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOp",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 652,
+    "originalPrice": 1304,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdpylQO6UbLJfUK.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdpylQO6UbLJfUK.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOq",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOq",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 652,
+    "originalPrice": 1304,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdxThX56qQOQNeA.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdxThX56qQOQNeA.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOr",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOr",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 652,
+    "originalPrice": 1304,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdlsQ-Vzjiwara0.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdlsQ-Vzjiwara0.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOs",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOs",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 652,
+    "originalPrice": 1304,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdtLzJSQ62QgSCi.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdtLzJSQ62QgSCi.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOt",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOt",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 557,
+    "originalPrice": 1114,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdrIOsOlGTA2GRl.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdrIOsOlGTA2GRl.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOu",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOu",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 557,
+    "originalPrice": 1114,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdsE5FdJEBinwKg.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdsE5FdJEBinwKg.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOv",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOv",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 557,
+    "originalPrice": 1114,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdsE5FdJEBinwKh.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDdsE5FdJEBinwKh.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOw",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOw",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 522,
+    "originalPrice": 1044,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe19nQnqCQJTRWR.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe19nQnqCQJTRWR.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOx",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOx",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 557,
+    "originalPrice": 1114,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe2DOny7UwfQ4O_.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe2DOny7UwfQ4O_.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OhzpDdPZlTca5s7ErOy",
+    "sku": "UE-SKU--OhzpDdPZlTca5s7ErOy",
+    "title": "Kids Clogs",
+    "category": "Kids Footwear",
+    "price": 557,
+    "originalPrice": 1114,
+    "discount": 50,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe2DOny7UwfQ4Oa.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe2DOny7UwfQ4Oa.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OhzpDdQ6-_ZdzXOZppB",
+    "sku": "UE-SKU--OhzpDdQ6-_ZdzXOZppB",
     "title": "Kids Clogs",
     "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdQ6Zd",
     "price": 552,
     "originalPrice": 1104,
     "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 102,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe19nQnqCQJTRWS.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe19nQnqCQJTRWS.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe19nQnqCQJTRWS.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OhzpDdQ6-_ZdzXOZppC",
+    "sku": "UE-SKU--OhzpDdQ6-_ZdzXOZppC",
     "title": "Kids Clogs",
     "category": "Kids Footwear",
-    "sku": "UE-SKU-OhzpDdQ6Zd",
     "price": 522,
     "originalPrice": 1044,
     "discount": 50,
-    "rating": "4.9",
-    "reviewsCount": 105,
-    "description": "Kids Clogs - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe6y1GsB_PfmnBh.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe6y1GsB_PfmnBh.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OhzpDe6y1GsB_PfmnBh.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwOc_dLLeSf_oQ5LmS3",
-    "title": "Alien Mobile Stand",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1418",
-    "price": 130,
-    "originalPrice": 200,
-    "discount": 35,
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Alien Mobile Stand - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOc_dM0nKjxX6CFvkj.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOc_dNY17L-JG3AhD6.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOc_dLLeSf_oQ5LmS4.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOc_dM0nKjxX6CFvkh.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOc_dM0nKjxX6CFvki.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOc_dM0nKjxX6CFvkj.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwOceS9SpzoeIFWl3kJ",
-    "title": "Inflatable Sofa Chair(with pump)",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1419",
-    "price": 1960,
-    "originalPrice": 2500,
-    "discount": 22,
-    "rating": "4.9",
-    "reviewsCount": 21,
-    "description": "Inflatable Sofa Chair(with pump) - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOceS9SpzoeIFWl3kK.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOceSAXn2xhu5t9jbU.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOceS9SpzoeIFWl3kK.jpg",
-    "stockQty": 3,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwOckvJwJnuySEzWjX3",
-    "title": "Rechargeable Water Dispenser",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1420",
-    "price": 239,
-    "originalPrice": 300,
-    "discount": 20,
-    "rating": "4.9",
-    "reviewsCount": 24,
-    "description": "Rechargeable Water Dispenser - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOckvJwJnuySEzWjX4.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT-YEJa9uPh-4-QAgU.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT-YEK52B1V0J4V_iu.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOckvJwJnuySEzWjX4.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwOctJa4iVgb9QU37x5",
-    "title": "Ultra HD Metallic Cylinder Projector",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1421",
-    "price": 4399,
-    "originalPrice": 5000,
-    "discount": 12,
-    "rating": "4.9",
-    "reviewsCount": 27,
-    "description": "Ultra HD Metallic Cylinder Projector - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOctJa4iVgb9QU37x6.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOctJbcDFAYTikMzq0.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSvy4GnezwB5DwWle9.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSvy4IATvXYSWDbg6m.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSvy4Ejh_Ioqq8s_Wg.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSvy44JmEUtPs9g4zr.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOctJa4iVgb9QU37x6.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwOcvxvOT4tz0rdEg7x",
-    "title": "Velvet Heating Pad",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1422",
-    "price": 299,
-    "originalPrice": 500,
-    "discount": 40,
-    "rating": "4.9",
-    "reviewsCount": 30,
-    "description": "Velvet Heating Pad - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOcvxvOT4tz0rdEg7y.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOcvxwS2Wik0Em_uos.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOcvxvOT4tz0rdEg7y.jpg",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OwOd3aVR3vReY1vxneq",
-    "title": "Electric Cloth Dryer Heater",
+    "id": "-OwT--nxqP-AaJ0M_rll",
+    "sku": "UE 1445",
+    "title": "Electronic Measuring Spoon Scale",
     "category": "Gifts & Gadgets",
-    "sku": "UE 1423",
-    "price": 2159,
-    "originalPrice": 3000,
-    "discount": 28,
-    "rating": "4.9",
-    "reviewsCount": 33,
-    "description": "Electric Cloth Dryer Heater - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOd3aVR3vReY1vxner.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOd3aWUugdzQVE-Lt4.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOd3aWUugdzQVE-Lt5.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOd3aWUugdzQVE-Lt6.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOd3aVR3vReY1vxner.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwOdBbyVWGwzgtwr3SV",
-    "title": "Cyber Truck Bluetooth Speaker",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1424",
-    "price": 2399,
-    "originalPrice": 3000,
-    "discount": 20,
-    "rating": "4.9",
-    "reviewsCount": 36,
-    "description": "Cyber Truck Bluetooth Speaker - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdBbzbwbiDAAxL2Ap.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdBc-LhFD9a6Da9kc.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdBc-LhFD9a6Da9kb.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdBc-LhFD9a6Da9kd.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdBbzbwbiDAAxL2Ap.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwOdFGgmX9_7iSQjax7",
-    "title": "Buggati Car Bluetooth Speaker",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1425",
-    "price": 1079,
-    "originalPrice": 1500,
-    "discount": 28,
-    "rating": "4.9",
-    "reviewsCount": 39,
-    "description": "Buggati Car Bluetooth Speaker - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdFGhnPutksV4Uij3.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdFGhnPutksV4Uij2.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdFGgmX9_7iSQjax8.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdFGhnPutksV4Uij3.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwOdH3vJ4p99A4BFZM9",
-    "title": "Laptop or Bed Study Table",
-    "category": "Gifts & Gadgets",
-    "sku": "UE1426",
-    "price": 450,
-    "originalPrice": 800,
-    "discount": 44,
-    "rating": "4.9",
-    "reviewsCount": 42,
-    "description": "Laptop or Bed Study Table - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdH3vJ4p99A4BFZMA.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdH3vJ4p99A4BFZMA.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwOYLvFvCKiKxWrhMYd",
-    "title": "Study Lamp with Pen Stand & Sharpener",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1416",
-    "price": 299,
+    "price": 310,
     "originalPrice": 500,
-    "discount": 40,
-    "rating": "4.9",
-    "reviewsCount": 45,
-    "description": "Study Lamp with Pen Stand & Sharpener - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "discount": 38,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT--nyRS9SFW3Et7J3.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYLvGt-5lnNmy4cLZ.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYLvGt-5lnNmy4cLY.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYLvFvCKiKxWrhMYe.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT--nyRS9SFW3Et7J3.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT--nyRS9SFW3Et7J4.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT--nyRS9SFW3Et7J2.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT--nxqP-AaJ0M_rlm.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT--nxqP-AaJ0M_rln.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYLvGt-5lnNmy4cLZ.jpg",
-    "stockQty": 0,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwOYN_J8AT1Pbkyv0tj",
-    "title": "L T21 USB Headlight",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1417",
-    "price": 210,
-    "originalPrice": 300,
-    "discount": 30,
     "rating": "4.9",
-    "reviewsCount": 48,
-    "description": "L T21 USB Headlight - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYN_KRfB3BU8Iy4jq.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYN_KRfB3BU8Iy4jp.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYN_J8AT1Pbkyv0tl.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYN_J8AT1Pbkyv0tk.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYN_KRfB3BU8Iy4jq.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwSwb_Ar7NbypmrFx41",
-    "title": "Premium Watch & Sunglasses Organizer",
-    "category": "Gifts & Gadgets",
-    "sku": "UE1427",
-    "price": 1199,
-    "originalPrice": 2000,
-    "discount": 40,
-    "rating": "4.9",
-    "reviewsCount": 51,
-    "description": "Premium Watch & Sunglasses Organizer - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSwb_Ar7NbypmrFx42.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSwb_CD1JrtrstCOXx.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSwb_Ar7NbypmrFx42.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwSx6Zpm-dWnjF7rCgh",
-    "title": "Premium Insulated Bottle 1000ml",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1428",
-    "price": 499,
-    "originalPrice": 700,
-    "discount": 29,
-    "rating": "4.9",
-    "reviewsCount": 54,
-    "description": "Premium Insulated Bottle 1000ml - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSx6ZqmG2EXdJho8CD.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSx6Zpm-dWnjF7rCgk.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSx6Zpm-dWnjF7rCgj.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSx6Zpm-dWnjF7rCgi.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSx6ZqmG2EXdJho8CD.jpg",
-    "stockQty": 0,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwSxAIIae3t0q1NyidJ",
-    "title": "Oil Spray Glass Bottle",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1429",
-    "price": 149,
-    "originalPrice": 200,
-    "discount": 26,
-    "rating": "4.9",
-    "reviewsCount": 57,
-    "description": "Oil Spray Glass Bottle - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxAIIae3t0q1NyidL.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxAIJbX06mJDHRtYI.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxAIIae3t0q1NyidK.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxAIJbX06mJDHRtYH.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxAIIae3t0q1NyidL.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwSxDY1Qk6xD4wJG3g4",
-    "title": "Magic Umbrella",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1430",
-    "price": 330,
-    "originalPrice": 500,
-    "discount": 34,
-    "rating": "4.9",
-    "reviewsCount": 60,
-    "description": "Magic Umbrella - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxDY2GgJ3OeeXtxg8.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxDY2GgJ3OeeXtxg9.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxDY36p1AsSi-Ills.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxDY1Qk6xD4wJG3g5.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxDY36p1AsSi-Illr.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxDY2GgJ3OeeXtxg8.jpg",
+    "reviewsCount": 18,
+    "description": "Electronic Measuring Spoon Scale offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OwSxTOyLqIigFLbwVHs",
-    "title": "Cute Duck Silicon Lamp",
+    "id": "-OwSzyDF6fM_BzqjZe0u",
+    "sku": "UE 1444",
+    "title": "X20 Magnetic Tape Bluetooth Speaker+Fragrance",
     "category": "Gifts & Gadgets",
-    "sku": "UE 1431",
-    "price": 459,
-    "originalPrice": 999,
-    "discount": 54,
-    "rating": "4.9",
-    "reviewsCount": 63,
-    "description": "Cute Duck Silicon Lamp - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "price": 760,
+    "originalPrice": 900,
+    "discount": 16,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzyDF6fM_BzqjZe0v.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxz3sbwxFLxeiI0Qg.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxz3r16N3WxNpgAzU.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxTOyLqIigFLbwVHt.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzyDF6fM_BzqjZe0v.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzyDGKjaxVt9kR2NG.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzyDF6fM_BzqjZe0w.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzyDF6fM_BzqjZe0x.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzyDGKjaxVt9kR2NF.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxz3sbwxFLxeiI0Qg.jpg",
-    "stockQty": 3,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwSyGpdTsElGBNrcOzG",
-    "title": "Cute Silicon Pear Multi colour Lamp",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1432",
-    "price": 450,
-    "originalPrice": 700,
-    "discount": 36,
     "rating": "4.9",
-    "reviewsCount": 66,
-    "description": "Cute Silicon Pear Multi colour Lamp - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyGpel48RY7F4CWem.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyGpdTsElGBNrcOzH.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyGpel48RY7F4CWel.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyGpel48RY7F4CWen.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyGpel48RY7F4CWem.jpg",
-    "stockQty": 3,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwSyIAXuDqYj22unB6L",
-    "title": "Premium Metal Night Lamp",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1433",
-    "price": 559,
-    "originalPrice": 800,
-    "discount": 30,
-    "rating": "4.9",
-    "reviewsCount": 69,
-    "description": "Premium Metal Night Lamp - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyIAYXMjCwVjrk5il.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyIAYXMjCwVjrk5im.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyIAXuDqYj22unB6N.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyIAXuDqYj22unB6M.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyIAYXMjCwVjrk5il.jpg",
+    "reviewsCount": 18,
+    "description": "X20 Magnetic Tape Bluetooth Speaker+Fragrance offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OwSzaylkVgYWj_4Wnk8",
-    "title": "Instant Popcorn Maker",
+    "id": "-OwSzvWO5aruUMjJ4r45",
+    "sku": "UE 1443",
+    "title": "Aura Premium Bluetooth Speaker",
     "category": "Gifts & Gadgets",
-    "sku": "UE 1437",
-    "price": 1199,
-    "originalPrice": 1500,
-    "discount": 20,
-    "rating": "4.9",
-    "reviewsCount": 72,
-    "description": "Instant Popcorn Maker - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "price": 780,
+    "originalPrice": 900,
+    "discount": 13,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzvWPYj8auCy05mVL.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzaymRiB8RvL2xRPS.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzaylkVgYWj_4WnkA.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzaylkVgYWj_4Wnk9.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzvWPYj8auCy05mVL.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzvWPYj8auCy05mVO.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzvWPYj8auCy05mVN.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzvWO5aruUMjJ4r46.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzvWPYj8auCy05mVM.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzaymRiB8RvL2xRPS.jpg",
-    "stockQty": 3,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwSzdQLgjtPxyxjbde0",
-    "title": "Sensor Alarm Clock",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1438",
-    "price": 360,
-    "originalPrice": 500,
-    "discount": 28,
     "rating": "4.9",
-    "reviewsCount": 75,
-    "description": "Sensor Alarm Clock - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzdQLgjtPxyxjbde1.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzdQLgjtPxyxjbde3.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzdQLgjtPxyxjbde2.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzdQLgjtPxyxjbde1.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwSzh2zuZFAi0iCnf0j",
-    "title": "Reversible Umbrella",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1439",
-    "price": 399,
-    "originalPrice": 500,
-    "discount": 20,
-    "rating": "4.9",
-    "reviewsCount": 78,
-    "description": "Reversible Umbrella - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzh2zuZFAi0iCnf0k.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzh2zuZFAi0iCnf0k.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwSzkEtOmN5jVh2U4Iy",
-    "title": "Automatic Inflatable Air Bed",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1440",
-    "price": 3990,
-    "originalPrice": 6000,
-    "discount": 34,
-    "rating": "4.9",
-    "reviewsCount": 81,
-    "description": "Automatic Inflatable Air Bed - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzkEuOziuV7erPm0S.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzkEtOmN5jVh2U4Iz.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzkEuOziuV7erPm0R.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzkEuOziuV7erPm0S.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwSznl7Yg4FfU-0JoWU",
-    "title": "Transparent Umbrella",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1441",
-    "price": 200,
-    "originalPrice": 300,
-    "discount": 33,
-    "rating": "4.9",
-    "reviewsCount": 84,
-    "description": "Transparent Umbrella - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSznl7Yg4FfU-0JoWV.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSznl7Yg4FfU-0JoWV.jpg",
+    "reviewsCount": 18,
+    "description": "Aura Premium Bluetooth Speaker offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OwSzquJ2QZ6eBMOOHM-",
+    "sku": "UE 1442",
     "title": "Retro Bluetooth Speaker",
     "category": "Gifts & Gadgets",
-    "sku": "UE 1442",
     "price": 670,
     "originalPrice": 800,
     "discount": 16,
-    "rating": "4.9",
-    "reviewsCount": 87,
-    "description": "Retro Bluetooth Speaker - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzquKT0Bl0XxC3Zmc.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzquKT0Bl0XxC3Zmc.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzquJ2QZ6eBMOOHM0.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzquLJUiyGk7Ni5yF.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzquLJUiyGk7Ni5yF.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzquJ2QZ6eBMOOHM0.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzquKT0Bl0XxC3Zmc.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Retro Bluetooth Speaker offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OwSzSgpkXs_H8JRjLmr",
-    "title": "Premium Metal 3 mode Night Lamp",
+    "id": "-OwSznl7Yg4FfU-0JoWU",
+    "sku": "UE 1441",
+    "title": "Transparent Umbrella",
     "category": "Gifts & Gadgets",
-    "sku": "UE 1434",
-    "price": 510,
-    "originalPrice": 800,
-    "discount": 36,
-    "rating": "4.9",
-    "reviewsCount": 90,
-    "description": "Premium Metal 3 mode Night Lamp - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "price": 200,
+    "originalPrice": 300,
+    "discount": 33,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSznl7Yg4FfU-0JoWV.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzSgqhmjJJsOlFpWX.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzSgpkXs_H8JRjLms.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzSgqhmjJJsOlFpWY.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSznl7Yg4FfU-0JoWV.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzSgqhmjJJsOlFpWX.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Transparent Umbrella offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwSzkEtOmN5jVh2U4Iy",
+    "sku": "UE 1440",
+    "title": "Automatic Inflatable Air Bed",
+    "category": "Gifts & Gadgets",
+    "price": 3990,
+    "originalPrice": 6000,
+    "discount": 34,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzkEuOziuV7erPm0S.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzkEuOziuV7erPm0S.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzkEtOmN5jVh2U4Iz.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzkEuOziuV7erPm0R.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Automatic Inflatable Air Bed offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwSzh2zuZFAi0iCnf0j",
+    "sku": "UE 1439",
+    "title": "Reversible Umbrella",
+    "category": "Gifts & Gadgets",
+    "price": 399,
+    "originalPrice": 500,
+    "discount": 20,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzh2zuZFAi0iCnf0k.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzh2zuZFAi0iCnf0k.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Reversible Umbrella offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwSzdQLgjtPxyxjbde0",
+    "sku": "UE 1438",
+    "title": "Sensor Alarm Clock",
+    "category": "Gifts & Gadgets",
+    "price": 360,
+    "originalPrice": 500,
+    "discount": 28,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzdQLgjtPxyxjbde1.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzdQLgjtPxyxjbde1.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzdQLgjtPxyxjbde3.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzdQLgjtPxyxjbde2.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Sensor Alarm Clock offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwSzaylkVgYWj_4Wnk8",
+    "sku": "UE 1437",
+    "title": "Instant Popcorn Maker",
+    "category": "Gifts & Gadgets",
+    "price": 1199,
+    "originalPrice": 1500,
+    "discount": 20,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzaylkVgYWj_4Wnk9.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzaylkVgYWj_4Wnk9.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzaylkVgYWj_4WnkA.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzaymRiB8RvL2xRPS.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Instant Popcorn Maker offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 3,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwSzZGJZ2GKnN0B0l5K",
+    "sku": "UE 1436",
+    "title": "Carrot Umbrella",
+    "category": "Gifts & Gadgets",
+    "price": 530,
+    "originalPrice": 700,
+    "discount": 24,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzZGJZ2GKnN0B0l5L.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzZGJZ2GKnN0B0l5L.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzZGJZ2GKnN0B0l5M.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzZGK4pGCa2Khs8Y8.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Carrot Umbrella offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OwSzUVW7D00n6cNPof7",
+    "sku": "UE 1435",
     "title": "Multi function Silicon Pumpkin Night Lamp",
     "category": "Gifts & Gadgets",
-    "sku": "UE 1435",
     "price": 450,
     "originalPrice": 600,
     "discount": 25,
-    "rating": "4.9",
-    "reviewsCount": 93,
-    "description": "Multi function Silicon Pumpkin Night Lamp - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzUVW7D00n6cNPof8.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzUVW7D00n6cNPof8.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzUVXIRINkQbn_w-D.jpg",
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzUVXIRINkQbn_w-B.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzUVXIRINkQbn_w-C.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzUVXIRINkQbn_w-D.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzUVXIRINkQbn_w-C.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzUVW7D00n6cNPof8.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Multi function Silicon Pumpkin Night Lamp offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 5,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OwSzvWO5aruUMjJ4r45",
-    "title": "Aura Premium Bluetooth Speaker",
+    "id": "-OwSzSgpkXs_H8JRjLmr",
+    "sku": "UE 1434",
+    "title": "Premium Metal 3 mode Night Lamp",
     "category": "Gifts & Gadgets",
-    "sku": "UE 1443",
-    "price": 780,
-    "originalPrice": 900,
-    "discount": 13,
-    "rating": "4.9",
-    "reviewsCount": 96,
-    "description": "Aura Premium Bluetooth Speaker - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "price": 510,
+    "originalPrice": 800,
+    "discount": 36,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzSgqhmjJJsOlFpWX.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzvWPYj8auCy05mVN.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzvWPYj8auCy05mVM.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzvWPYj8auCy05mVL.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzvWPYj8auCy05mVO.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzvWO5aruUMjJ4r46.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzSgqhmjJJsOlFpWX.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzSgpkXs_H8JRjLms.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzSgqhmjJJsOlFpWY.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzvWPYj8auCy05mVN.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwSzyDF6fM_BzqjZe0u",
-    "title": "X20 Magnetic Tape Bluetooth Speaker+Fragrance",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1444",
-    "price": 760,
-    "originalPrice": 900,
-    "discount": 16,
-    "rating": "4.9",
-    "reviewsCount": 99,
-    "description": "X20 Magnetic Tape Bluetooth Speaker+Fragrance - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzyDGKjaxVt9kR2NF.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzyDGKjaxVt9kR2NG.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzyDF6fM_BzqjZe0w.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzyDF6fM_BzqjZe0x.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzyDF6fM_BzqjZe0v.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzyDGKjaxVt9kR2NF.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwSzZGJZ2GKnN0B0l5K",
-    "title": "Carrot Umbrella",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1436",
-    "price": 530,
-    "originalPrice": 700,
-    "discount": 24,
-    "rating": "4.9",
-    "reviewsCount": 102,
-    "description": "Carrot Umbrella - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzZGJZ2GKnN0B0l5L.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzZGJZ2GKnN0B0l5M.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzZGK4pGCa2Khs8Y8.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSzZGJZ2GKnN0B0l5L.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OwT--nxqP-AaJ0M_rll",
-    "title": "Electronic Measuring Spoon Scale",
-    "category": "Gifts & Gadgets",
-    "sku": "UE 1445",
-    "price": 310,
-    "originalPrice": 500,
-    "discount": 38,
-    "rating": "4.9",
-    "reviewsCount": 105,
-    "description": "Electronic Measuring Spoon Scale - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT--nyRS9SFW3Et7J4.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT--nyRS9SFW3Et7J2.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT--nxqP-AaJ0M_rln.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT--nxqP-AaJ0M_rlm.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT--nyRS9SFW3Et7J3.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT--nyRS9SFW3Et7J4.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opr3R9lMkNbQuYi7pbp",
-    "title": "Pasupu Kumkuma Set 1",
-    "category": "Return Gifts",
-    "sku": "UE-SKU-Opr3R9lMkN",
-    "price": 150,
-    "originalPrice": 150,
-    "discount": 0,
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Pasupu Kumkuma Set 1 - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Premium Metal 3 mode Night Lamp offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwSyIAXuDqYj22unB6L",
+    "sku": "UE 1433",
+    "title": "Premium Metal Night Lamp",
+    "category": "Gifts & Gadgets",
+    "price": 559,
+    "originalPrice": 800,
+    "discount": 30,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyIAYXMjCwVjrk5il.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOJEePIQ4eKxrxl.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyIAYXMjCwVjrk5il.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyIAYXMjCwVjrk5im.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyIAXuDqYj22unB6M.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyIAXuDqYj22unB6N.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOJEePIQ4eKxrxl.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Premium Metal Night Lamp offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwSyGpdTsElGBNrcOzG",
+    "sku": "UE 1432",
+    "title": "Cute Silicon Pear Multi colour Lamp",
+    "category": "Gifts & Gadgets",
+    "price": 450,
+    "originalPrice": 700,
+    "discount": 36,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyGpdTsElGBNrcOzH.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyGpdTsElGBNrcOzH.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyGpel48RY7F4CWem.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyGpel48RY7F4CWel.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSyGpel48RY7F4CWen.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Cute Silicon Pear Multi colour Lamp offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 3,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwSxTOyLqIigFLbwVHs",
+    "sku": "UE 1431",
+    "title": "Cute Duck Silicon Lamp",
+    "category": "Gifts & Gadgets",
+    "price": 459,
+    "originalPrice": 999,
+    "discount": 54,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxz3r16N3WxNpgAzU.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxz3r16N3WxNpgAzU.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxz3sbwxFLxeiI0Qg.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxTOyLqIigFLbwVHt.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Cute Duck Silicon Lamp offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 3,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwSxDY1Qk6xD4wJG3g4",
+    "sku": "UE 1430",
+    "title": "Magic Umbrella",
+    "category": "Gifts & Gadgets",
+    "price": 330,
+    "originalPrice": 500,
+    "discount": 34,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxDY36p1AsSi-Ills.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxDY36p1AsSi-Ills.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxDY36p1AsSi-Illr.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxDY1Qk6xD4wJG3g5.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxDY2GgJ3OeeXtxg8.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxDY2GgJ3OeeXtxg9.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Magic Umbrella offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Opr3R9lMkNbQuYi7pbq",
-    "title": "RAJA RANI Pasupu Kumkuma Set Couple Edt",
-    "category": "Return Gifts",
-    "sku": "UE-SKU-Opr3R9lMkN",
-    "price": 218.75,
-    "originalPrice": 218.75,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 21,
-    "description": "RAJA RANI Pasupu Kumkuma Set Couple Edt - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvP8nK5Py4VipbAM.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvP8nK5Py4VipbAM.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opr3R9lMkNbQuYi7pbr",
-    "title": "Thambolam Pasupu Kumkuma Set Parrot Edt",
-    "category": "Return Gifts",
-    "sku": "UE-SKU-Opr3R9lMkN",
-    "price": 218.75,
-    "originalPrice": 218.75,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 24,
-    "description": "Thambolam Pasupu Kumkuma Set Parrot Edt - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvO_wzrkOotuQGFR.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvO_wzrkOotuQGFR.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Opr3R9lMkNbQuYi7pbs",
-    "title": "Pasupu Kumkuma Set Parrot Edt2",
-    "category": "Return Gifts",
-    "sku": "UE-SKU-Opr3R9lMkN",
-    "price": 150,
-    "originalPrice": 150,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 27,
-    "description": "Pasupu Kumkuma Set Parrot Edt2 - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvO_wzrkOotuQGFS.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvO_wzrkOotuQGFS.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OqtTsOZx0Z5S7RqPx6P",
-    "title": "Balaji GSI 8’in Tray",
-    "category": "Return Gifts",
-    "sku": "UE-SKU-OqtTsOZx0Z",
-    "price": 270,
-    "originalPrice": 270,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 30,
-    "description": "Balaji GSI 8’in Tray - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqtTsO8-1D0WOrom27G.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqtUaP3koJSTflvHeW6.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqtTsO8-1D0WOrom27G.jpg",
-    "stockQty": 29,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OqtXQhe23c37jgnYcnd",
-    "title": "Diya Peacock Design",
-    "category": "Return Gifts",
-    "sku": "UE-SKU-OqtXQhe23c",
-    "price": 75,
-    "originalPrice": 75,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 33,
-    "description": "Diya Peacock Design - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqtXgF8CUgFO4JRi2oh.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqtXQhH7YGTv5FA5xz1.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqtXgF8CUgFO4JRi2oh.jpg",
-    "stockQty": 40,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-Orhj4LN2G4T3tBkHnzb",
-    "title": "Pichwai Design Brass 6”in tray",
-    "category": "Return Gifts",
-    "sku": "UE-SKU-Orhj4LN2G4",
+    "id": "-OwSxAIIae3t0q1NyidJ",
+    "sku": "UE 1429",
+    "title": "Oil Spray Glass Bottle",
+    "category": "Gifts & Gadgets",
     "price": 149,
-    "originalPrice": 149,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 36,
-    "description": "Pichwai Design Brass 6”in tray - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "originalPrice": 200,
+    "discount": 26,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxAIJbX06mJDHRtYI.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj3IheQ0QhUXDN8yn.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj3JCreaH1cBw18Ta.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj3JVMboPi2Gl6fi7.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxAIJbX06mJDHRtYI.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxAIJbX06mJDHRtYH.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxAIIae3t0q1NyidL.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSxAIIae3t0q1NyidK.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj3IheQ0QhUXDN8yn.jpg",
-    "stockQty": 40,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Oil Spray Glass Bottle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-Orhj8XBQIDLPCg7LQMb",
-    "title": "Pichwai Design 6”in tray with handle",
-    "category": "Return Gifts",
-    "sku": "UE-SKU-Orhj8XBQID",
-    "price": 159,
-    "originalPrice": 159,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 39,
-    "description": "Pichwai Design 6”in tray with handle - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "id": "-OwSx6Zpm-dWnjF7rCgh",
+    "sku": "UE 1428",
+    "title": "Premium Insulated Bottle 1000ml",
+    "category": "Gifts & Gadgets",
+    "price": 499,
+    "originalPrice": 700,
+    "discount": 29,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSx6Zpm-dWnjF7rCgi.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj7wKRTCTEukAN_6o.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj7whMq1rJQDq0GQs.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj7wzIMcqdlA379qh.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSx6Zpm-dWnjF7rCgi.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSx6Zpm-dWnjF7rCgj.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSx6ZqmG2EXdJho8CD.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSx6Zpm-dWnjF7rCgk.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj7wKRTCTEukAN_6o.jpg",
-    "stockQty": 40,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Premium Insulated Bottle 1000ml offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OrhjBsAtG3fkvXeNqMS",
-    "title": "GSI  4”in basket",
-    "category": "Return Gifts",
-    "sku": "UE-SKU-OrhjBsAtG3",
-    "price": 125,
-    "originalPrice": 125,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 42,
-    "description": "GSI  4”in basket - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "id": "-OwSwb_Ar7NbypmrFx41",
+    "sku": "UE1427",
+    "title": "Premium Watch & Sunglasses Organizer",
+    "category": "Gifts & Gadgets",
+    "price": 1199,
+    "originalPrice": 2000,
+    "discount": 40,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSwb_CD1JrtrstCOXx.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjBS7rpHBjg6JkxgX.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjBRTYu0ulKQOxoq5.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjBRqCc1RqTs4Fj0J.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSwb_CD1JrtrstCOXx.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSwb_Ar7NbypmrFx42.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjBS7rpHBjg6JkxgX.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Premium Watch & Sunglasses Organizer offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwOdH3vJ4p99A4BFZM9",
+    "sku": "UE1426",
+    "title": "Laptop or Bed Study Table",
+    "category": "Gifts & Gadgets",
+    "price": 450,
+    "originalPrice": 800,
+    "discount": 44,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdH3vJ4p99A4BFZMA.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdH3vJ4p99A4BFZMA.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Laptop or Bed Study Table offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwOdFGgmX9_7iSQjax7",
+    "sku": "UE 1425",
+    "title": "Buggati Car Bluetooth Speaker",
+    "category": "Gifts & Gadgets",
+    "price": 1079,
+    "originalPrice": 1500,
+    "discount": 28,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdFGhnPutksV4Uij3.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdFGhnPutksV4Uij3.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdFGgmX9_7iSQjax8.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdFGhnPutksV4Uij2.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Buggati Car Bluetooth Speaker offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwOdBbyVWGwzgtwr3SV",
+    "sku": "UE 1424",
+    "title": "Cyber Truck Bluetooth Speaker",
+    "category": "Gifts & Gadgets",
+    "price": 1999,
+    "originalPrice": 3000,
+    "discount": 33,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdBc-LhFD9a6Da9kb.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdBc-LhFD9a6Da9kb.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdBc-LhFD9a6Da9kc.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdBc-LhFD9a6Da9kd.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOdBbzbwbiDAAxL2Ap.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Cyber Truck Bluetooth Speaker offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwOd3aVR3vReY1vxneq",
+    "sku": "UE 1423",
+    "title": "Electric Cloth Dryer Heater",
+    "category": "Gifts & Gadgets",
+    "price": 2159,
+    "originalPrice": 3000,
+    "discount": 28,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOd3aWUugdzQVE-Lt4.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOd3aWUugdzQVE-Lt4.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOd3aVR3vReY1vxner.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOd3aWUugdzQVE-Lt5.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOd3aWUugdzQVE-Lt6.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Electric Cloth Dryer Heater offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwOcvxvOT4tz0rdEg7x",
+    "sku": "UE 1422",
+    "title": "Velvet Heating Pad",
+    "category": "Gifts & Gadgets",
+    "price": 299,
+    "originalPrice": 500,
+    "discount": 40,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOcvxwS2Wik0Em_uos.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOcvxwS2Wik0Em_uos.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOcvxvOT4tz0rdEg7y.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Velvet Heating Pad offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OrhjGH04h1bWTPBsTjO",
-    "title": "Pichwai Jars 4”in",
-    "category": "Return Gifts",
-    "sku": "UE-SKU-OrhjGH04h1",
-    "price": 109,
-    "originalPrice": 109,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 45,
-    "description": "Pichwai Jars 4”in - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "id": "-OwOctJa4iVgb9QU37x5",
+    "sku": "UE 1421",
+    "title": "Ultra HD Metallic Cylinder Projector",
+    "category": "Gifts & Gadgets",
+    "price": 4399,
+    "originalPrice": 5000,
+    "discount": 12,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSvy44JmEUtPs9g4zr.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjFuCQk2kvNFtjH24.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjFuZFBjs7-OvAb3y.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjFutmWnY365Vtbqr.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSvy44JmEUtPs9g4zr.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSvy4IATvXYSWDbg6m.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSvy4GnezwB5DwWle9.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwSvy4Ejh_Ioqq8s_Wg.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOctJa4iVgb9QU37x6.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOctJbcDFAYTikMzq0.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjFuCQk2kvNFtjH24.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Ultra HD Metallic Cylinder Projector offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwOckvJwJnuySEzWjX3",
+    "sku": "UE 1420",
+    "title": "Rechargeable Water Dispenser",
+    "category": "Gifts & Gadgets",
+    "price": 239,
+    "originalPrice": 300,
+    "discount": 20,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT-YEK52B1V0J4V_iu.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT-YEK52B1V0J4V_iu.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwT-YEJa9uPh-4-QAgU.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOckvJwJnuySEzWjX4.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Rechargeable Water Dispenser offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OrhjMn4sMVaHC5xVyCb",
-    "title": "Pichwai Jars 4”in",
-    "category": "Return Gifts",
-    "sku": "UE-SKU-OrhjMn4sMV",
-    "price": 109,
-    "originalPrice": 109,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 48,
-    "description": "Pichwai Jars 4”in - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "id": "-OwOceS9SpzoeIFWl3kJ",
+    "sku": "UE 1419",
+    "title": "Inflatable Sofa Chair(with pump)",
+    "category": "Gifts & Gadgets",
+    "price": 1960,
+    "originalPrice": 2500,
+    "discount": 22,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOceS9SpzoeIFWl3kK.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjMQ6140q83fsVlaw.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjMQVD7vkfvnDPe-K.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjMQlMdVfG-0uY0Hx.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOceS9SpzoeIFWl3kK.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOceSAXn2xhu5t9jbU.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjMQ6140q83fsVlaw.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Inflatable Sofa Chair(with pump) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OwOc_dLLeSf_oQ5LmS3",
+    "sku": "UE 1418",
+    "title": "Alien Mobile Stand",
+    "category": "Gifts & Gadgets",
+    "price": 130,
+    "originalPrice": 200,
+    "discount": 35,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOc_dM0nKjxX6CFvkj.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOc_dM0nKjxX6CFvkj.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOc_dM0nKjxX6CFvkh.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOc_dLLeSf_oQ5LmS4.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOc_dNY17L-JG3AhD6.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOc_dM0nKjxX6CFvki.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Alien Mobile Stand offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OrhjRzOsDciBa2YP0RN",
-    "title": " Bowl & spoon GSI",
-    "category": "Return Gifts",
-    "sku": "UE-SKU-OrhjRzOsDc",
-    "price": 109,
-    "originalPrice": 109,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 51,
-    "description": " Bowl & spoon GSI - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "id": "-OwOYN_J8AT1Pbkyv0tj",
+    "sku": "UE 1417",
+    "title": "L T21 USB Headlight",
+    "category": "Gifts & Gadgets",
+    "price": 210,
+    "originalPrice": 300,
+    "discount": 30,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYN_KRfB3BU8Iy4jq.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjRbpOdzxAbQQcp-g.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjRc9-77EC7WW2j00.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjRcV4zKAWeVbq1xS.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYN_KRfB3BU8Iy4jq.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYN_KRfB3BU8Iy4jp.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYN_J8AT1Pbkyv0tl.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYN_J8AT1Pbkyv0tk.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjRbpOdzxAbQQcp-g.jpg",
-    "stockQty": 20,
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "L T21 USB Headlight offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OrhjVZiUDX4Wk_4yMYn",
-    "title": "Rudraksh Bell GSI",
-    "category": "Return Gifts",
-    "sku": "UE-SKU-OrhjVZiUDX",
-    "price": 190,
-    "originalPrice": 190,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 54,
-    "description": "Rudraksh Bell GSI - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "id": "-OwOYLvFvCKiKxWrhMYd",
+    "sku": "UE 1416",
+    "title": "Study Lamp with Pen Stand & Sharpener",
+    "category": "Gifts & Gadgets",
+    "price": 299,
+    "originalPrice": 500,
+    "discount": 40,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYLvFvCKiKxWrhMYe.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjVButgIwKQdiBGOi.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjVCELyieOnUvf-1n.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjVCWB5h1dy4h3ze3.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjVCkBtDlbeHp_G5r.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYLvFvCKiKxWrhMYe.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYLvGt-5lnNmy4cLY.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OwOYLvGt-5lnNmy4cLZ.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjVButgIwKQdiBGOi.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Study Lamp with Pen Stand & Sharpener offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OrhjYz8cLxnpEeA6wXQ",
+    "sku": "UE-SKU--OrhjYz8cLxnpEeA6wXQ",
     "title": "Radha Krishna brass square 6”in tray",
     "category": "Return Gifts",
-    "sku": "UE-SKU-OrhjYz8cLx",
     "price": 159,
     "originalPrice": 159,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 57,
-    "description": "Radha Krishna brass square 6”in tray - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjYU0YUjHwKDGVTnZ.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjYU0YUjHwKDGVTnZ.jpg",
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjYVbuhJ44ApzQsF7.jpg",
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjYZgKPW0jRzDMTLr.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjYU0YUjHwKDGVTnZ.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Radha Krishna brass square 6”in tray offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OrhjVZiUDX4Wk_4yMYn",
+    "sku": "UE-SKU--OrhjVZiUDX4Wk_4yMYn",
+    "title": "Rudraksh Bell GSI",
+    "category": "Return Gifts",
+    "price": 190,
+    "originalPrice": 190,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjVButgIwKQdiBGOi.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjVButgIwKQdiBGOi.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjVCELyieOnUvf-1n.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjVCWB5h1dy4h3ze3.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjVCkBtDlbeHp_G5r.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Rudraksh Bell GSI offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OrhjRzOsDciBa2YP0RN",
+    "sku": "UE-SKU--OrhjRzOsDciBa2YP0RN",
+    "title": "Bowl & spoon GSI",
+    "category": "Return Gifts",
+    "price": 109,
+    "originalPrice": 109,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjRbpOdzxAbQQcp-g.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjRbpOdzxAbQQcp-g.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjRc9-77EC7WW2j00.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjRcV4zKAWeVbq1xS.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Bowl & spoon GSI offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OrhjMn4sMVaHC5xVyCb",
+    "sku": "UE-SKU--OrhjMn4sMVaHC5xVyCb",
+    "title": "Pichwai Jars 4”in",
+    "category": "Return Gifts",
+    "price": 109,
+    "originalPrice": 109,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjMQ6140q83fsVlaw.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjMQ6140q83fsVlaw.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjMQVD7vkfvnDPe-K.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjMQlMdVfG-0uY0Hx.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Pichwai Jars 4”in offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OrhjGH04h1bWTPBsTjO",
+    "sku": "UE-SKU--OrhjGH04h1bWTPBsTjO",
+    "title": "Pichwai Jars 4”in",
+    "category": "Return Gifts",
+    "price": 109,
+    "originalPrice": 109,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjFuCQk2kvNFtjH24.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjFuCQk2kvNFtjH24.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjFuZFBjs7-OvAb3y.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjFutmWnY365Vtbqr.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Pichwai Jars 4”in offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OrhjBsAtG3fkvXeNqMS",
+    "sku": "UE-SKU--OrhjBsAtG3fkvXeNqMS",
+    "title": "GSI  4”in basket",
+    "category": "Return Gifts",
+    "price": 125,
+    "originalPrice": 125,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjBS7rpHBjg6JkxgX.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjBS7rpHBjg6JkxgX.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjBRTYu0ulKQOxoq5.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OrhjBRqCc1RqTs4Fj0J.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "GSI  4”in basket offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Orhj8XBQIDLPCg7LQMb",
+    "sku": "UE-SKU--Orhj8XBQIDLPCg7LQMb",
+    "title": "Pichwai Design 6”in tray with handle",
+    "category": "Return Gifts",
+    "price": 159,
+    "originalPrice": 159,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj7wKRTCTEukAN_6o.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj7wKRTCTEukAN_6o.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj7whMq1rJQDq0GQs.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj7wzIMcqdlA379qh.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Pichwai Design 6”in tray with handle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 40,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Orhj4LN2G4T3tBkHnzb",
+    "sku": "UE-SKU--Orhj4LN2G4T3tBkHnzb",
+    "title": "Pichwai Design Brass 6”in tray",
+    "category": "Return Gifts",
+    "price": 149,
+    "originalPrice": 149,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj3IheQ0QhUXDN8yn.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj3IheQ0QhUXDN8yn.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj3JCreaH1cBw18Ta.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-Orhj3JVMboPi2Gl6fi7.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Pichwai Design Brass 6”in tray offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 40,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OqtXQhe23c37jgnYcnd",
+    "sku": "UE-SKU--OqtXQhe23c37jgnYcnd",
+    "title": "Diya Peacock Design",
+    "category": "Return Gifts",
+    "price": 75,
+    "originalPrice": 75,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqtXgF8CUgFO4JRi2oh.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqtXgF8CUgFO4JRi2oh.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqtXQhH7YGTv5FA5xz1.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Diya Peacock Design offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 40,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OqtTsOZx0Z5S7RqPx6P",
+    "sku": "UE-SKU--OqtTsOZx0Z5S7RqPx6P",
+    "title": "Balaji GSI 8’in Tray",
+    "category": "Return Gifts",
+    "price": 270,
+    "originalPrice": 270,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqtTsO8-1D0WOrom27G.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqtTsO8-1D0WOrom27G.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OqtUaP3koJSTflvHeW6.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Balaji GSI 8’in Tray offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 29,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opr3R9lMkNbQuYi7pbp",
+    "sku": "UE-SKU--Opr3R9lMkNbQuYi7pbp",
+    "title": "Pasupu Kumkuma Set 1",
+    "category": "Return Gifts",
+    "price": 150,
+    "originalPrice": 150,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOJEePIQ4eKxrxl.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvOJEePIQ4eKxrxl.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Pasupu Kumkuma Set 1 offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opr3R9lMkNbQuYi7pbq",
+    "sku": "UE-SKU--Opr3R9lMkNbQuYi7pbq",
+    "title": "RAJA RANI Pasupu Kumkuma Set Couple Edt",
+    "category": "Return Gifts",
+    "price": 218.75,
+    "originalPrice": 218.75,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvP8nK5Py4VipbAM.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvP8nK5Py4VipbAM.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "RAJA RANI Pasupu Kumkuma Set Couple Edt offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opr3R9lMkNbQuYi7pbr",
+    "sku": "UE-SKU--Opr3R9lMkNbQuYi7pbr",
+    "title": "Thambolam Pasupu Kumkuma Set Parrot Edt",
+    "category": "Return Gifts",
+    "price": 218.75,
+    "originalPrice": 218.75,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvO_wzrkOotuQGFR.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvO_wzrkOotuQGFR.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Thambolam Pasupu Kumkuma Set Parrot Edt offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-Opr3R9lMkNbQuYi7pbs",
+    "sku": "UE-SKU--Opr3R9lMkNbQuYi7pbs",
+    "title": "Pasupu Kumkuma Set Parrot Edt2",
+    "category": "Return Gifts",
+    "price": 150,
+    "originalPrice": 150,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvO_wzrkOotuQGFS.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OaFYvO_wzrkOotuQGFS.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Pasupu Kumkuma Set Parrot Edt2 offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OybcLjTMIXA8M9bTKut",
+    "sku": "UE 1515",
     "title": "JCB Engineering Vehicle",
     "category": "Latest Arrivars",
-    "sku": "UE 1515",
     "price": 1820,
     "originalPrice": 2500,
     "discount": 27,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OybcLR8tQ8UoV68-pQP.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OybcLR8tQ8UoV68-pQP.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OybcLRKrb6lEtoa_tqE.jpg"
+    ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "JCB Engineering Vehicle - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OybcLRKrb6lEtoa_tqE.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OybcLR8tQ8UoV68-pQP.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OybcLRKrb6lEtoa_tqE.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyC_0nzEL8mPo_Sl5LE",
-    "title": "Alphabetic Magnetic Maze",
-    "category": "Latest Arrivars",
-    "sku": "UE 1504",
-    "price": 399,
-    "originalPrice": 700,
-    "discount": 43,
-    "rating": "4.9",
-    "reviewsCount": 21,
-    "description": "Alphabetic Magnetic Maze - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyC_0QOkLHUNisSZbsC.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyC_0QF-PTdpZ9z5www.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyC_0QOkLHUNisSZbsC.jpg",
-    "stockQty": 2,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyChCkPsgZZK7C42OID",
-    "title": "Wooden multi puzzle n white board",
-    "category": "Latest Arrivars",
-    "sku": "UE 1515",
-    "price": 260,
-    "originalPrice": 350,
-    "discount": 26,
-    "rating": "4.9",
-    "reviewsCount": 24,
-    "description": "Wooden multi puzzle n white board - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChCR-LKE5qQ83Ddbo.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChCRD73nj_Px0nTmm.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChCR-LKE5qQ83Ddbo.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyChDoC4Ra3VovY1k60",
-    "title": "Lucky Glass Bottle",
-    "category": "Latest Arrivars",
-    "sku": "UE-SKU-OyChDoC4Ra",
-    "price": 99,
-    "originalPrice": 99,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 27,
-    "description": "Lucky Glass Bottle - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChDo2okWVIXHKsZ21.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChDo2okWVIXHKsZ21.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyChENG7lPuVUcZAgGp",
-    "title": "Glass Bottle",
-    "category": "Latest Arrivars",
-    "sku": "UE 1514",
-    "price": 110,
-    "originalPrice": 110,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 30,
-    "description": "Glass Bottle - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChEN1UMlvo6vaLxw4.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChEN1UMlvo6vaLxw4.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyChEvh3Xhvb6ZIozcu",
-    "title": "The Lil Rabbit Bottle",
-    "category": "Latest Arrivars",
-    "sku": "UE 1515",
-    "price": 75,
-    "originalPrice": 75,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 33,
-    "description": "The Lil Rabbit Bottle - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChEvTrBgQoT3BlxrB.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChEvTrBgQoT3BlxrB.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyChFPq0vutFV5yeup6",
-    "title": "Glass bottle",
-    "category": "Latest Arrivars",
-    "sku": "UE 1513",
-    "price": 90,
-    "originalPrice": 90,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 36,
-    "description": "Glass bottle - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChFPeWFSK2xLPw9kJ.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChFPeWFSK2xLPw9kJ.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyChFx5QhwSvyReHYul",
-    "title": "Enjoy Life Glass Bottle",
-    "category": "Latest Arrivars",
-    "sku": "UE 15012",
-    "price": 90,
-    "originalPrice": 90,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 39,
-    "description": "Enjoy Life Glass Bottle - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChFwyLKbv2sxRS3kR.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChFwyLKbv2sxRS3kR.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyChGZUPOjbQ3cdNUKh",
-    "title": "Cactus Glass Bottle",
-    "category": "Latest Arrivars",
-    "sku": "UE 1512",
-    "price": 86,
-    "originalPrice": 86,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 42,
-    "description": "Cactus Glass Bottle - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChGZGHCoOGKgjgATZ.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChGZGHCoOGKgjgATZ.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyChHczZFHwMUCvmE1T",
-    "title": "Diary",
-    "category": "Latest Arrivars",
-    "sku": "UE 1511",
-    "price": 220,
-    "originalPrice": 300,
-    "discount": 27,
-    "rating": "4.9",
-    "reviewsCount": 45,
-    "description": "Diary - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChHNY0ASmQjEXlHPu.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChHNH8uIK-PoEFqAc.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChHNY0ASmQjEXlHPu.jpg",
-    "stockQty": 4,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyChIe-XbOJtg24j7vY",
-    "title": "Spinner Puzzle",
-    "category": "Latest Arrivars",
-    "sku": "UE 1506",
-    "price": 260,
-    "originalPrice": 500,
-    "discount": 48,
-    "rating": "4.9",
-    "reviewsCount": 48,
-    "description": "Spinner Puzzle - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChILfjxKnvufwe7cp.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChILvT5w_xX2JV_Ec.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChILfjxKnvufwe7cp.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyChK0MHzki8YJ6Aypn",
-    "title": "Doctors Kit",
-    "category": "Latest Arrivars",
-    "sku": "UE 1509",
-    "price": 599,
-    "originalPrice": 800,
-    "discount": 25,
-    "rating": "4.9",
-    "reviewsCount": 51,
-    "description": "Doctors Kit - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChJgMjoLbGlffmZe0.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChJgjENs8tAGFmVcR.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChJgMjoLbGlffmZe0.jpg",
-    "stockQty": 20,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyChLxpbaiWcHbja2l6",
-    "title": "Cute Mini Stamps",
-    "category": "Latest Arrivars",
-    "sku": "UE 1509",
-    "price": 99,
-    "originalPrice": 120,
-    "discount": 18,
-    "rating": "4.9",
-    "reviewsCount": 54,
-    "description": "Cute Mini Stamps - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChLxYiuQmy0N3mLMT.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChLxYiuQmy0N3mLMT.jpg",
-    "stockQty": 5,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyChOVldtjQMDavu5w_",
-    "title": "Spinner Band",
-    "category": "Latest Arrivars",
-    "sku": "UE 1510",
-    "price": 60,
-    "originalPrice": 60,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 57,
-    "description": "Spinner Band - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChOV3xkYkCFiDwDEx.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChOV3xkYkCFiDwDEx.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyChRKis4JzLiJr2QYS",
-    "title": "Thermal bottle 300ml",
-    "category": "Latest Arrivars",
-    "sku": "UE 1509",
-    "price": 250,
-    "originalPrice": 250,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 60,
-    "description": "Thermal bottle 300ml - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChRKTC-GgKDSNw6Fn.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChRKTC-GgKDSNw6Fn.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyCjj5srhmAVcdDlSiL",
-    "title": "Roulette Game",
-    "category": "Latest Arrivars",
-    "sku": "UE 1516",
-    "price": 630,
-    "originalPrice": 999,
-    "discount": 37,
-    "rating": "4.9",
-    "reviewsCount": 63,
-    "description": "Roulette Game - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjiZBQ61gkB2IvaYm.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjiZRIxAkIBIt_U6t.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjiZh3rHFifVR0p5S.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjiZBQ61gkB2IvaYm.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyCjkj8xnSJ4lOk0ztj",
-    "title": "Lucky Shot Game",
-    "category": "Latest Arrivars",
-    "sku": "UE 1517",
-    "price": 720,
-    "originalPrice": 1100,
-    "discount": 35,
-    "rating": "4.9",
-    "reviewsCount": 66,
-    "description": "Lucky Shot Game - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjkPiBAQuxEVEa_0u.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjkPLmbuL6Tl9Lrow.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjkPiBAQuxEVEa_0u.jpg",
-    "stockQty": 1,
-    "inStock": true,
-    "isFeatured": true
-  },
-  {
-    "id": "-OyCjmjj7_1PnQLZQiEZ",
-    "title": "Linear pens",
-    "category": "Latest Arrivars",
-    "sku": "UE 1508",
-    "price": 95,
-    "originalPrice": 95,
-    "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 69,
-    "description": "Linear pens - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
-    "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjmjWl5XG8cbTzMpS.jpg"
-    ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjmjWl5XG8cbTzMpS.jpg",
+    "description": "JCB Engineering Vehicle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
     "id": "-OyCjnUanjxrRRXT06g_",
+    "sku": "UE-SKU--OyCjnUanjxrRRXT06g_",
     "title": "scratch book mini",
     "category": "Latest Arrivars",
-    "sku": "UE-SKU-OyCjnUanjx",
     "price": 30,
     "originalPrice": 30,
     "discount": 0,
-    "rating": "4.9",
-    "reviewsCount": 72,
-    "description": "scratch book mini - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjnUI-N7ca6DaW9Yo.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjnUI-N7ca6DaW9Yo.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjnUI-N7ca6DaW9Yo.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "scratch book mini offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
     "isFeatured": true
   },
   {
-    "id": "-OyCTaOlhwWSceSTt2HF",
-    "title": "Hanging Table Tennis",
+    "id": "-OyCjmjj7_1PnQLZQiEZ",
+    "sku": "UE 1508",
+    "title": "Linear pens",
     "category": "Latest Arrivars",
-    "sku": "UE 15901",
-    "price": 360,
-    "originalPrice": 500,
-    "discount": 28,
-    "rating": "4.9",
-    "reviewsCount": 75,
-    "description": "Hanging Table Tennis - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "price": 95,
+    "originalPrice": 95,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjmjWl5XG8cbTzMpS.jpg",
     "images": [
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCTX4JSPa8fex2qubh.jpg",
-      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCTX4RsGGcM8O9bHjR.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjmjWl5XG8cbTzMpS.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCTX4JSPa8fex2qubh.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Linear pens offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyCjkj8xnSJ4lOk0ztj",
+    "sku": "UE 1517",
+    "title": "Lucky Shot Game",
+    "category": "Latest Arrivars",
+    "price": 720,
+    "originalPrice": 1100,
+    "discount": 35,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjkPiBAQuxEVEa_0u.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjkPiBAQuxEVEa_0u.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjkPLmbuL6Tl9Lrow.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Lucky Shot Game offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
     "isFeatured": true
   },
   {
+    "id": "-OyCjj5srhmAVcdDlSiL",
+    "sku": "UE 1516",
+    "title": "Roulette Game",
+    "category": "Latest Arrivars",
+    "price": 630,
+    "originalPrice": 999,
+    "discount": 37,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjiZh3rHFifVR0p5S.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjiZh3rHFifVR0p5S.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjiZRIxAkIBIt_U6t.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCjiZBQ61gkB2IvaYm.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Roulette Game offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyChRKis4JzLiJr2QYS",
+    "sku": "UE 1509",
+    "title": "Thermal bottle 300ml",
+    "category": "Latest Arrivars",
+    "price": 250,
+    "originalPrice": 250,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChRKTC-GgKDSNw6Fn.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChRKTC-GgKDSNw6Fn.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Thermal bottle 300ml offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyChOVldtjQMDavu5w_",
+    "sku": "UE 1510",
+    "title": "Spinner Band",
+    "category": "Latest Arrivars",
+    "price": 60,
+    "originalPrice": 60,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChOV3xkYkCFiDwDEx.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChOV3xkYkCFiDwDEx.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Spinner Band offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyChLxpbaiWcHbja2l6",
+    "sku": "UE 1509",
+    "title": "Cute Mini Stamps",
+    "category": "Latest Arrivars",
+    "price": 99,
+    "originalPrice": 120,
+    "discount": 18,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChLxYiuQmy0N3mLMT.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChLxYiuQmy0N3mLMT.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Cute Mini Stamps offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 5,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyChK0MHzki8YJ6Aypn",
+    "sku": "UE 1509",
+    "title": "Doctors Kit",
+    "category": "Latest Arrivars",
+    "price": 599,
+    "originalPrice": 800,
+    "discount": 25,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChJgjENs8tAGFmVcR.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChJgjENs8tAGFmVcR.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChJgMjoLbGlffmZe0.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Doctors Kit offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyChIe-XbOJtg24j7vY",
+    "sku": "UE 1506",
+    "title": "Spinner Puzzle",
+    "category": "Latest Arrivars",
+    "price": 260,
+    "originalPrice": 500,
+    "discount": 48,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChILvT5w_xX2JV_Ec.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChILvT5w_xX2JV_Ec.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChILfjxKnvufwe7cp.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Spinner Puzzle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 20,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyChHczZFHwMUCvmE1T",
+    "sku": "UE 1511",
+    "title": "Diary",
+    "category": "Latest Arrivars",
+    "price": 220,
+    "originalPrice": 300,
+    "discount": 27,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChHNY0ASmQjEXlHPu.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChHNY0ASmQjEXlHPu.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChHNH8uIK-PoEFqAc.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Diary offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 4,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyChGZUPOjbQ3cdNUKh",
+    "sku": "UE 1512",
+    "title": "Cactus Glass Bottle",
+    "category": "Latest Arrivars",
+    "price": 86,
+    "originalPrice": 86,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChGZGHCoOGKgjgATZ.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChGZGHCoOGKgjgATZ.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Cactus Glass Bottle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyChFx5QhwSvyReHYul",
+    "sku": "UE 15012",
+    "title": "Enjoy Life Glass Bottle",
+    "category": "Latest Arrivars",
+    "price": 90,
+    "originalPrice": 90,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChFwyLKbv2sxRS3kR.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChFwyLKbv2sxRS3kR.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Enjoy Life Glass Bottle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyChFPq0vutFV5yeup6",
+    "sku": "UE 1513",
+    "title": "Glass bottle",
+    "category": "Latest Arrivars",
+    "price": 90,
+    "originalPrice": 90,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChFPeWFSK2xLPw9kJ.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChFPeWFSK2xLPw9kJ.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Glass bottle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyChEvh3Xhvb6ZIozcu",
+    "sku": "UE 1515",
+    "title": "The Lil Rabbit Bottle",
+    "category": "Latest Arrivars",
+    "price": 75,
+    "originalPrice": 75,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChEvTrBgQoT3BlxrB.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChEvTrBgQoT3BlxrB.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "The Lil Rabbit Bottle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyChENG7lPuVUcZAgGp",
+    "sku": "UE 1514",
+    "title": "Glass Bottle",
+    "category": "Latest Arrivars",
+    "price": 110,
+    "originalPrice": 110,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChEN1UMlvo6vaLxw4.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChEN1UMlvo6vaLxw4.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Glass Bottle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyChDoC4Ra3VovY1k60",
+    "sku": "UE-SKU--OyChDoC4Ra3VovY1k60",
+    "title": "Lucky Glass Bottle",
+    "category": "Latest Arrivars",
+    "price": 99,
+    "originalPrice": 99,
+    "discount": 0,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChDo2okWVIXHKsZ21.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChDo2okWVIXHKsZ21.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Lucky Glass Bottle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyChCkPsgZZK7C42OID",
+    "sku": "UE 1515",
+    "title": "Wooden multi puzzle n white board",
+    "category": "Latest Arrivars",
+    "price": 260,
+    "originalPrice": 350,
+    "discount": 26,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChCR-LKE5qQ83Ddbo.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChCR-LKE5qQ83Ddbo.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyChCRD73nj_Px0nTmm.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Wooden multi puzzle n white board offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
+    "id": "-OyC_0nzEL8mPo_Sl5LE",
+    "sku": "UE 1504",
+    "title": "Alphabetic Magnetic Maze",
+    "category": "Latest Arrivars",
+    "price": 399,
+    "originalPrice": 700,
+    "discount": 43,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyC_0QOkLHUNisSZbsC.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyC_0QOkLHUNisSZbsC.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyC_0QF-PTdpZ9z5www.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Alphabetic Magnetic Maze offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 2,
+    "inStock": true,
+    "isFeatured": true
+  },
+  {
     "id": "-OyCTeKz4b6j_rBb-W7I",
+    "sku": "UE 1502",
     "title": "Standing Table Tennis",
     "category": "Latest Arrivars",
-    "sku": "UE 1502",
     "price": 350,
     "originalPrice": 500,
     "discount": 30,
-    "rating": "4.9",
-    "reviewsCount": 78,
-    "description": "Standing Table Tennis - Authentic boutique product by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCTcA1HCd_aOU2KMLO.jpg",
     "images": [
       "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCTcA1HCd_aOU2KMLO.jpg",
-      "https://cdn.quicksell.co/-OyCTc9rBrOCTe59CAx5.jpg"
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCTc9rBrOCTe59CAx5.jpg"
     ],
-    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCTcA1HCd_aOU2KMLO.jpg",
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Standing Table Tennis offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
     "stockQty": 3,
     "inStock": true,
     "isFeatured": true
+  },
+  {
+    "id": "-OyCTaOlhwWSceSTt2HF",
+    "sku": "UE 15901",
+    "title": "Hanging Table Tennis",
+    "category": "Latest Arrivars",
+    "price": 360,
+    "originalPrice": 500,
+    "discount": 28,
+    "image": "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCTX4RsGGcM8O9bHjR.jpg",
+    "images": [
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCTX4RsGGcM8O9bHjR.jpg",
+      "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OyCTX4JSPa8fex2qubh.jpg"
+    ],
+    "rating": "4.9",
+    "reviewsCount": 18,
+    "description": "Hanging Table Tennis offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "videoUrl": "",
+    "stockQty": 1,
+    "inStock": true,
+    "isFeatured": true
   }
-]);
-localStorage.setItem('ue_products_v7', JSON.stringify(ALL_PRODUCTS));
-
-let STORE_SETTINGS = JSON.parse(localStorage.getItem('ue_store_settings_v5')) || {
-  storeName: "UNIQUE EXPRESSIONS",
-  ownerName: "G MOUNIKA DURGA",
-  phone: "+91 8886662334",
-  whatsapp: "918886662334",
-  gstin: "37BVTPG7761F1Z1",
-  address: "2nd floor LIG 347, 2-115/9/1, near Shivalayam, Midhilapuri VUDA Colony, Madhurawada",
-  city: "Visakhapatnam",
-  pincode: "530041",
-  email: "uniqueexpressions.in@gmail.com",
-  freeShippingMin: 499,
-  shippingFee: 50,
-  giftWrapFee: 30,
-  instagram: "@uniqueexpressions.in",
-  youtube: "@UNIQUEEXPRESSIONS-25",
-  adminPin: "1234"
-};
-if (!STORE_SETTINGS.adminPin) STORE_SETTINGS.adminPin = '1234';
-localStorage.setItem('ue_store_settings_v5', JSON.stringify(STORE_SETTINGS));
-
-let STORE_CUSTOMERS = JSON.parse(localStorage.getItem('ue_customers_v5')) || [];
-localStorage.setItem('ue_customers_v5', JSON.stringify(STORE_CUSTOMERS));
-
-let STORE_COUPONS = JSON.parse(localStorage.getItem('ue_coupons_v5')) || [
-  { code: "WELCOME100", type: "fixed", value: 100, discount: "₹100 OFF", minSpend: 499, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
-  { code: "VIZAGFREE", type: "shipping", value: 0, discount: "FREE Shipping", minSpend: 299, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
-  { code: "FESTIVE20", type: "percent", value: 20, discount: "20% OFF", minSpend: 999, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
-  { code: "UNIQUE10", type: "percent", value: 10, discount: "10% OFF", minSpend: 399, usedCount: 0, expiry: "31 Dec 2026", status: "Active" }
 ];
-normalizeStoreCoupons();
-localStorage.setItem('ue_coupons_v5', JSON.stringify(STORE_COUPONS));
-
-let STORE_REVIEWS = JSON.parse(localStorage.getItem('ue_reviews_v5')) || [];
-localStorage.setItem('ue_reviews_v5', JSON.stringify(STORE_REVIEWS));
 
 function syncStorefrontState() {
   syncReviewsForAdmin();
-  localStorage.setItem('ue_products_v9', JSON.stringify(ALL_PRODUCTS));
+  localStorage.setItem('ue_products_v12', JSON.stringify(ALL_PRODUCTS));
+  localStorage.setItem('ue_products_v10', JSON.stringify(ALL_PRODUCTS));
   localStorage.setItem('ue_products_v8', JSON.stringify(ALL_PRODUCTS));
   localStorage.setItem('ue_categories_data_v5', JSON.stringify(CATEGORIES_DATA));
   localStorage.setItem('ue_categories_v5', JSON.stringify(CATEGORIES));
@@ -5823,7 +6093,7 @@ function filterCategory(cat) {
 }
 
 function openWhatsAppChat(customMsg) {
-  const phone = '918886662334';
+  const phone = '917799747575';
   const defaultText = 'Hi UNIQUE EXPRESSIONS! I am reaching out from your online store regarding products, return gifts and wholesale orders.';
   const msg = customMsg || defaultText;
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
@@ -5887,6 +6157,15 @@ function mergeProductsFromSupabase(sbProds) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const cached = JSON.parse(localStorage.getItem('ue_products_v12') || localStorage.getItem('ue_products_v10') || '[]');
+    if (!Array.isArray(cached) || cached.length < 200) {
+      localStorage.removeItem('ue_products_v10');
+      localStorage.removeItem('ue_products_v9');
+      localStorage.removeItem('ue_products_v8');
+      localStorage.setItem('ue_products_v12', JSON.stringify(ALL_PRODUCTS));
+    }
+  } catch (e) {}
   // Legacy /admin pathname → hash route (avoids 404 on static hosts)
   if (window.location.pathname === '/admin' || window.location.pathname === '/admin/') {
     history.replaceState({ view: 'admin', params: {} }, '', '#view=admin');
@@ -6517,24 +6796,30 @@ function openProductPage(productId) {
 
 /* ── Video URL Helpers ─────────────────────────────────────────── */
 
-
-
+function cleanProductDescriptionText(desc) {
+  if (!desc) return 'Authentic boutique item from UNIQUE EXPRESSIONS, Visakhapatnam.';
+  // Clean raw http/https links leftover from old site imports so overview text is clean
+  const cleaned = String(desc).replace(/(https?:\/\/[^\s]+|www\.[^\s]+)/gi, '').trim();
+  return cleaned || 'Authentic boutique item from UNIQUE EXPRESSIONS, Visakhapatnam.';
+}
 
 function buildVideoSectionHTML(product) {
-  const videoUrl = (product.videoUrl || product.video_url || product.videoLink || '').trim();
+  const videoUrl = (product?.videoUrl || product?.video_url || product?.videoLink || '').trim();
   if (!videoUrl) return '';
 
+  const isInstagram = videoUrl.includes('instagram.com');
+  const iconHtml = isInstagram
+    ? `<i class="ri-instagram-line" style="color: #E1306C; font-size: 18px;"></i>`
+    : `<i class="ri-youtube-fill" style="color: #FF0000; font-size: 18px;"></i>`;
+
   return `
-    <div style="margin-top: 12px;">
-      <a href="${videoUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #0f172a; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; width: 100%; box-sizing: border-box; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
-        🎥 View Product Demonstration →
+    <div style="margin-top: 12px; margin-bottom: 12px;">
+      <a href="${videoUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #0f172a; background: #ffffff; border: 1.5px solid #cbd5e1; padding: 11px 18px; border-radius: 14px; font-size: 13.5px; font-weight: 800; text-decoration: none; width: 100%; box-sizing: border-box; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.04); transition: all 0.2s ease;" onmouseover="this.style.borderColor='#94a3b8'; this.style.background='#f8fafc';" onmouseout="this.style.borderColor='#cbd5e1'; this.style.background='#ffffff';">
+        ${iconHtml} View Product Demonstration →
       </a>
     </div>
   `;
 }
-
-
-
 
 function playPDPInlineVideo(containerId, embedUrl) {
   const container = document.getElementById(containerId);
@@ -6761,7 +7046,7 @@ function renderPDPDesktop(product) {
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 24px;">
           <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 10px 0;">About this Product</h3>
           <p style="font-size: 13.5px; color: #334155; line-height: 1.7; margin: 0 0 20px 0;">
-            ${product.description || 'Authentic boutique item from UNIQUE EXPRESSIONS, Visakhapatnam.'}
+            ${cleanProductDescriptionText(product.description)}
           </p>
 
           ${Array.isArray(product.features) && product.features.length > 0 ? `
@@ -6951,7 +7236,7 @@ function renderPDPMobile(product) {
               <span class="pdp-accordion-icon">▾</span>
             </div>
             <div class="pdp-accordion-body">
-              <p style="margin: 0 0 10px 0;">${product.description || 'Authentic boutique item from UNIQUE EXPRESSIONS, Visakhapatnam.'}</p>
+              <p style="margin: 0 0 10px 0;">${cleanProductDescriptionText(product.description)}</p>
               ${Array.isArray(product.features) && product.features.length > 0 ? `
                 <ul style="margin: 0; padding-left: 18px; font-size: 12.5px; color: #475569;">
                   ${product.features.map(f => `<li>${f}</li>`).join('')}
@@ -7220,12 +7505,13 @@ function renderCategoriesView() {
   const container = document.getElementById('viewCategories');
   if (!container) return;
 
+  dedupeCategoriesData();
   const isDesktop = window.innerWidth >= 1024;
   
   // Get all unique categories
-  const categoriesList = CATEGORIES_DATA && CATEGORIES_DATA.length > 0 
+  const categoriesList = [...new Set((CATEGORIES_DATA && CATEGORIES_DATA.length > 0 
     ? CATEGORIES_DATA.map(c => c.name)
-    : [...new Set(ALL_PRODUCTS.map(p => p.category))];
+    : ALL_PRODUCTS.map(p => p.category)).filter(Boolean))];
 
   const getBannerForCat = (catName) => {
     const name = String(catName).toLowerCase();
@@ -7969,7 +8255,7 @@ function placeOrderFinal(grandTotal) {
         </div>
 
         <button class="pdp-btn-amazon-buy" style="width:100%; height:44px; margin-bottom:10px; font-size:12px;" onclick="openWhatsAppChat('Hi, I just placed Order ${orderRecord.orderId} for ₹${paidTotal}. Please share delivery updates!')">
-          💬 Send Order to WhatsApp (+91 8886662334)
+          💬 Send Order to WhatsApp (+91 7799747575)
         </button>
 
         <button class="m-back-btn" style="width:100%; justify-content:center; padding:12px; font-size:12px;" onclick="switchView('home')">
@@ -8361,7 +8647,7 @@ function renderProfileView() {
                 <h3 style="font-size:16px; font-weight:800; color:#0f172a;">${userProfile.name}</h3>
                 <span class="profile-vip-pill">✨ VIP</span>
               </div>
-              <p style="font-size:11px; color:#64748b; margin-top:2px;">📞 ${userProfile.phone || '+91 8886662334'} • ${userProfile.city || 'Visakhapatnam'}</p>
+              <p style="font-size:11px; color:#64748b; margin-top:2px;">📞 ${userProfile.phone || '+91 7799747575'} • ${userProfile.city || 'Visakhapatnam'}</p>
               <p style="font-size:10px; color:#94a3b8;">✉️ ${userProfile.email || 'customer@uniqueexpressions.in'}</p>
             </div>
           </div>
@@ -10021,9 +10307,14 @@ function renderApCategories() {
           </select>
         </div>
 
-        <button class="ap-btn ap-btn-primary" onclick="openApCategoryModal()">
-          <i class="ri-add-line"></i> + Add New Category
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button class="ap-btn ap-btn-secondary" style="height:36px; font-size:12px;" onclick="resetCategoryDefaults()" title="Reset to default category seed data">
+            🔄 Reset Seed
+          </button>
+          <button class="ap-btn ap-btn-primary" onclick="openApCategoryModal()">
+            <i class="ri-add-line"></i> + Add New Category
+          </button>
+        </div>
       </div>
 
       <!-- Enterprise Category Table -->
@@ -10198,6 +10489,14 @@ function openApCategoryModal(catId = null) {
                 </label>
                 <img id="apFormCatImgPrev" src="${c ? getCategoryDisplayImage(c) : 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' fill=\'%2394a3b8\' viewBox=\'0 0 24 24\'><path d=\'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z\'/></svg>'}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1;">
               </div>
+              <div style="display:flex; gap:6px; margin-top:8px; align-items:center;">
+                <span style="font-size:11px; font-weight:700; color:#64748b;">Presets:</span>
+                <button type="button" class="cat-preset-btn" onclick="document.getElementById('apFormCatImg').value='/assets/dashboards/heroes/mobile-hero.png'; document.getElementById('apFormCatImgPrev').src='/assets/dashboards/heroes/mobile-hero.png';">P1</button>
+                <button type="button" class="cat-preset-btn" onclick="document.getElementById('apFormCatImg').value='/assets/dashboards/heroes/vehicle-hero.png'; document.getElementById('apFormCatImgPrev').src='/assets/dashboards/heroes/vehicle-hero.png';">P2</button>
+                <button type="button" class="cat-preset-btn" onclick="document.getElementById('apFormCatImg').value='/assets/dashboards/heroes/furniture-hero.png'; document.getElementById('apFormCatImgPrev').src='/assets/dashboards/heroes/furniture-hero.png';">P3</button>
+                <button type="button" class="cat-preset-btn" onclick="document.getElementById('apFormCatImg').value='/assets/dashboards/heroes/rental-hero.png'; document.getElementById('apFormCatImgPrev').src='/assets/dashboards/heroes/rental-hero.png';">P4</button>
+                <button type="button" class="cat-preset-btn" onclick="document.getElementById('apFormCatImg').value='/assets/dashboards/heroes/service-hero.png'; document.getElementById('apFormCatImgPrev').src='/assets/dashboards/heroes/service-hero.png';">P5</button>
+              </div>
             </div>
 
             <div>
@@ -10324,9 +10623,16 @@ function renderApInventory() {
           <h3 style="font-size:16px; font-weight:800; margin:0;">🏬 Real-Time Inventory & Stock Matrix</h3>
           <span style="font-size:12px; color:#64748b;">${lowStockProducts.length} items flagged as Low Stock (&lt; 5 units) · Updates product stock everywhere</span>
         </div>
-        <button class="ap-btn ap-btn-primary" onclick="saveApInventoryMatrix()">
-          <i class="ri-save-3-line"></i> Save Stock Matrix
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button class="ap-btn ap-btn-secondary" onclick="exportApInventoryCSV()">Export CSV</button>
+          <label class="ap-btn ap-btn-secondary" style="cursor:pointer;">
+            Import CSV <input type="file" style="display:none;" accept=".csv" onchange="uploadApInventoryCSV(this)">
+          </label>
+          <button class="ap-btn ap-btn-secondary" onclick="bulkSetApStockCount()">Bulk Set Stock</button>
+          <button class="ap-btn ap-btn-primary" onclick="saveApInventoryMatrix()">
+            <i class="ri-save-3-line"></i> Save
+          </button>
+        </div>
       </div>
 
       <div class="ap-table-wrapper">
@@ -10430,8 +10736,15 @@ function renderApBanners() {
             <input type="text" id="apBannerSub" class="ap-search-input" placeholder="e.g. Curated Educational Toys & Handicrafts">
           </div>
           <div>
-            <label style="font-size:11px; font-weight:700; color:#475569;">Banner Image URL</label>
-            <input type="text" id="apBannerImg" class="ap-search-input" placeholder="https://images.unsplash.com/...">
+            <label style="font-size:11px; font-weight:700; color:#475569;">Banner Image URL or Direct File Upload</label>
+            <div style="display:flex; gap:10px; align-items:center; margin-top:4px;">
+              <input type="text" id="apBannerImg" class="ap-search-input" style="flex:1;" placeholder="https://images.unsplash.com/..." oninput="this.value=this.value.trim(); document.getElementById('apBannerImgPrev').src=this.value;">
+              <label class="ap-btn ap-btn-secondary" style="height:38px; font-size:11px; padding:0 10px; cursor:pointer; margin:0; display:flex; align-items:center; gap:4px;" title="Upload photo directly from phone or computer">
+                ☁️ Upload Media
+                <input type="file" accept="image/*" style="display:none;" onchange="uploadImageToCloudinary(this, 'apBannerImg', 'apBannerImgPrev')">
+              </label>
+              <img id="apBannerImgPrev" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='50' height='35' fill='%2394a3b8' viewBox='0 0 24 24'><path d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/></svg>" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600'" style="width:50px; height:35px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1;">
+            </div>
           </div>
           <button class="ap-btn ap-btn-primary" style="margin-top:8px;" onclick="addApBannerSlide()">
             + Add Slide to Hero Carousel
@@ -11418,22 +11731,7 @@ function updateCartQty(idx, change) {
 }
 
 function quickAddToCart(productId) {
-  const product = ALL_PRODUCTS.find(p => p.id === productId);
-  if (!product) return;
-
-  const check = validateStockForCart(productId, 1);
-  if (!check.ok) {
-    showToast(check.msg, 'info');
-    return;
-  }
-
-  const effectivePrice = getEffectivePrice(product.price);
-  const existing = cart.find(i => i.id === productId);
-  if (existing) existing.qty += 1;
-  else cart.push({ ...product, price: effectivePrice, qty: 1 });
-
-  saveCart();
-  openCartDrawer();
+  openAddToCartPopUpModal(productId);
 }
 
 function saveCart() {
@@ -11615,7 +11913,7 @@ function renderB2BView() {
 
           <div class="form-group">
             <label class="form-label">Contact Phone & WhatsApp</label>
-            <input type="text" id="b2bPhone" class="form-input" placeholder="+91 8886662334" value="+91 8886662334">
+            <input type="text" id="b2bPhone" class="form-input" placeholder="+91 7799747575" value="+91 7799747575">
           </div>
 
           <div style="display:flex; gap:12px; margin-top:20px;">
@@ -11649,7 +11947,7 @@ function submitB2BQuoteRequest() {
     showToast('Please enter your Business Name and Contact Phone Number.', 'info');
     return;
   }
-  showApToast(`Thank you! Your GST Wholesale Inquiry for "${biz}" has been received. Owner Swaroop Sandy will send your official quotation via WhatsApp (+91 8886662334, 'info');.`);
+  showApToast(`Thank you! Your GST Wholesale Inquiry for "${biz}" has been received. Owner Swaroop Sandy will send your official quotation via WhatsApp (+91 7799747575, 'info');.`);
 }
 
 /* 1. ABOUT US PAGE */
@@ -11682,12 +11980,12 @@ function renderAboutView() {
             <strong>Official GSTIN:</strong> <code>37BVTPG7761F1Z1</code><br>
             <strong>Address:</strong> Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam – 530041, Andhra Pradesh<br>
             <strong>Landmark:</strong> Beside More Supermarket, Opp RR Complex, Madhurawada<br>
-            <strong>Contact / WhatsApp:</strong> +91 8886662334<br>
+            <strong>Contact / WhatsApp:</strong> +91 7799747575<br>
             <strong>Support Email:</strong> uniqueexpressions.in@gmail.com
           </div>
 
           <button class="m-hero-cta-button" style="width:100%; height:48px; justify-content:center; background:#25D366; font-size:14px;" onclick="openWhatsAppChat()">
-            💬 Connect Directly on WhatsApp (+91 8886662334) →
+            💬 Connect Directly on WhatsApp (+91 7799747575) →
           </button>
         </div>
       </div>
@@ -11717,7 +12015,7 @@ function renderFAQView() {
     },
     {
       q: "What is your replacement policy if an item arrives damaged?",
-      a: "We offer a 7-day hassle-free replacement guarantee. Simply share a photo or video on WhatsApp (+91 8886662334) for an immediate replacement."
+      a: "We offer a 7-day hassle-free replacement guarantee. Simply share a photo or video on WhatsApp (+91 7799747575) for an immediate replacement."
     }
   ];
 
@@ -11866,7 +12164,7 @@ function renderShippingView() {
 
         <h3 class="info-section-heading">🔄 7-Day Replacement Guarantee</h3>
         <p class="info-text-p">
-          If any item arrives damaged or incomplete, contact our store customer service within 7 days of delivery. Send an unboxing photo/video to <strong>+91 8886662334</strong> for an immediate replacement.
+          If any item arrives damaged or incomplete, contact our store customer service within 7 days of delivery. Send an unboxing photo/video to <strong>+91 7799747575</strong> for an immediate replacement.
         </p>
 
         <h3 class="info-section-heading">💳 Refund Processing</h3>
@@ -12144,7 +12442,7 @@ function renderReturnsView() {
 
         <div class="form-group">
           <label class="form-label">UPI ID / PhonePe Number for Refund</label>
-          <input type="text" id="retUpiInput" class="form-input" placeholder="e.g. 8886662334@ybl or UPI ID" value="8886662334@ybl">
+          <input type="text" id="retUpiInput" class="form-input" placeholder="e.g. 7799747575@ybl or UPI ID" value="7799747575@ybl">
         </div>
 
         <div class="form-group">
@@ -12199,7 +12497,7 @@ function renderHelpCenterView() {
     { q: "What are the store hours for UNIQUE EXPRESSIONS Madhurawada?", a: "Our store is open 7 days a week from 9:30 AM to 9:30 PM. Visit us at 2nd floor LIG 347, 2-115/9/1, near Shivalayam, Midhilapuri VUDA Colony, Madhurwada, Visakhapatnam." },
     { q: "How fast is delivery within Visakhapatnam?", a: "We offer express same-day delivery across Madhurawada, PM Palem, MVP Colony, Siripuram, Gajuwaka, and all Vizag areas for orders placed before 3:00 PM." },
     { q: "Do you offer GST Invoicing for Wholesale & Corporate buyers?", a: "Yes! We issue official B2B GST Invoices with our GSTIN 37BVTPG7761F1Z1 for input tax credit. Enter your GST number during checkout or in our Wholesale B2B portal." },
-    { q: "Can I customize return gift hampers for birthday parties?", a: "Absolutely! We specialize in custom return gift boxes for kids birthdays, weddings, baby showers, and school events. Contact us at +91 8886662334 for personalized hampers." },
+    { q: "Can I customize return gift hampers for birthday parties?", a: "Absolutely! We specialize in custom return gift boxes for kids birthdays, weddings, baby showers, and school events. Contact us at +91 7799747575 for personalized hampers." },
     { q: "What is the return and replacement policy?", a: "We offer a 7-day hassle-free replacement guarantee. If any product is damaged or defective, we provide doorstep pickup or instant exchange at our Madhurawada store." }
   ];
 
@@ -12248,12 +12546,12 @@ function renderHelpCenterView() {
         <div class="info-content-card" style="margin:0; text-align:center; cursor:pointer;" onclick="openWhatsAppChat()">
           <i class="ri-whatsapp-line" style="font-size:24px; color:#25D366;"></i>
           <h4 style="font-size:12px; font-weight:800; margin:4px 0 2px 0;">WhatsApp Us</h4>
-          <span style="font-size:10px; color:#64748b;">+91 8886662334</span>
+          <span style="font-size:10px; color:#64748b;">+91 7799747575</span>
         </div>
-        <div class="info-content-card" style="margin:0; text-align:center; cursor:pointer;" onclick="window.location.href='tel:+918886662334'">
+        <div class="info-content-card" style="margin:0; text-align:center; cursor:pointer;" onclick="window.location.href='tel:+917799747575'">
           <i class="ri-phone-line" style="font-size:24px; color:var(--brand-magenta);"></i>
           <h4 style="font-size:12px; font-weight:800; margin:4px 0 2px 0;">Call Store Direct</h4>
-          <span style="font-size:10px; color:#64748b;">+91 8886662334</span>
+          <span style="font-size:10px; color:#64748b;">+91 7799747575</span>
         </div>
       </div>
 
@@ -12363,7 +12661,7 @@ function renderStoreLocatorView() {
             <strong>Owner Name:</strong> Swaroop Sandy<br>
             <strong>Address:</strong> UNIQUE EXPRESSIONS, Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam – 530041, Andhra Pradesh<br>
             <strong>Landmark:</strong> Beside More Supermarket, Opp RR Complex, Madhurawada<br>
-            <strong>Contact Number:</strong> +91 8886662334<br>
+            <strong>Contact Number:</strong> +91 7799747575<br>
             <strong>Support Email:</strong> uniqueexpressions.in@gmail.com<br>
             <strong>GSTIN:</strong> <code>37BVTPG7761F1Z1</code>
           </p>
@@ -12383,7 +12681,7 @@ function renderStoreLocatorView() {
           </div>
 
           <div style="display:flex; gap:12px; margin-top:24px;">
-            <button class="m-hero-cta-button" style="flex:1; justify-content:center; height:46px;" onclick="window.location.href='tel:+918886662334'">
+            <button class="m-hero-cta-button" style="flex:1; justify-content:center; height:46px;" onclick="window.location.href='tel:+917799747575'">
               <i class="ri-phone-line"></i> Call Store Now
             </button>
             <button class="m-hero-cta-button" style="flex:1; justify-content:center; background:#25D366; box-shadow:none; height:46px;" onclick="openWhatsAppChat()">
@@ -12928,7 +13226,7 @@ function handleUserSignup(e) {
 }
 
 function handleSendOtpCode() {
-  showToast('Use Email + Password login, or register a new account. WhatsApp help: +91 8886662334', 'info');
+  showToast('Use Email + Password login, or register a new account. WhatsApp help: +91 7799747575', 'info');
 }
 
 function handleVerifyOtpCode() {
@@ -13022,3 +13320,184 @@ function addFbtComboToCart(mainProdId, bundleProdIds) {
   saveCart();
   openCartDrawer();
 }
+
+/* ==========================================================================
+   NEW & ENHANCED MODULE FUNCTIONS (WhatsApp Widget, Watch Video, Add-to-Cart Pop-up)
+   ========================================================================== */
+
+/* 1. Add to Cart Pop-Up Modal with Real-Time Stock Inventory Tracking */
+function openAddToCartPopUpModal(productOrId) {
+  const product = typeof productOrId === 'object' 
+    ? productOrId 
+    : ALL_PRODUCTS.find(p => String(p.id) === String(productOrId));
+  if (!product) return;
+
+  const stockCount = typeof product.stock === 'number' ? product.stock : (product.inStock !== false ? 15 : 0);
+  const isOutOfStock = stockCount <= 0;
+  const isLowStock = stockCount > 0 && stockCount <= 5;
+
+  let modalBackdrop = document.getElementById('addToCartModalOverlay');
+  if (!modalBackdrop) {
+    modalBackdrop = document.createElement('div');
+    modalBackdrop.id = 'addToCartModalOverlay';
+    modalBackdrop.className = 'ap-modal-backdrop';
+    document.body.appendChild(modalBackdrop);
+  }
+
+  let selectedQty = 1;
+
+  window._updateCartModalQty = (delta) => {
+    selectedQty = Math.max(1, Math.min(stockCount || 1, selectedQty + delta));
+    const qtyEl = document.getElementById('cartModalQtyVal');
+    if (qtyEl) qtyEl.textContent = selectedQty;
+  };
+
+  window._confirmAddToCartPopUp = (goToCheckout = false) => {
+    if (isOutOfStock) {
+      showToast('Item is currently out of stock.', 'info');
+      return;
+    }
+    const check = validateStockForCart(product.id, selectedQty);
+    if (!check.ok) {
+      showToast(check.msg, 'info');
+      return;
+    }
+    const effectivePrice = getEffectivePrice(product.price);
+    const existing = cart.find(i => String(i.id) === String(product.id));
+    if (existing) existing.qty += selectedQty;
+    else cart.push({ ...product, price: effectivePrice, qty: selectedQty });
+
+    saveCart();
+    document.getElementById('addToCartModalOverlay').classList.remove('active');
+    showToast(`Added ${selectedQty} × ${product.title} to your cart!`, 'success');
+    if (goToCheckout) openCartDrawer();
+  };
+
+  const stockBadgeHtml = isOutOfStock
+    ? `<span class="stock-badge stock-badge-out">⚠️ Out of Stock</span>`
+    : isLowStock
+    ? `<span class="stock-badge stock-badge-low">🔥 Low Stock: Only ${stockCount} left!</span>`
+    : `<span class="stock-badge stock-badge-in">✅ In Stock (${stockCount} Available)</span>`;
+
+  modalBackdrop.onclick = () => modalBackdrop.classList.remove('active');
+  modalBackdrop.innerHTML = `
+    <div class="cart-popup-modal-container" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:28px; height:28px; border-radius:50%; background:#22c55e; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;">✓</div>
+          <span style="font-size:15px; font-weight:800; color:#0f172a;">Added to Cart</span>
+        </div>
+        <button style="border:none; background:#f1f5f9; width:28px; height:28px; border-radius:50%; font-size:14px; color:#64748b; cursor:pointer;" onclick="document.getElementById('addToCartModalOverlay').classList.remove('active')">✕</button>
+      </div>
+
+      <div class="cart-item-preview-card">
+        <img src="${product.image || 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400'}" style="width:64px; height:64px; object-fit:cover; border-radius:12px; border:1px solid #cbd5e1;">
+        <div style="flex:1; min-width:0;">
+          <h4 style="font-size:14px; font-weight:800; color:#0f172a; margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${apEscHtml(product.title)}</h4>
+          <div style="font-size:13px; font-weight:700; color:#2563eb; margin-top:2px;">₹${product.price}</div>
+          <div style="margin-top:6px;">${stockBadgeHtml}</div>
+        </div>
+      </div>
+
+      ${!isOutOfStock ? `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:10px 0; border-top:1px solid #f1f5f9; border-bottom:1px solid #f1f5f9;">
+        <span style="font-size:13px; font-weight:700; color:#334155;">Select Quantity:</span>
+        <div class="qty-picker-group">
+          <button class="qty-picker-btn" onclick="_updateCartModalQty(-1)">-</button>
+          <span id="cartModalQtyVal" style="width:32px; text-align:center; font-size:14px; font-weight:800; color:#0f172a;">1</span>
+          <button class="qty-picker-btn" onclick="_updateCartModalQty(1)">+</button>
+        </div>
+      </div>
+      ` : ''}
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:18px;">
+        <button style="width:100%; height:44px; border-radius:12px; background:#2563eb; color:#fff; font-size:14px; font-weight:800; border:none; cursor:pointer; box-shadow:0 4px 12px rgba(37,99,235,0.25);" onclick="_confirmAddToCartPopUp(true)">
+          🛒 Proceed to Checkout →
+        </button>
+        <button style="width:100%; height:38px; border-radius:12px; background:#ffffff; color:#475569; font-size:13px; font-weight:700; border:1px solid #cbd5e1; cursor:pointer;" onclick="document.getElementById('addToCartModalOverlay').classList.remove('active')">
+          Continue Shopping
+        </button>
+      </div>
+    </div>
+  `;
+
+  modalBackdrop.classList.add('active');
+}
+
+/* 2. Watch Video Walkthrough Modal */
+function openWatchVideoModal(videoUrl = "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1", title = "How UNIQUE EXPRESSIONS Works") {
+  let modalBackdrop = document.getElementById('watchVideoModalOverlay');
+  if (!modalBackdrop) {
+    modalBackdrop = document.createElement('div');
+    modalBackdrop.id = 'watchVideoModalOverlay';
+    modalBackdrop.className = 'ap-modal-backdrop';
+    document.body.appendChild(modalBackdrop);
+  }
+
+  modalBackdrop.onclick = () => {
+    modalBackdrop.classList.remove('active');
+    modalBackdrop.innerHTML = '';
+  };
+
+  modalBackdrop.innerHTML = `
+    <div class="watch-video-modal-window" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:12px; margin-bottom:14px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:32px; height:32px; border-radius:50%; background:#2563eb; color:#fff; display:flex; align-items:center; justify-content:center;">
+            <i class="ri-play-fill" style="font-size:18px;"></i>
+          </div>
+          <div>
+            <h3 style="font-size:16px; font-weight:800; color:#ffffff; margin:0;">${apEscHtml(title)}</h3>
+            <span style="font-size:11px; color:#94a3b8;">Watch the store video walkthrough & guide</span>
+          </div>
+        </div>
+        <button style="border:none; background:#1e293b; width:32px; height:32px; border-radius:50%; color:#94a3b8; font-size:16px; cursor:pointer;" onclick="document.getElementById('watchVideoModalOverlay').classList.remove('active'); document.getElementById('watchVideoModalOverlay').innerHTML='';">✕</button>
+      </div>
+
+      <div class="video-aspect-frame">
+        <iframe src="${videoUrl}" title="${apEscHtml(title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; text-align:center; border-top:1px solid #1e293b; margin-top:16px; padding-top:14px; font-size:11px; color:#94a3b8;">
+        <div><i class="ri-shield-check-line" style="color:#22c55e; font-size:16px;"></i><br>Aadhaar Verified</div>
+        <div><i class="ri-file-code-line" style="color:#2563eb; font-size:16px;"></i><br>Instant Digital eSign</div>
+        <div><i class="ri-checkbox-circle-line" style="color:#a855f7; font-size:16px;"></i><br>Audit Trail Stored</div>
+      </div>
+    </div>
+  `;
+
+  modalBackdrop.classList.add('active');
+}
+
+/* 3. Floating Social Media & WhatsApp Chat Widgets (Disabled as requested) */
+function renderWhatsAppFloatingWidget() {
+  const widget = document.getElementById('whatsappFloatingWidget');
+  if (widget) widget.remove();
+}
+
+/* 4. Reset Category Seed Data */
+function resetCategoryDefaults() {
+  if (confirm("Reset categories table to initial default data seed?")) {
+    CATEGORIES_DATA = [
+      { id: "cat-1", sortOrder: 1, name: "RC Toys", description: "RC Toys collection at UNIQUE EXPRESSIONS", image: "/assets/dashboards/heroes/mobile-hero.png", subcategories: ["RC Toys"], isFeatured: true, isVisible: true, createdAt: "2026-01-10" },
+      { id: "cat-2", sortOrder: 2, name: "RC Flying Toys", description: "RC Flying Toys collection at UNIQUE EXPRESSIONS", image: "/assets/dashboards/heroes/vehicle-hero.png", subcategories: ["RC Flying Toys"], isFeatured: true, isVisible: true, createdAt: "2026-01-11" },
+      { id: "cat-3", sortOrder: 3, name: "RC Cars & Buggies", description: "High-speed remote control cars, off-road trucks & racers", image: "/assets/dashboards/heroes/furniture-hero.png", subcategories: ["RC Cars", "Trucks"], isFeatured: false, isVisible: true, createdAt: "2026-01-12" },
+      { id: "cat-4", sortOrder: 4, name: "Drones & Quadcopters", description: "Aerial photography drones, mini quads and video flyers", image: "/assets/dashboards/heroes/rental-hero.png", subcategories: ["Drones", "Quadcopters"], isFeatured: true, isVisible: true, createdAt: "2026-01-15" },
+      { id: "cat-5", sortOrder: 5, name: "Action Figures & Collectibles", description: "Anime, superhero, and sci-fi collectible figures", image: "/assets/dashboards/heroes/service-hero.png", subcategories: ["Action Figures"], isFeatured: false, isVisible: false, createdAt: "2026-01-18" },
+      { id: "cat-6", sortOrder: 6, name: "STEM & Educational Toys", description: "Robotics kits, science experiments, and puzzle blocks", image: "/assets/dashboards/heroes/mobile-hero.png", subcategories: ["STEM", "Robotics"], isFeatured: true, isVisible: true, createdAt: "2026-01-20" }
+    ];
+    CATEGORIES = CATEGORIES_DATA.map(c => c.name);
+    syncStorefrontState();
+    switchApTab('categories');
+    showApToast("Reset categories to default data seed!", "success");
+  }
+}
+
+// Auto-initialize WhatsApp floating widget when DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  renderWhatsAppFloatingWidget();
+});
+setTimeout(() => {
+  renderWhatsAppFloatingWidget();
+}, 800);
+
