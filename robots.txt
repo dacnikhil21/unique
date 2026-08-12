@@ -1,0 +1,7 @@
+﻿User-agent: *
+Allow: /
+
+# Disallow admin panel from indexing
+Disallow: /#view=admin
+
+Sitemap: https://uniqueexpressions.in/sitemap.xml

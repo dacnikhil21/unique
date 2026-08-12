@@ -35,18 +35,40 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
+// Validate required environment variables at startup
+if (!process.env.CLOUDINARY_API_SECRET) {
+  console.error('[FATAL] CLOUDINARY_API_SECRET environment variable is not set. Server will not handle uploads.');
+}
+
 const CLOUDINARY_CONFIG = {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'oqj0unl4',
   api_key: process.env.CLOUDINARY_API_KEY || '392727691414539',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'lz4eGHf-j5Auu7__KTgNl2Ur6vg',
+  api_secret: process.env.CLOUDINARY_API_SECRET || '',
   folder: process.env.CLOUDINARY_FOLDER || 'unique_expressions'
 };
 
+const ALLOWED_ORIGINS = [
+  'https://uniqueexpressions.in',
+  'https://www.uniqueexpressions.in',
+  'http://localhost:5000',
+  'http://127.0.0.1:5000'
+];
+
 const server = http.createServer((req, res) => {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS Headers — restricted to known origins only
+  const origin = req.headers.origin || '';
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Security Headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -154,10 +176,15 @@ const server = http.createServer((req, res) => {
       res.writeHead(500, { 'Content-Type': 'text/plain' });
       res.end('500 Internal Server Error');
     } else {
+      // Cache static assets aggressively (JS/CSS/images have version query strings)
+      // HTML is always kept fresh for SPA routing
+      const isHtml = ext === '.html' || ext === '';
+      const cacheControl = isHtml
+        ? 'no-store, no-cache, must-revalidate'
+        : 'public, max-age=31536000, immutable';
       res.writeHead(200, {
         'Content-Type': contentType,
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-        'Access-Control-Allow-Origin': '*'
+        'Cache-Control': cacheControl
       });
       res.end(content);
     }

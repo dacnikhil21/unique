@@ -4,9 +4,16 @@ const https = require('https');
 const CLOUDINARY_CONFIG = {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'oqj0unl4',
   api_key: process.env.CLOUDINARY_API_KEY || '392727691414539',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'lz4eGHf-j5Auu7__KTgNl2Ur6vg',
+  api_secret: process.env.CLOUDINARY_API_SECRET || '',  // Must be set via env var
   folder: process.env.CLOUDINARY_FOLDER || 'unique_expressions'
 };
+
+const ALLOWED_ORIGINS = [
+  'https://uniqueexpressions.in',
+  'https://www.uniqueexpressions.in',
+  'http://localhost:5000',
+  'http://127.0.0.1:5000'
+];
 
 function uploadToCloudinary(base64File) {
   return new Promise((resolve, reject) => {
@@ -54,9 +61,18 @@ function uploadToCloudinary(base64File) {
 }
 
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin || '';
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+
+  if (!CLOUDINARY_CONFIG.api_secret) {
+    return res.status(503).json({ error: 'Upload service not configured. Contact support.' });
+  }
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();

@@ -17,7 +17,7 @@ let STORE_SETTINGS = (() => {
     giftWrapFee: 30,
     instagram: "uniqueexpressions.in",
     youtube: "@UNIQUEEXPRESSIONS-25",
-    adminPin: "1234"
+    adminPin: "UE@2026"  // ⚠️ Change this immediately via Admin → Settings → Security
   };
 })();
 
@@ -11331,8 +11331,8 @@ function renderApSettings() {
           <input type="email" id="apStEmail" class="ap-search-input" value="${STORE_SETTINGS.email}">
         </div>
         <div>
-          <label style="font-size:11px; font-weight:700; color:#475569;">Admin Panel PIN (4 digits)</label>
-          <input type="password" maxlength="4" id="apStAdminPin" class="ap-search-input" value="${STORE_SETTINGS.adminPin || '1234'}" placeholder="••••">
+          <label style="font-size:11px; font-weight:700; color:#475569;">Admin Panel PIN (min 6 chars) ⚠️ Change from default!</label>
+          <input type="password" maxlength="20" id="apStAdminPin" class="ap-search-input" value="${STORE_SETTINGS.adminPin || 'UE@2026'}" placeholder="Enter secure PIN">
         </div>
       </div>
 
@@ -11926,8 +11926,7 @@ function openAdminPinModal() {
   }
   const backdrop = document.getElementById('adminPinBackdrop');
   if (!backdrop) {
-    console.error('[UE] Admin PIN modal element missing');
-    alert('Admin login could not load. Please hard-refresh the page (Ctrl+Shift+R).');
+    showToast('Admin login could not load. Please hard-refresh the page (Ctrl+Shift+R).', 'info');
     return;
   }
   backdrop.classList.add('active');
@@ -11941,7 +11940,7 @@ function closeAdminPinModal() {
 
 function verifyAdminPin() {
   const pin = (document.getElementById('adminPinInput')?.value || '').trim();
-  const expected = String(STORE_SETTINGS.adminPin || '1234');
+  const expected = String(STORE_SETTINGS.adminPin || 'UE@2026');
   if (pin === expected) {
     apIsAuthenticated = true;
     sessionStorage.setItem('ue_admin_auth', '1');
