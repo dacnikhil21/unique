@@ -607,6 +607,17 @@ async function sbGetProfile(userId) {
   }
 }
 
+async function sbAdminGetAllProfiles() {
+  try {
+    const { data, error } = await _supabase.from('profiles').select('*');
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    console.warn('[Supabase] getAllProfiles failed:', err.message);
+    return [];
+  }
+}
+
 async function sbUpsertProfile(userId, profile) {
   try {
     const row = {

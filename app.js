@@ -564,9 +564,21 @@ function getLast7DaysSales() {
 
 function syncCustomersFromOrders() {
   const map = new Map();
+  
+  // 1. Pre-populate map with any existing STORE_CUSTOMERS who have 0 orders (registered profiles)
+  if (Array.isArray(STORE_CUSTOMERS)) {
+    STORE_CUSTOMERS.forEach(c => {
+      if (c && c.ordersCount === 0) {
+        map.set(c.id, c);
+      }
+    });
+  }
+
   userOrders.forEach(o => {
     const phone = (o.phone || '').replace(/\D/g, '');
-    const key = phone || (o.customerName || o.name || 'guest').toLowerCase();
+    const email = (o.email || '').toLowerCase().trim();
+    const key = phone || email || (o.customerName || o.name || 'guest').toLowerCase();
+    
     if (!map.has(key)) {
       map.set(key, {
         id: key,
@@ -586,6 +598,89 @@ function syncCustomersFromOrders() {
     else if (c.ordersCount === 1) c.status = 'New';
   });
   STORE_CUSTOMERS = [...map.values()].sort((a, b) => b.totalSpend - a.totalSpend);
+}
+
+async function loadCustomersAndRefresh() {
+  if (typeof sbAdminGetAllProfiles !== 'function') return;
+  try {
+    const profiles = await sbAdminGetAllProfiles();
+    const map = new Map();
+    
+    // 1. Add registered profiles first (default ordersCount = 0, totalSpend = 0)
+    profiles.forEach(p => {
+      const email = (p.email || '').toLowerCase().trim();
+      const phone = (p.phone || '').replace(/\D/g, '');
+      const key = phone || email || p.id;
+      if (key) {
+        map.set(key, {
+          id: key,
+          name: p.name || 'Customer',
+          phone: p.phone || '',
+          email: p.email || '',
+          city: p.city || 'Visakhapatnam',
+          ordersCount: 0,
+          totalSpend: 0,
+          status: 'Active'
+        });
+      }
+    });
+
+    // 2. Add/merge customer data from orders
+    userOrders.forEach(o => {
+      const phone = (o.phone || '').replace(/\D/g, '');
+      const email = (o.email || '').toLowerCase().trim();
+      const key = phone || email || (o.customerName || o.name || 'guest').toLowerCase();
+      
+      if (!map.has(key)) {
+        map.set(key, {
+          id: key,
+          name: o.customerName || o.name || 'Customer',
+          phone: o.phone || '',
+          email: o.email || '',
+          city: 'Visakhapatnam',
+          ordersCount: 0,
+          totalSpend: 0,
+          status: 'Active'
+        });
+      }
+      
+      const c = map.get(key);
+      c.ordersCount += 1;
+      c.totalSpend += (o.totalAmount || o.grandTotal || 0);
+      if (c.totalSpend >= 5000) c.status = 'VIP';
+      else if (c.ordersCount === 1 && c.totalSpend > 0) c.status = 'New';
+    });
+
+    STORE_CUSTOMERS = [...map.values()].sort((a, b) => b.totalSpend - a.totalSpend);
+    localStorage.setItem('ue_customers_v5', JSON.stringify(STORE_CUSTOMERS));
+
+    // Refresh UI if the user is currently viewing the customers tab or the dashboard
+    if (currentView === 'admin') {
+      const customerBadge = document.querySelector('#apNav-customers .ap-nav-count-badge');
+      if (customerBadge) customerBadge.innerText = STORE_CUSTOMERS.length;
+      
+      const dashboardCustBadge = document.getElementById('apDashCustBadge');
+      if (dashboardCustBadge) dashboardCustBadge.innerText = STORE_CUSTOMERS.length;
+      
+      if (apActiveTab === 'customers') {
+        const viewport = document.getElementById('apMainContentArea');
+        if (viewport) {
+          viewport.innerHTML = renderApCustomers();
+          if (window.feather) window.feather.replace();
+          if (window.lucide) window.lucide.createIcons();
+        }
+      } else if (apActiveTab === 'dashboard') {
+        const viewport = document.getElementById('apMainContentArea');
+        if (viewport) {
+          viewport.innerHTML = renderApDashboard();
+          if (window.feather) window.feather.replace();
+          if (window.lucide) window.lucide.createIcons();
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[UE] Failed to sync registered customers:', err);
+  }
 }
 
 function getAdminNotifications() {
@@ -6350,7 +6445,9 @@ function switchView(viewName, params = {}, skipHistory = false) {
 
   const targetView = viewName === 'admin'
     ? document.getElementById('viewAdmin')
-    : (document.getElementById('view' + viewName.toUpperCase()) || document.getElementById('view' + capitalizeFirst(viewName)) || document.getElementById('view' + viewName));
+    : ((viewName === 'wholesale' || viewName === 'b2b')
+        ? document.getElementById('viewB2B')
+        : (document.getElementById('view' + viewName.toUpperCase()) || document.getElementById('view' + capitalizeFirst(viewName)) || document.getElementById('view' + viewName)));
   if (targetView) {
     targetView.classList.add('active-view');
   }
@@ -8264,36 +8361,6 @@ function placeOrderFinal(grandTotal) {
   `;
 }
 
-/* ==========================================================================
-   OFFERS & COUPONS ENGINE VIEW
-   ========================================================================== */
-function renderOffersView() {
-  const container = document.getElementById('viewOffers');
-  container.innerHTML = `
-    <div class="m-view-header-bar">
-      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
-      <span class="m-view-title">Offers & Coupons</span>
-      <div></div>
-    </div>
-
-    <div class="checkout-container">
-      <div class="checkout-card" style="background:linear-gradient(135deg, #0f172a, #334155); color:#fff;">
-        <span class="m-featured-tag" style="color:#fef08a;">FESTIVE SPECIAL</span>
-        <h2 style="font-size:20px; font-weight:800; margin:4px 0;">Extra 10% Off Everything</h2>
-        <p style="font-size:11px; opacity:0.9; margin-bottom:12px;">Use promo code UNIQUE10 at checkout on any order above ₹299.</p>
-        <button class="m-hero-cta-button" style="background:#fff; color:#0f172a;" onclick="appliedCouponCode='UNIQUE10'; showApToast('Coupon UNIQUE10 copied! Applied automatically at checkout.', 'info'); switchView('checkout');">
-          Apply Coupon UNIQUE10 →
-        </button>
-      </div>
-
-      <div class="checkout-card">
-        <h3 style="font-size:14px; font-weight:800; margin-bottom:10px;">Bulk Return Gift Discounts</h3>
-        <p style="font-size:12px; color:#475569; margin-bottom:10px;">Ordering for birthday party hampers? Get flat 20% discount on 25+ quantity orders.</p>
-        <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="switchView('b2b')">Open B2B Bulk Calculator</button>
-      </div>
-    </div>
-  `;
-}
 
 /* ==========================================================================
    WISHLIST MANAGER VIEW
@@ -9132,68 +9199,6 @@ function closeInvoiceModal() {
   document.getElementById('invoiceModalBackdrop').classList.remove('active');
 }
 
-/* ==========================================================================
-   B2B WHOLESALE PORTAL VIEW
-   ========================================================================== */
-function renderB2BView() {
-  const container = document.getElementById('viewB2B');
-  container.innerHTML = `
-    <div class="m-view-header-bar">
-      <button class="m-back-btn" onclick="switchView('home')">← Home</button>
-      <span class="m-view-title">B2B Wholesale Portal</span>
-      <div></div>
-    </div>
-
-    <div class="checkout-container">
-      <div class="checkout-card" style="background:#141c48; color:#fff;">
-        <span class="m-hero-badge-pill">OFFICIAL GSTIN: 37BVTPG7761F1Z1</span>
-        <h2 style="font-size:18px; font-weight:800; margin:6px 0;">Wholesale & Bulk Supplier</h2>
-        <p style="font-size:11px; color:#c5d2f6; margin-bottom:12px;">We supply Kids Toys, Smart Gadgets, Handicrafts, Stationery, and Customized Return Gift Hampers at direct factory rates.</p>
-      </div>
-
-      <div class="checkout-card">
-        <h3 style="font-size:14px; font-weight:800; margin-bottom:12px;">B2B Bulk Calculator</h3>
-        <div class="form-group">
-          <label class="form-label">Estimated Order Quantity (Pieces)</label>
-          <input type="number" id="b2bQty" class="form-input" value="50" oninput="calculateB2BTotal()">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Select Product Category</label>
-          <select id="b2bCategory" class="form-input" onchange="calculateB2BTotal()">
-            <option value="Toys">Kids Toys (Est ₹250/pc)</option>
-            <option value="Return Gifts">Return Gift Hampers (Est ₹120/pc)</option>
-            <option value="Stationery">Fancy Stationery Sets (Est ₹150/pc)</option>
-            <option value="Handicrafts">Artisan Handicrafts (Est ₹450/pc)</option>
-          </select>
-        </div>
-
-        <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:14px; padding:14px; margin:14px 0;" id="b2bResultBox">
-          <div style="font-size:12px; font-weight:800; color:#0f172a;">Estimated Wholesale Quote:</div>
-          <div style="font-size:22px; font-weight:800; color:var(--brand-magenta-dark); margin:4px 0;" id="b2bEstTotal">₹6,000</div>
-          <div style="font-size:10px; color:var(--func-green); font-weight:700;">Includes 18% GST Credit Invoice & Free Vizag Delivery</div>
-        </div>
-
-        <button class="m-hero-cta-button" style="width:100%; justify-content:center; background:#25D366;" onclick="openWhatsAppChat('Hi UNIQUE EXPRESSIONS! I would like a Wholesale Bulk Quote for ' + document.getElementById('b2bQty').value + ' pcs of ' + document.getElementById('b2bCategory').value)">
-          💬 Request Official GST Invoice on WhatsApp →
-        </button>
-      </div>
-    </div>
-  `;
-  calculateB2BTotal();
-}
-
-function calculateB2BTotal() {
-  const qty = parseInt(document.getElementById('b2bQty')?.value || '50');
-  const cat = document.getElementById('b2bCategory')?.value || 'Toys';
-  let unitRate = 250;
-  if (cat === 'Return Gifts') unitRate = 120;
-  if (cat === 'Stationery') unitRate = 150;
-  if (cat === 'Handicrafts') unitRate = 450;
-
-  const total = qty * unitRate;
-  const el = document.getElementById('b2bEstTotal');
-  if (el) el.innerText = `₹${total.toLocaleString('en-IN')}`;
-}
 
 // ─── Cloudinary Upload Helper ────────────────────────────────────────────────
 async function uploadToCloudinary(file) {
@@ -9309,7 +9314,10 @@ function switchApTab(tabId) {
   else if (tabId === 'products') viewport.innerHTML = renderApProducts();
   else if (tabId === 'categories') viewport.innerHTML = renderApCategories();
   else if (tabId === 'inventory') viewport.innerHTML = renderApInventory();
-  else if (tabId === 'customers') viewport.innerHTML = renderApCustomers();
+  else if (tabId === 'customers') {
+    viewport.innerHTML = renderApCustomers();
+    loadCustomersAndRefresh();
+  }
   else if (tabId === 'coupons') viewport.innerHTML = renderApCoupons();
   else if (tabId === 'banners') viewport.innerHTML = renderApBanners();
   else if (tabId === 'reviews') viewport.innerHTML = renderApReviews();
@@ -9442,6 +9450,9 @@ function renderAdminView() {
     renderAdminLoginView(container);
     return;
   }
+
+  // Trigger background customer sync
+  loadCustomersAndRefresh();
 
   const lowStockCount = ALL_PRODUCTS.filter(p => getAvailableStock(p) > 0 && getAvailableStock(p) < 5).length;
   const pendingReviewsCount = STORE_REVIEWS.filter(r => r.status === 'Pending').length;
@@ -10887,6 +10898,10 @@ function openApBannerModal(idx = null) {
               <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Banner Image URL *</label>
               <div style="display:flex; gap:10px; align-items:center;">
                 <input type="text" id="apFormBannerImg" class="ap-search-input" style="flex:1;" required value="${slide ? slide.img : 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=800&auto=format&fit=crop'}" oninput="document.getElementById('apFormBannerImgPrev').src=this.value">
+                <label class="ap-btn ap-btn-secondary" style="height:38px; font-size:11px; padding:0 10px; cursor:pointer; margin:0; display:flex; align-items:center; gap:4px;" title="Upload photo directly from phone or computer">
+                  ☁️ Upload Media
+                  <input type="file" accept="image/*" style="display:none;" onchange="uploadImageToCloudinary(this, 'apFormBannerImg', 'apFormBannerImgPrev')">
+                </label>
                 <img id="apFormBannerImgPrev" src="${slide ? slide.img : 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=800&auto=format&fit=crop'}" style="width:50px; height:35px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1;">
               </div>
             </div>
@@ -10980,20 +10995,21 @@ function renderApCustomers() {
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
         <div>
           <h3 style="font-size:16px; font-weight:800; margin:0;">👥 Customer Directory</h3>
-          <span style="font-size:12px; color:#64748b;">Auto-built from real store orders</span>
+          <span style="font-size:12px; color:#64748b;">Auto-built from real store orders & registered profiles</span>
         </div>
       </div>
       <div class="ap-table-wrapper">
         <table class="ap-table">
           <thead>
-            <tr><th>Customer Name</th><th>Phone</th><th>City</th><th>Total Orders</th><th>Lifetime Spend</th><th>Tier</th></tr>
+            <tr><th>Customer Name</th><th>Phone</th><th>Email</th><th>City</th><th>Total Orders</th><th>Lifetime Spend</th><th>Tier</th></tr>
           </thead>
           <tbody>
-            ${customers.length === 0 ? `<tr><td colspan="6" style="text-align:center;padding:40px;color:#64748b;">No customers yet — orders will populate this list.</td></tr>` :
+            ${customers.length === 0 ? `<tr><td colspan="7" style="text-align:center;padding:40px;color:#64748b;">No customers yet — orders will populate this list.</td></tr>` :
             customers.map(c => `
               <tr>
                 <td><strong>${apEscHtml(c.name)}</strong></td>
-                <td>${apEscHtml(c.phone)}</td>
+                <td>${apEscHtml(c.phone || '—')}</td>
+                <td>${apEscHtml(c.email || '—')}</td>
                 <td>${apEscHtml(c.city)}</td>
                 <td><span class="ap-badge ap-badge-info">${c.ordersCount}</span></td>
                 <td><strong>₹${c.totalSpend.toLocaleString('en-IN')}</strong></td>
@@ -12526,6 +12542,7 @@ function renderReturnsView() {
         </div>
       ` : ''}
 
+      ${userOrders.length > 0 ? `
       <div class="info-content-card">
         <h3 class="info-section-heading">Request a New Return / Exchange</h3>
         
@@ -12569,26 +12586,45 @@ function renderReturnsView() {
         </div>
 
         <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="submitReturnRequest()">Submit Return Request →</button>
-      </div>
+      </div>` : `
+      <div class="info-content-card" style="text-align:center; padding:32px 20px;">
+        <div style="width:48px; height:48px; background:#f1f5f9; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px auto;">
+          <i class="ri-refund-line" style="font-size:24px; color:#94a3b8;"></i>
+        </div>
+        <h3 class="info-section-heading" style="font-size:15px; margin-bottom:6px;">No Orders Found</h3>
+        <p style="font-size:12px; color:#64748b; line-height:1.4; margin:0 0 16px 0;">You do not have any delivered orders associated with this account. Only successful delivered orders are eligible for return or replacement requests.</p>
+        <button class="m-hero-cta-button" style="width:100%; justify-content:center; background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; box-shadow:none; font-weight:800;" onclick="switchView('home')">
+          🛍️ Continue Shopping
+        </button>
+      </div>`}
     </div>
   `;
 }
 
 async function submitReturnRequest() {
-  const orderId = document.getElementById('retOrderSelect').value;
-  const reason = document.getElementById('retReasonSelect').value;
-  const resolution = document.getElementById('retResolutionSelect').value;
+  if (userOrders.length === 0) {
+    showToast('You do not have any orders to return.', 'info');
+    return;
+  }
+  const orderSelect = document.getElementById('retOrderSelect');
+  const orderId = orderSelect ? orderSelect.value : '';
+  if (!orderId) {
+    showToast('Please select a valid order.', 'info');
+    return;
+  }
+  const reason = document.getElementById('retReasonSelect')?.value || '';
+  const resolution = document.getElementById('retResolutionSelect')?.value || '';
 
-  const selectedOrder = userOrders.find(o => o.orderId === orderId) || userOrders[0];
+  const selectedOrder = userOrders.find(o => o.orderId === orderId);
   const returnObj = {
     returnId: "RET-" + Math.floor(100000 + Math.random() * 900000),
     orderId: orderId,
     date: "Today",
     status: "Requested - Under Review",
-    itemTitle: selectedOrder ? selectedOrder.items[0].title : "Catalog Item",
+    itemTitle: selectedOrder && selectedOrder.items && selectedOrder.items[0] ? selectedOrder.items[0].title : "Catalog Item",
     reason: reason,
     resolution: resolution,
-    amount: selectedOrder ? selectedOrder.totalAmount : 999
+    amount: selectedOrder ? (selectedOrder.totalAmount || selectedOrder.grandTotal || 0) : 0
   };
 
   // Save locally first

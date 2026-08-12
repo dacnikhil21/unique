@@ -1358,6 +1358,8 @@ body {
 
 .app-view.active-view {
   display: block !important;
+  animation: fadeInUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
 }
 
 /* Common View Top Header Bar */
