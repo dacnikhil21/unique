@@ -8647,17 +8647,17 @@ function renderProfileView() {
           </div>
         </div>
 
-        <div class="profile-stats-row">
-          <div class="profile-stat-box">
-            <div class="profile-stat-val">${myOrders.length}</div>
+        <div class="profile-stats-grid">
+          <div class="profile-stat-box" onclick="switchView('orderDetails', { orderId: '${myOrders[0]?.orderId || ''}' })">
+            <div class="profile-stat-num">${myOrders.length}</div>
             <div class="profile-stat-label">Total Orders</div>
           </div>
-          <div class="profile-stat-box">
-            <div class="profile-stat-val">${wishlist.length}</div>
+          <div class="profile-stat-box" onclick="switchView('wishlist')">
+            <div class="profile-stat-num">${wishlist.length}</div>
             <div class="profile-stat-label">Saved Items</div>
           </div>
-          <div class="profile-stat-box">
-            <div class="profile-stat-val">${userAddresses.length}</div>
+          <div class="profile-stat-box" onclick="switchView('addresses')">
+            <div class="profile-stat-num">${userAddresses.length}</div>
             <div class="profile-stat-label">Addresses</div>
           </div>
         </div>
@@ -8667,48 +8667,50 @@ function renderProfileView() {
         <h4 style="font-size:12px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">My Account & Shopping</h4>
       </div>
 
-      <div class="profile-menu-tile" onclick="switchView('orderDetails', { orderId: '${myOrders[0]?.orderId || ''}' })">
-        <div class="profile-menu-left">
-          <div class="profile-menu-icon"><i class="ri-shopping-bag-line"></i></div>
-          <div>
-            <div class="profile-menu-title">Order History & Live Tracking</div>
-            <div class="profile-menu-sub">Track active dispatches & past orders (${myOrders.length})</div>
+      <div class="profile-menu-grid">
+        <div class="profile-menu-grid-card" onclick="switchView('orderDetails', { orderId: '${myOrders[0]?.orderId || ''}' })">
+          <div class="profile-menu-left">
+            <div class="profile-menu-icon" style="color: #0f172a;"><i class="ri-shopping-bag-line"></i></div>
+            <div class="profile-menu-info">
+              <div class="profile-menu-title">Orders</div>
+              <div class="profile-menu-sub">${myOrders.length} orders</div>
+            </div>
           </div>
+          <span class="profile-menu-chevron">&rarr;</span>
         </div>
-        <span style="font-size:12px; color:#94a3b8;">→</span>
-      </div>
 
-      <div class="profile-menu-tile" onclick="switchView('addresses')">
-        <div class="profile-menu-left">
-          <div class="profile-menu-icon"><i class="ri-map-pin-line"></i></div>
-          <div>
-            <div class="profile-menu-title">Saved Address Book</div>
-            <div class="profile-menu-sub">${defaultAddress ? defaultAddress.street + ', ' + defaultAddress.city : 'Manage shipping addresses'}</div>
+        <div class="profile-menu-grid-card" onclick="switchView('wishlist')">
+          <div class="profile-menu-left">
+            <div class="profile-menu-icon" style="color: #ff5500;"><i class="ri-heart-3-line"></i></div>
+            <div class="profile-menu-info">
+              <div class="profile-menu-title">Wishlist</div>
+              <div class="profile-menu-sub">${wishlist.length} items</div>
+            </div>
           </div>
+          <span class="profile-menu-chevron">&rarr;</span>
         </div>
-        <span style="font-size:12px; color:#94a3b8;">→</span>
-      </div>
 
-      <div class="profile-menu-tile" onclick="switchView('wishlist')">
-        <div class="profile-menu-left">
-          <div class="profile-menu-icon"><i class="ri-heart-3-line"></i></div>
-          <div>
-            <div class="profile-menu-title">My Saved Wishlist</div>
-            <div class="profile-menu-sub">${wishlist.length} items saved for later</div>
+        <div class="profile-menu-grid-card" onclick="switchView('addresses')">
+          <div class="profile-menu-left">
+            <div class="profile-menu-icon" style="color: #2563eb;"><i class="ri-map-pin-line"></i></div>
+            <div class="profile-menu-info">
+              <div class="profile-menu-title">Addresses</div>
+              <div class="profile-menu-sub">${userAddresses.length} saved</div>
+            </div>
           </div>
+          <span class="profile-menu-chevron">&rarr;</span>
         </div>
-        <span style="font-size:12px; color:#94a3b8;">→</span>
-      </div>
 
-      <div class="profile-menu-tile" onclick="switchView('offers')">
-        <div class="profile-menu-left">
-          <div class="profile-menu-icon"><i class="ri-coupon-3-line"></i></div>
-          <div>
-            <div class="profile-menu-title">Coupons & VIP Discounts</div>
-            <div class="profile-menu-sub">Active Code: UNIQUE10 (Flat 10% Off)</div>
+        <div class="profile-menu-grid-card" onclick="switchView('offers')">
+          <div class="profile-menu-left">
+            <div class="profile-menu-icon" style="color: #d97706;"><i class="ri-coupon-3-line"></i></div>
+            <div class="profile-menu-info">
+              <div class="profile-menu-title">Coupons</div>
+              <div class="profile-menu-sub">VIP Offers</div>
+            </div>
           </div>
+          <span class="profile-menu-chevron">&rarr;</span>
         </div>
-        <span style="font-size:12px; color:#94a3b8;">→</span>
       </div>
 
       <div class="profile-menu-tile" onclick="openWhatsAppChat()">
