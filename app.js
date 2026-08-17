@@ -6270,15 +6270,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Restore view from URL hash (deep link from WhatsApp etc.) or default to home
+  const isAuthCallback = window.location.hash.includes('access_token=') || window.location.hash.includes('error=') || window.location.search.includes('code=');
   const restoredNav = parseNavHash();
   if (restoredNav) {
-    // Replace base history entry with home so Back from deep link goes home first
     history.replaceState({ view: 'home', params: {} }, '', '#view=home');
     switchView(restoredNav.view, restoredNav.params || {});
   } else {
-    // Set a base history entry — replaceState so Back from home exits the app
-    history.replaceState({ view: 'home', params: {} }, '', '#view=home');
-    switchView('home', {}, true); // skipHistory=true since we just set it above
+    if (!isAuthCallback) {
+      history.replaceState({ view: 'home', params: {} }, '', '#view=home');
+    }
+    switchView('home', {}, true);
   }
   updateBadges();
   startHeroCarousel();
@@ -6289,7 +6290,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (window.feather) feather.replace();
   if (window.lucide) lucide.createIcons();
 
-  await bootstrapCustomerAuth();
+  try {
+    await bootstrapCustomerAuth();
+  } catch (authErr) {
+    console.warn('[UE] Customer auth bootstrap note:', authErr);
+  }
+
 
   // Bootstrap from Supabase in background
   try {
@@ -7493,12 +7499,49 @@ function updatePdpQty(change) {
 
 function addPdpToCart(goToCheckout = false) {
   if (!currentPdpProduct) return;
+  const available = getAvailableStock(currentPdpProduct);
+  if (available <= 0) {
+    showToast(`"${currentPdpProduct.title}" is currently out of stock.`, 'info');
+    return;
+  }
+
+  const existing = cart.find(i => String(i.id) === String(currentPdpProduct.id) && i.variant === pdpSelectedVariant);
+
+  if (goToCheckout) {
+    // ⚡ BUY NOW FLOW: Ensure item is in cart
+    if (existing) {
+      existing.qty = Math.min(available, Math.max(1, pdpSelectedQty || 1));
+    } else {
+      cart.push({
+        id: currentPdpProduct.id,
+        title: currentPdpProduct.title,
+        category: currentPdpProduct.category,
+        image: currentPdpProduct.image,
+        price: currentPdpProduct.price,
+        qty: Math.min(available, Math.max(1, pdpSelectedQty || 1)),
+        variant: pdpSelectedVariant
+      });
+    }
+    saveCart();
+
+    // Check if user is logged in
+    if (!userProfile && !authUserId) {
+      openUserAuthModal('login');
+      showToast('Please login or register to complete your order!', 'info');
+    } else {
+      switchView('checkout');
+    }
+    return;
+  }
+
+
+  // 🛒 ADD TO CART FLOW
   const check = validateStockForCart(currentPdpProduct.id, pdpSelectedQty);
   if (!check.ok) {
     showToast(check.msg, 'info');
     return;
   }
-  const existing = cart.find(i => i.id === currentPdpProduct.id && i.variant === pdpSelectedVariant);
+
   if (existing) {
     existing.qty += pdpSelectedQty;
   } else {
@@ -7513,12 +7556,9 @@ function addPdpToCart(goToCheckout = false) {
     });
   }
   saveCart();
-  if (goToCheckout) {
-    switchView('checkout');
-  } else {
-    showToast(`Added ${pdpSelectedQty} × ${currentPdpProduct.title} to your cart! 🛒`, 'success');
-  }
+  showToast(`Added ${pdpSelectedQty} × ${currentPdpProduct.title} to your cart! 🛒`, 'success');
 }
+
 
 /* ==========================================================================
    SPRINT 1 SHOPPING JOURNEY STATE & UTILITIES
@@ -8237,7 +8277,115 @@ function selectDeliveryAddressCard(el, addressKey) {
   selectedDeliveryAddress = addressKey;
 }
 
-function placeOrderFinal(grandTotal) {
+function finalizeOrderSuccess(orderMeta) {
+  const {
+    paymentMethod = 'Online',
+    paymentId = null,
+    razorpayOrderId = null,
+    name,
+    phone,
+    address,
+    totals
+  } = orderMeta;
+
+  const orderRecord = {
+    orderId: 'UE-' + Math.floor(100000 + Math.random() * 900000),
+    date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    createdAt: new Date().toISOString(),
+    items: cart.map(i => ({ ...i, qty: cartItemQty(i) })),
+    totalAmount: totals.grandTotal,
+    subtotal: totals.subtotal,
+    discountAmount: totals.discount,
+    shippingFee: totals.shipping,
+    couponCode: appliedCouponCode || null,
+    stepIndex: 0,
+    status: paymentId ? 'Paid & Confirmed' : 'Order Confirmed',
+    customerName: name,
+    phone: phone,
+    address: address || 'Visakhapatnam',
+    paymentMethod: paymentMethod,
+    paymentId: paymentId || null,
+    razorpayOrderId: razorpayOrderId || null,
+    gstin: '37BVTPG7761F1Z1',
+    userId: authUserId || null
+  };
+
+  // Save locally first
+  userOrders.unshift(orderRecord);
+  localStorage.setItem('ue_orders', JSON.stringify(userOrders));
+
+  // Deduct stock for each ordered item
+  deductStockForOrder(orderRecord.items);
+  syncStorefrontState();
+
+  // Sync to Supabase (non-blocking)
+  sbInsertOrder(orderRecord).catch(err => console.warn('[UE] Order sync failed:', err));
+
+  if (appliedCouponCode) {
+    const c = STORE_COUPONS.find(x => x.code === appliedCouponCode);
+    if (c) c.usedCount = (c.usedCount || 0) + 1;
+  }
+  appliedCouponCode = null;
+  appliedDiscountAmount = 0;
+
+  // Reset Cart
+  cart = [];
+  saveCart();
+
+  // Display clean Order Confirmation Screen on Checkout view
+  const paidTotal = totals.grandTotal;
+  const container = document.getElementById('viewCheckout');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="m-view-header-bar">
+      <button class="m-back-btn" onclick="switchView('home')">← Store</button>
+      <span class="m-view-title">Order Confirmed</span>
+      <div></div>
+    </div>
+
+    <div class="checkout-container">
+      <div class="checkout-card" style="text-align:center; padding:28px 18px;">
+        <div style="width:64px; height:64px; border-radius:50%; background:#dcfce7; color:#16a34a; font-size:30px; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 14px auto; box-shadow:0 4px 14px rgba(22,163,74,0.25);">
+          ✓
+        </div>
+        <span style="background:#f1f5f9; color:#0f172a; font-size:11px; font-weight:800; padding:4px 12px; border-radius:99px; display:inline-block; margin-bottom:10px;">
+          ORDER #${orderRecord.orderId}
+        </span>
+        <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin-bottom:6px;">Thank You, ${name}!</h2>
+        <p style="font-size:12.5px; color:#64748b; margin-bottom:18px; line-height:1.5;">
+          Your order has been placed successfully for <strong>₹${paidTotal}</strong>.<br>
+          Payment Mode: <strong style="color:#0f172a;">${paymentMethod}</strong>${paymentId ? `<br><small style="color:#64748b; font-size:10.5px;">(Ref: ${paymentId})</small>` : ''}<br>
+          Express delivery to <strong>${address || 'Visakhapatnam'}</strong> is scheduled.
+        </p>
+
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px; text-align:left; margin-bottom:20px;">
+          <div style="font-size:11px; font-weight:800; color:#334155; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Order Summary:</div>
+          ${orderRecord.items.map(item => `
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:#334155;">
+              <span>${item.title} (x${cartItemQty(item)})</span>
+              <span style="font-weight:700; color:#0f172a;">₹${cartItemQty(item) * item.price}</span>
+            </div>
+          `).join('')}
+          <div style="border-top:1px dashed #cbd5e1; margin-top:8px; padding-top:6px; display:flex; justify-content:space-between; font-size:13px; font-weight:800; color:#0f172a;">
+            <span>Total Paid:</span>
+            <span style="color:var(--brand-magenta-dark);">₹${paidTotal}</span>
+          </div>
+        </div>
+
+        <button class="pdp-btn-amazon-buy" style="width:100%; height:44px; margin-bottom:10px; font-size:12px;" onclick="openWhatsAppChat('Hi, I just placed Order ${orderRecord.orderId} for ₹${paidTotal}. Please share delivery updates!')">
+          💬 Send Order to WhatsApp (+91 7799747575)
+        </button>
+
+        <button class="m-back-btn" style="width:100%; justify-content:center; padding:12px; font-size:12px;" onclick="switchView('home')">
+          ← Return to Home Shopping
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+async function placeOrderFinal(grandTotal) {
   const nameInput = document.getElementById('chkName');
   const phoneInput = document.getElementById('chkPhone');
   const addressInput = document.getElementById('chkAddress');
@@ -8267,99 +8415,155 @@ function placeOrderFinal(grandTotal) {
   const locality = document.getElementById('chkLocality')?.value.trim() || 'Visakhapatnam';
   const pincode = document.getElementById('chkPincode')?.value.trim() || '';
   const fullAddress = [address, locality, pincode].filter(Boolean).join(', ');
-
   const totals = calculateCheckoutTotals();
-  const orderRecord = {
-    orderId: 'UE-' + Math.floor(100000 + Math.random() * 900000),
-    date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-    createdAt: new Date().toISOString(),
-    items: cart.map(i => ({ ...i, qty: cartItemQty(i) })),
-    totalAmount: totals.grandTotal,
-    subtotal: totals.subtotal,
-    discountAmount: totals.discount,
-    shippingFee: totals.shipping,
-    couponCode: appliedCouponCode || null,
-    stepIndex: 0,
-    status: 'Order Confirmed',
-    customerName: name,
-    phone: phone,
-    address: fullAddress || 'Visakhapatnam',
-    paymentMethod: document.querySelector('.payment-option-card.active span')?.innerText || 'Online',
-    gstin: '37BVTPG7761F1Z1',
-    userId: authUserId || null
-  };
 
-  // Save locally first
-  userOrders.unshift(orderRecord);
-  localStorage.setItem('ue_orders', JSON.stringify(userOrders));
+  const activeMethodText = document.querySelector('.payment-option-card.active span, .payment-option-card.active div > div')?.innerText || 'Online';
+  const isOnlinePay = activeMethodText.toLowerCase().includes('online') || activeMethodText.toLowerCase().includes('razorpay') || activeMethodText.toLowerCase().includes('upi') || activeMethodText.toLowerCase().includes('gpay');
 
-  // Deduct stock for each ordered item
-  deductStockForOrder(orderRecord.items);
-  syncStorefrontState();
+  // If Instant Online Razorpay / UPI selected
+  if (isOnlinePay) {
+    const orderBtn = document.querySelector('button[onclick*="placeOrderFinal"]');
+    const originalBtnText = orderBtn ? orderBtn.innerHTML : '🔒 Complete & Place Order →';
+    if (orderBtn) {
+      orderBtn.disabled = true;
+      orderBtn.innerHTML = '⏳ Initializing Razorpay Gateway...';
+    }
 
-  // Sync to Supabase (non-blocking)
-  sbInsertOrder(orderRecord).catch(err => console.warn('[UE] Order sync failed:', err));
+    try {
+      // 1. Create Razorpay order via backend
+      const res = await fetch('/api/razorpay/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: totals.grandTotal,
+          receipt: 'ue_' + Date.now(),
+          notes: {
+            customerName: name,
+            phone: phone,
+            address: fullAddress
+          }
+        })
+      });
 
-  if (appliedCouponCode) {
-    const c = STORE_COUPONS.find(x => x.code === appliedCouponCode);
-    if (c) c.usedCount = (c.usedCount || 0) + 1;
+      const data = await res.json();
+      if (!res.ok || !data.success || !data.order) {
+        throw new Error(data.error || 'Failed to initialize payment gateway');
+      }
+
+      if (typeof window.Razorpay === 'undefined') {
+        throw new Error('Razorpay SDK not loaded. Please refresh your browser or check internet connection.');
+      }
+
+      // 2. Configure and open Razorpay Standard Checkout
+      const rzpOptions = {
+        key: data.keyId || 'rzp_live_TPJNlPejCHurNZ',
+        amount: data.order.amount,
+        currency: data.order.currency || 'INR',
+        name: 'UNIQUE EXPRESSIONS',
+        description: `Order for ${cart.length} item${cart.length > 1 ? 's' : ''}`,
+        image: 'logo.png',
+        order_id: data.order.id,
+        prefill: {
+          name: name,
+          contact: phone,
+          email: userProfile?.email || 'customer@uniqueexpressions.in'
+        },
+        notes: {
+          shipping_address: fullAddress
+        },
+        theme: {
+          color: '#db2777' // Brand magenta
+        },
+        modal: {
+          ondismiss: function() {
+            if (orderBtn) {
+              orderBtn.disabled = false;
+              orderBtn.innerHTML = originalBtnText;
+            }
+            showApToast('Payment cancelled. You can retry whenever ready.', 'info');
+          }
+        },
+        handler: async function(response) {
+          if (orderBtn) {
+            orderBtn.innerHTML = '⏳ Verifying Payment Signature...';
+          }
+          try {
+            const vRes = await fetch('/api/razorpay/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+            const vData = await vRes.json();
+            if (vData.success && vData.verified) {
+              finalizeOrderSuccess({
+                paymentMethod: 'Razorpay Online (UPI / Cards / NetBanking)',
+                paymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                name,
+                phone,
+                address: fullAddress,
+                totals
+              });
+            } else {
+              showApToast('⚠️ Payment verification issue: ' + (vData.error || 'Please contact store with ID: ' + response.razorpay_payment_id), 'info');
+              finalizeOrderSuccess({
+                paymentMethod: 'Razorpay Online (Pending Verification)',
+                paymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                name,
+                phone,
+                address: fullAddress,
+                totals
+              });
+            }
+          } catch (e) {
+            finalizeOrderSuccess({
+              paymentMethod: 'Razorpay Online (UPI / Cards)',
+              paymentId: response.razorpay_payment_id,
+              razorpayOrderId: response.razorpay_order_id,
+              name,
+              phone,
+              address: fullAddress,
+              totals
+            });
+          }
+        }
+      };
+
+      const rzpInstance = new window.Razorpay(rzpOptions);
+      rzpInstance.on('payment.failed', function(failure) {
+        if (orderBtn) {
+          orderBtn.disabled = false;
+          orderBtn.innerHTML = originalBtnText;
+        }
+        showApToast(`Payment Failed: ${failure.error?.description || 'Transaction declined'}`, 'info');
+      });
+      rzpInstance.open();
+
+    } catch (err) {
+      if (orderBtn) {
+        orderBtn.disabled = false;
+        orderBtn.innerHTML = originalBtnText;
+      }
+      showApToast(`Payment gateway error: ${err.message}`, 'info');
+    }
+    return;
   }
-  appliedCouponCode = null;
-  appliedDiscountAmount = 0;
 
-  // Reset Cart
-  cart = [];
-  saveCart();
-
-  // Stop right here and display a clean Order Confirmation Screen on Checkout view
-  const paidTotal = totals.grandTotal;
-  const container = document.getElementById('viewCheckout');
-  container.innerHTML = `
-    <div class="m-view-header-bar">
-      <button class="m-back-btn" onclick="switchView('home')">← Store</button>
-      <span class="m-view-title">Order Confirmed</span>
-      <div></div>
-    </div>
-
-    <div class="checkout-container">
-      <div class="checkout-card" style="text-align:center; padding:28px 18px;">
-        <div style="width:60px; height:60px; border-radius:50%; background:#dcfce7; color:#16a34a; font-size:28px; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 14px auto; box-shadow:0 4px 12px rgba(22,163,74,0.2);">
-          ✓
-        </div>
-        <span style="background:#f1f5f9; color:#0f172a; font-size:11px; font-weight:800; padding:4px 12px; border-radius:99px; display:inline-block; margin-bottom:10px;">
-          ORDER #${orderRecord.orderId}
-        </span>
-        <h2 style="font-size:19px; font-weight:800; color:#0f172a; margin-bottom:6px;">Thank You, ${name}!</h2>
-        <p style="font-size:12px; color:#64748b; margin-bottom:20px; line-height:1.5;">
-          Your order has been placed successfully for <strong>₹${paidTotal}</strong>.<br>
-          Express delivery to <strong>${address || 'Visakhapatnam'}</strong> is scheduled.
-        </p>
-
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px; text-align:left; margin-bottom:20px;">
-          <div style="font-size:11px; font-weight:800; color:#334155; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Order Summary:</div>
-          ${orderRecord.items.map(item => `
-            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:#334155;">
-              <span>${item.title} (x${cartItemQty(item)})</span>
-              <span style="font-weight:700; color:#0f172a;">₹${cartItemQty(item) * item.price}</span>
-            </div>
-          `).join('')}
-          <div style="border-top:1px dashed #cbd5e1; margin-top:8px; padding-top:6px; display:flex; justify-content:space-between; font-size:13px; font-weight:800; color:#0f172a;">
-            <span>Total Paid:</span>
-            <span style="color:var(--brand-magenta-dark);">₹${paidTotal}</span>
-          </div>
-        </div>
-
-        <button class="pdp-btn-amazon-buy" style="width:100%; height:44px; margin-bottom:10px; font-size:12px;" onclick="openWhatsAppChat('Hi, I just placed Order ${orderRecord.orderId} for ₹${paidTotal}. Please share delivery updates!')">
-          💬 Send Order to WhatsApp (+91 7799747575)
-        </button>
-
-        <button class="m-back-btn" style="width:100%; justify-content:center; padding:12px; font-size:12px;" onclick="switchView('home')">
-          ← Return to Home Shopping
-        </button>
-      </div>
-    </div>
-  `;
+  // Otherwise: COD or WhatsApp Order
+  finalizeOrderSuccess({
+    paymentMethod: activeMethodText || 'Cash on Delivery',
+    name,
+    phone,
+    address: fullAddress,
+    totals
+  });
 }
+
 
 
 /* ==========================================================================
@@ -13396,9 +13600,12 @@ function handleUserLogin(e) {
     }
     await applyAuthSession(result.session);
     closeUserAuthModal();
-    showToast(`Welcome back, ${userProfile.name}!`, 'success');
-    if (currentView === 'profile') renderProfileView();
-    if (currentView === 'checkout') renderCheckoutView();
+    showToast(`Welcome back, ${userProfile ? userProfile.name : 'Customer'}!`, 'success');
+    if (cart.length > 0) {
+      switchView('checkout');
+    } else if (currentView === 'profile') {
+      renderProfileView();
+    }
   });
 }
 
@@ -13418,13 +13625,18 @@ function handleUserSignup(e) {
       await applyAuthSession(result.session);
       closeUserAuthModal();
       showToast(`Welcome ${name}!`, 'success');
-      if (currentView === 'profile') renderProfileView();
+      if (cart.length > 0) {
+        switchView('checkout');
+      } else if (currentView === 'profile') {
+        renderProfileView();
+      }
     } else {
       showToast('Account created! Check email to verify, then login.', 'success');
       switchAuthTab('login');
     }
   });
 }
+
 
 function handleSendOtpCode() {
   showToast('Use Email + Password login, or register a new account. WhatsApp help: +91 7799747575', 'info');

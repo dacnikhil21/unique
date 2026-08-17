@@ -1259,16 +1259,26 @@
             OTP sent to your number! Didn't receive? <a href="#" onclick="handleSendOtpCode(); return false;" style="color:#2563eb; font-weight:700;">Resend OTP</a>
           </div>
         </div>
+
+        <div style="padding:14px 24px 18px; text-align:center; background:#f8fafc; border-top:1px solid #f1f5f9;">
+          <a href="#" onclick="closeUserAuthModal(); switchView('checkout'); return false;" style="font-size:12px; font-weight:700; color:#475569; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+            <span>Want to order faster?</span> <strong style="color:#2563eb;">Continue as Guest Checkout &rarr;</strong>
+          </a>
+        </div>
       </div>
     </div>
   </div>
+
 
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Supabase config & DB helpers -->
   <script src="supabase.js?v=1.0"></script>
+  <!-- Razorpay Official Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <!-- Main App -->
-  <script src="app.js?v=5.8"></script>
+  <script src="app.js?v=5.9"></script>
+
   <script>
     if (window.feather) feather.replace();
     if (window.lucide) lucide.createIcons();
