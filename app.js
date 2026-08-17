@@ -6158,6 +6158,9 @@ async function applyAuthSession(session) {
 }
 
 async function bootstrapCustomerAuth() {
+  if (typeof sbInitAuthFlow === 'function') {
+    await sbInitAuthFlow();
+  }
   if (typeof sbGetAuthSession !== 'function') return;
   const session = await sbGetAuthSession();
   await applyAuthSession(session);
@@ -6172,6 +6175,7 @@ async function bootstrapCustomerAuth() {
     setTimeout(openResetPasswordModal, 400);
   }
 }
+
 
 let userOrders = JSON.parse(localStorage.getItem('ue_orders') || '[]');
 

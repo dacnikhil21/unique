@@ -570,14 +570,42 @@ async function sbGetAuthSession() {
 }
 
 function sbOnAuthStateChange(callback) {
-  return _supabase.auth.onAuthStateChange((event, session) => callback(event, session));
+  return _supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      if (typeof openResetPasswordModal === 'function') {
+        setTimeout(openResetPasswordModal, 200);
+      }
+    }
+    if (typeof callback === 'function') {
+      callback(event, session);
+    }
+  });
+}
+
+async function sbInitAuthFlow() {
+  try {
+    // 1. Handle PKCE auth code exchange if present in URL (?code=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+      const { data, error } = await _supabase.auth.exchangeCodeForSession(code);
+      if (!error && data?.session) {
+        if (typeof applyAuthSession === 'function') {
+          await applyAuthSession(data.session);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[Supabase] Auth flow initialization note:', e);
+  }
 }
 
 async function sbResetPassword(identifier) {
   try {
     const authEmail = sbResolveAuthEmail(identifier);
+    const cleanOrigin = window.location.origin.replace(/\/+$/, '');
     const { error } = await _supabase.auth.resetPasswordForEmail(authEmail, {
-      redirectTo: window.location.origin + window.location.pathname + '#view=profile&reset=1'
+      redirectTo: `${cleanOrigin}/#view=profile&reset=1`
     });
     if (error) throw error;
     return { ok: true, error: null };
@@ -588,6 +616,17 @@ async function sbResetPassword(identifier) {
 
 async function sbUpdatePassword(newPassword) {
   try {
+    // Check if session exists or try refreshing
+    const { data: sessionData } = await _supabase.auth.getSession();
+    if (!sessionData?.session) {
+      const { data: userData } = await _supabase.auth.getUser();
+      if (!userData?.user) {
+        return {
+          ok: false,
+          error: 'Your password reset session has expired or is invalid. Please request a fresh reset link from the login page.'
+        };
+      }
+    }
     const { error } = await _supabase.auth.updateUser({ password: newPassword });
     if (error) throw error;
     return { ok: true, error: null };
@@ -595,6 +634,7 @@ async function sbUpdatePassword(newPassword) {
     return { ok: false, error: err.message || 'Could not update password' };
   }
 }
+
 
 async function sbGetProfile(userId) {
   try {
