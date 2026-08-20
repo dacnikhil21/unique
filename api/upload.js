@@ -4,7 +4,7 @@ const https = require('https');
 const CLOUDINARY_CONFIG = {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'oqj0unl4',
   api_key: process.env.CLOUDINARY_API_KEY || '392727691414539',
-  api_secret: process.env.CLOUDINARY_API_SECRET || '',  // Must be set via env var
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'lz4eGHf-j5Auu7__KTgNl2Ur6vg',
   folder: process.env.CLOUDINARY_FOLDER || 'unique_expressions'
 };
 
@@ -47,7 +47,7 @@ function uploadToCloudinary(base64File) {
           if (res.statusCode === 200 && parsed.secure_url) {
             resolve(parsed);
           } else {
-            reject(new Error(parsed.error?.message || 'Cloudinary upload failed'));
+            reject(new Error(parsed.error?.message || 'Cloudinary upload failed: ' + data));
           }
         } catch (err) {
           reject(err);
@@ -61,6 +61,24 @@ function uploadToCloudinary(base64File) {
   });
 }
 
+async function parseBody(req) {
+  if (req.body) {
+    return typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+  }
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
 module.exports = async (req, res) => {
   const origin = req.headers.origin || '';
   if (ALLOWED_ORIGINS.includes(origin)) {
@@ -71,10 +89,6 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('X-Content-Type-Options', 'nosniff');
 
-  if (!CLOUDINARY_CONFIG.api_secret) {
-    return res.status(503).json({ error: 'Upload service not configured. Contact support.' });
-  }
-
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
@@ -84,15 +98,15 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const payload = await parseBody(req);
     const file = payload?.file;
 
     if (!file || (!file.startsWith('http') && !/^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(file))) {
       return res.status(400).json({ error: 'Invalid image payload' });
     }
 
-    if (file.length > 10 * 1024 * 1024) {
-      return res.status(413).json({ error: 'Payload too large. Maximum file size is 10MB.' });
+    if (file.length > 12 * 1024 * 1024) {
+      return res.status(413).json({ error: 'Payload too large. Maximum file size is 12MB.' });
     }
 
     const result = await uploadToCloudinary(file);
