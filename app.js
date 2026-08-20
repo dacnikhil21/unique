@@ -6276,7 +6276,22 @@ function mergeProductsFromSupabase(sbProds) {
   });
   sbProds.forEach(sb => {
     if (!merged.some(p => String(p.id) === String(sb.id))) {
-      merged.push(enhanceProductSchema([sb])[0]);
+      merged.push({
+        id: String(sb.id),
+        title: sb.title || 'Product',
+        price: parseFloat(sb.price) || 0,
+        originalPrice: parseFloat(sb.originalPrice) || parseFloat(sb.price) || 0,
+        category: sb.category || 'General',
+        image: sb.image || (Array.isArray(sb.images) && sb.images[0]) || 'logo.png',
+        images: (Array.isArray(sb.images) && sb.images.length > 0) ? sb.images : [sb.image || 'logo.png'],
+        stockQty: sb.stockQty != null ? sb.stockQty : 10,
+        inStock: sb.inStock !== false,
+        sku: sb.sku || '',
+        rating: sb.rating || 4.8,
+        reviewsCount: sb.reviewsCount || 12,
+        isFeatured: sb.isFeatured || false,
+        description: sb.description || ''
+      });
     }
   });
   return merged;
@@ -12653,10 +12668,19 @@ function updateActiveCategoryThumbnails() {
 }
 
 function productMatchesSearch(p, q) {
-  if (!q) return false;
-  return (p.title || '').toLowerCase().includes(q)
-    || (p.category || '').toLowerCase().includes(q)
-    || (p.sku || '').toLowerCase().includes(q);
+  if (!q || !p) return false;
+  const qStr = String(q).toLowerCase().trim();
+  const searchCorpus = `${p.title || ''} ${p.category || ''} ${p.sku || ''} ${p.description || ''}`.toLowerCase();
+
+  // 1. Direct substring match
+  if (searchCorpus.includes(qStr)) return true;
+
+  // 2. Tokenized multi-word match (e.g. "nikhil toys" matches product with title "nikhil" and category "toys")
+  const tokens = qStr.split(/\s+/).filter(t => t.length > 0);
+  if (tokens.length > 1) {
+    return tokens.every(token => searchCorpus.includes(token));
+  }
+  return false;
 }
 
 function handleSearchInput(query) {

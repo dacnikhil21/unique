@@ -6402,29 +6402,38 @@ body.checkout-active #floatingWhatsappBtn,
    MOBILE HEADER & LOGO ENHANCEMENT + BLACK LINE REMOVAL
    ========================================================================== */
 .m-app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
-  background: #ffffff;
-  border-bottom: 1px solid #f1f5f9;
-  position: sticky;
-  top: 0;
-  z-index: 120;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 16px 2px 16px !important;
+  background: #ffffff !important;
+  border-bottom: none !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 120 !important;
 }
 
 .m-header-logo-link {
-  display: flex;
-  align-items: center;
-  text-decoration: none;
+  display: flex !important;
+  align-items: center !important;
+  text-decoration: none !important;
 }
 
 .m-header-logo-link img {
-  height: 56px !important;
+  height: 42px !important;
   width: auto !important;
-  max-width: 250px !important;
-  object-fit: contain;
-  mix-blend-mode: multiply;
+  max-width: 220px !important;
+  object-fit: contain !important;
+  mix-blend-mode: multiply !important;
+}
+
+.m-search-wrap-sticky {
+  position: sticky !important;
+  top: 52px !important;
+  z-index: 95 !important;
+  background: #ffffff !important;
+  padding: 2px 16px 8px 16px !important;
+  border-bottom: none !important;
 }
 
 /* Remove unwanted floating black line / hero indicator dots */
