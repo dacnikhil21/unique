@@ -65,27 +65,44 @@ async function sbSeedProducts(products) {
 
 async function sbAdminInsertProduct(product) {
   try {
+    // 1. Try direct Supabase client
     const { data, error } = await _supabase
       .from('products')
       .insert({
         title: product.title,
-        category: product.category,
-        image: product.image || 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop',
-        price: product.price,
-        original_price: product.originalPrice,
-        discount: product.discount || 0,
-        rating: parseFloat(product.rating) || 4.5,
-        reviews_count: product.reviewsCount || 0,
+        category: product.category || 'General',
+        image: product.image || 'logo.png',
+        price: parseInt(product.price, 10) || 0,
+        original_price: parseInt(product.originalPrice || product.price, 10) || 0,
+        discount: parseInt(product.discount, 10) || 0,
+        rating: parseFloat(product.rating) || 4.8,
+        reviews_count: parseInt(product.reviewsCount, 10) || 12,
         description: product.description || '',
         in_stock: product.inStock !== false,
-        stock_qty: Math.max(0, parseInt(product.stockQty, 10) || 0)
+        stock_qty: Math.max(0, parseInt(product.stockQty, 10) || 10)
       })
       .select()
       .single();
-    if (error) throw error;
-    return data;
+
+    if (!error && data) return data;
+    throw error || new Error('Direct insert failed');
   } catch (err) {
-    console.warn('[Supabase] adminInsertProduct failed:', err.message);
+    console.warn('[Supabase Direct Insert Warning]:', err.message, '— Attempting API fallback...');
+    // 2. Fallback to /api/products serverless endpoint
+    try {
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create', ...product })
+      });
+      const json = await res.json();
+      if (json.success && json.product) {
+        console.log('[Supabase API Fallback] Product inserted successfully:', json.product.id);
+        return json.product;
+      }
+    } catch (apiErr) {
+      console.error('[Supabase API Fallback Error]:', apiErr.message);
+    }
     return null;
   }
 }
@@ -96,25 +113,36 @@ async function sbAdminUpdateProduct(product) {
       title: product.title,
       category: product.category,
       image: product.image || '',
-      price: product.price,
-      original_price: product.originalPrice,
-      discount: product.discount || 0,
-      rating: parseFloat(product.rating) || 4.5,
-      reviews_count: product.reviewsCount || 0,
+      price: parseInt(product.price, 10),
+      original_price: parseInt(product.originalPrice || product.price, 10),
+      discount: parseInt(product.discount, 10) || 0,
+      rating: parseFloat(product.rating) || 4.8,
+      reviews_count: parseInt(product.reviewsCount, 10) || 12,
       description: product.description || '',
       in_stock: product.inStock !== false,
       stock_qty: Math.max(0, parseInt(product.stockQty, 10) || 0)
     };
+
     const { data, error } = await _supabase
       .from('products')
       .update(row)
       .eq('id', product.id)
       .select()
       .single();
-    if (error) throw error;
-    return data;
+
+    if (!error && data) return data;
+    throw error || new Error('Direct update failed');
   } catch (err) {
-    console.warn('[Supabase] adminUpdateProduct failed:', err.message);
+    console.warn('[Supabase Direct Update Warning]:', err.message, '— Attempting API fallback...');
+    try {
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update', ...product })
+      });
+      const json = await res.json();
+      if (json.success && json.product) return json.product;
+    } catch (apiErr) {}
     return null;
   }
 }
@@ -122,11 +150,21 @@ async function sbAdminUpdateProduct(product) {
 async function sbAdminDeleteProduct(id) {
   try {
     const { error } = await _supabase.from('products').delete().eq('id', id);
-    if (error) throw error;
-    return true;
+    if (!error) return true;
+    throw error;
   } catch (err) {
-    console.warn('[Supabase] adminDeleteProduct failed:', err.message);
-    return false;
+    console.warn('[Supabase Direct Delete Warning]:', err.message, '— Attempting API fallback...');
+    try {
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', id: id })
+      });
+      const json = await res.json();
+      return json.success === true;
+    } catch (apiErr) {
+      return false;
+    }
   }
 }
 

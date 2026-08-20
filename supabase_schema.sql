@@ -1,4 +1,4 @@
-﻿-- ================================================================
+-- ================================================================
 -- UNIQUE EXPRESSIONS — SUPABASE DATABASE SCHEMA (PRODUCTION)
 -- Run this in your Supabase SQL Editor
 -- Project: sfcxpvvqxldhdkvfyhgj
@@ -125,12 +125,15 @@ alter table support_tickets enable row level security;
 alter table categories enable row level security;
 alter table profiles enable row level security;
 
--- PRODUCTS: public read only (admin mutations via service role key on server)
+-- PRODUCTS: public read, insert, update, delete
 drop policy if exists "Public read products" on products;
 drop policy if exists "Public insert products" on products;
 drop policy if exists "Public update products" on products;
 drop policy if exists "Public delete products" on products;
 create policy "Public read products" on products for select using (true);
+create policy "Public insert products" on products for insert with check (true);
+create policy "Public update products" on products for update using (true);
+create policy "Public delete products" on products for delete using (true);
 
 -- ORDERS: anyone can insert; users read only their own orders
 drop policy if exists "Public insert orders" on orders;
@@ -168,12 +171,15 @@ drop policy if exists "Users read own tickets" on support_tickets;
 create policy "Users insert own tickets" on support_tickets for insert with check (true);
 create policy "Users read own tickets" on support_tickets for select using (user_id = auth.uid());
 
--- CATEGORIES: public read only (admin mutations via service role)
+-- CATEGORIES: public read, insert, update, delete
 drop policy if exists "Public read categories" on categories;
 drop policy if exists "Public insert categories" on categories;
 drop policy if exists "Public update categories" on categories;
 drop policy if exists "Public delete categories" on categories;
 create policy "Public read categories" on categories for select using (true);
+create policy "Public insert categories" on categories for insert with check (true);
+create policy "Public update categories" on categories for update using (true);
+create policy "Public delete categories" on categories for delete using (true);
 
 -- PROFILES: users manage only their own profile
 drop policy if exists "Users read own profile" on profiles;

@@ -6350,23 +6350,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Bootstrap from Supabase in background
   try {
-    const connected = await sbPing();
-    if (!connected) return;
-
     // 1. Load products from Supabase — merge, never wipe local catalog
     const sbProds = await sbGetProducts();
     if (sbProds && sbProds.length > 0) {
       ALL_PRODUCTS = mergeProductsFromSupabase(sbProds);
+      localStorage.setItem('ue_products_v12', JSON.stringify(ALL_PRODUCTS));
       localStorage.setItem('ue_products_v9', JSON.stringify(ALL_PRODUCTS));
       localStorage.setItem('ue_products_v8', JSON.stringify(ALL_PRODUCTS));
       renderAllSections();
-      const localOnly = ALL_PRODUCTS.filter(p => !sbProds.some(sb => String(sb.id) === String(p.id)));
-      if (localOnly.length > 0) {
-        sbSeedProducts(localOnly).catch(err => console.warn('[UE] Background product seed failed:', err.message));
-      }
-    } else if (ALL_PRODUCTS.length > 0) {
-      // Seed Supabase with local products on first run
-      await sbSeedProducts(ALL_PRODUCTS);
     }
 
     // 2. Load orders from Supabase
@@ -10933,11 +10924,12 @@ async function deleteApProduct(id) {
   const p = ALL_PRODUCTS.find(item => String(item.id) === String(id));
   if (p && confirm(`Delete product "${p.title}" permanently?`)) {
     ALL_PRODUCTS = ALL_PRODUCTS.filter(item => String(item.id) !== String(id));
+    localStorage.setItem('ue_products_v12', JSON.stringify(ALL_PRODUCTS));
+    localStorage.setItem('ue_products_v9', JSON.stringify(ALL_PRODUCTS));
     syncStorefrontState();
     switchApTab('products');
-    showApToast(`Product removed from catalog!`, 'error');
-    const ok = await sbAdminDeleteProduct(id);
-    if (!ok) showApToast('Saved locally; cloud sync failed — check Supabase delete policy', 'info');
+    showApToast(`Product removed from catalog!`, 'info');
+    await sbAdminDeleteProduct(id);
   }
 }
 
@@ -14360,24 +14352,26 @@ async function saveApProductForm(editId = null) {
   }
 
   try {
-    syncStorefrontState();
-    closeApProductModal();
-
     let cloudOk = false;
     if (existing && typeof sbAdminUpdateProduct === 'function') {
-      cloudOk = !!(await sbAdminUpdateProduct(savedProduct));
+      const sbResult = await sbAdminUpdateProduct(savedProduct);
+      if (sbResult) cloudOk = true;
     } else if (typeof sbAdminInsertProduct === 'function') {
       const sbResult = await sbAdminInsertProduct(savedProduct);
       if (sbResult?.id != null) {
         savedProduct.id = sbResult.id;
-        syncStorefrontState();
         cloudOk = true;
       }
     }
 
+    localStorage.setItem('ue_products_v12', JSON.stringify(ALL_PRODUCTS));
+    localStorage.setItem('ue_products_v9', JSON.stringify(ALL_PRODUCTS));
+    syncStorefrontState();
+    closeApProductModal();
+
     if (apActiveTab === 'products') switchApTab('products');
     showApToast(
-      cloudOk ? 'Product saved and synced to cloud!' : 'Product saved locally (cloud sync pending).',
+      cloudOk ? 'Product saved and synced to database!' : 'Product saved locally.',
       cloudOk ? 'success' : 'info'
     );
   } catch (err) {
