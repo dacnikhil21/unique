@@ -919,6 +919,73 @@ body {
   transform: scale(0.96);
 }
 
+/* ── Interactive Card Quantity Stepper (Zepto / Myntra style) ── */
+.m-tile-qty-stepper {
+  width: 100%;
+  margin-top: 10px;
+  height: 34px;
+  background: #0f172a;
+  color: #ffffff;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 6px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.28);
+  user-select: none;
+  animation: pulseCardStepper 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.m-tile-qty-stepper .m-stepper-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.m-tile-qty-stepper .m-stepper-btn:hover {
+  background: #db2777;
+  color: #ffffff;
+  transform: scale(1.12);
+}
+
+.m-tile-qty-stepper .m-stepper-btn:active {
+  transform: scale(0.9);
+}
+
+.m-tile-qty-stepper .m-stepper-qty {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.m-tile-qty-stepper .m-stepper-qty span.badge-num {
+  background: #db2777;
+  padding: 1px 7px;
+  border-radius: 99px;
+  font-weight: 900;
+  font-size: 11px;
+}
+
+@keyframes pulseCardStepper {
+  0% { transform: scale(0.92); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 .m-add-icon-sq {
   width: 16px;
   height: 16px;
@@ -4073,19 +4140,20 @@ body {
     color: #ffffff !important;
   }
 
-  /* Desktop Product Grid (4 Columns standard 1024-1599px, 5 Columns on Ultrawide >= 1600px) */
+  /* Desktop Product Grid (Auto-fill compact columns, perfectly proportioned) */
   .dt-product-grid {
     display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 250px)) !important;
+    justify-content: flex-start !important;
     gap: 20px !important;
-    padding: 20px 0 !important;
+    padding: 16px 0 !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
 
   @media (min-width: 1600px) {
     .dt-product-grid {
-      grid-template-columns: repeat(5, 1fr) !important;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 260px)) !important;
       gap: 24px !important;
     }
   }
@@ -4101,6 +4169,7 @@ body {
     transition: transform 0.25s ease, box-shadow 0.25s ease !important;
     cursor: pointer !important;
     width: 100% !important;
+    max-width: 260px !important;
     box-sizing: border-box !important;
   }
 
@@ -4112,9 +4181,8 @@ body {
 
   .dt-card-img-wrapper {
     width: 100% !important;
-    aspect-ratio: 1 / 1 !important;
-    height: 220px !important;
-    max-height: 240px !important;
+    height: 190px !important;
+    max-height: 200px !important;
     position: relative !important;
     overflow: hidden !important;
     background: #f8fafc !important;
@@ -4134,31 +4202,32 @@ body {
   }
 
   .dt-card-content {
-    padding: 16px !important;
+    padding: 14px !important;
     display: flex !important;
     flex-direction: column !important;
     flex: 1 !important;
-    gap: 6px !important;
+    gap: 5px !important;
   }
 
   .dt-card-cat {
-    font-size: 10px !important;
+    font-size: 9.5px !important;
     font-weight: 800 !important;
     text-transform: uppercase !important;
-    color: #0f172a !important;
+    color: #64748b !important;
     letter-spacing: 0.5px !important;
   }
 
   .dt-card-title {
-    font-size: 14px !important;
+    font-size: 13px !important;
     font-weight: 700 !important;
     line-height: 1.35 !important;
-    height: 38px !important;
+    height: 36px !important;
     overflow: hidden !important;
     color: #0f172a !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
+    margin: 0 !important;
   }
 
   .dt-card-price-row {
@@ -4169,27 +4238,28 @@ body {
   }
 
   .dt-card-price {
-    font-size: 17px !important;
+    font-size: 16px !important;
     font-weight: 800 !important;
     color: #0f172a !important;
   }
 
   .dt-card-mrp {
-    font-size: 12px !important;
+    font-size: 11.5px !important;
     color: #94a3b8 !important;
     text-decoration: line-through !important;
   }
 
   .dt-card-save {
-    font-size: 10px !important;
+    font-size: 9.5px !important;
     font-weight: 800 !important;
     color: #16a34a !important;
     margin-left: auto !important;
   }
 
   .dt-card-add-btn {
-    margin-top: 10px !important;
-    height: 38px !important;
+    margin-top: 8px !important;
+    width: 100% !important;
+    height: 36px !important;
     font-size: 12px !important;
     font-weight: 700 !important;
     border-radius: 10px !important;
@@ -4201,7 +4271,12 @@ body {
     align-items: center !important;
     justify-content: center !important;
     gap: 6px !important;
-    transition: background 0.2s ease !important;
+    transition: background 0.2s ease, transform 0.15s ease !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    padding: 0 10px !important;
+    box-sizing: border-box !important;
   }
 
   .dt-card-add-btn:hover {
@@ -5233,6 +5308,7 @@ body {
 
 .ap-table {
   width: 100% !important;
+  min-width: 680px !important;
   border-collapse: collapse !important;
   text-align: left !important;
   font-size: 13px !important;

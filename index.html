@@ -27,7 +27,7 @@
   <meta name="twitter:description" content="Shop 200+ educational toys, RC gadgets, return gift hampers & handicrafts. Same-day delivery in Visakhapatnam.">
   <meta name="twitter:image" content="https://uniqueexpressions.in/hero_lifestyle.png">
 
-  <link rel="stylesheet" href="styles.css?v=6.0">
+  <link rel="stylesheet" href="styles.css?v=7.3">
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/feather-icons"></script>
@@ -839,24 +839,24 @@
       <input type="hidden" id="addrEditId" value="">
       <div class="form-group">
         <label class="form-label">Full Name</label>
-        <input type="text" id="addrName" class="form-input" placeholder="e.g. G Mounika Durga">
+        <input type="text" id="addrName" class="form-input" placeholder="e.g. Rahul Sharma">
       </div>
       <div class="form-group">
         <label class="form-label">Mobile Phone Number</label>
-        <input type="tel" id="addrPhone" class="form-input" placeholder="e.g. +91 8886662334">
+        <input type="tel" id="addrPhone" class="form-input" placeholder="e.g. 9876543210 (10 digits)">
       </div>
       <div class="form-group">
         <label class="form-label">House / Flat / Street Address</label>
-        <input type="text" id="addrStreet" class="form-input" placeholder="e.g. 2nd floor LIG 347, 2-115/9/1, near Shivalayam">
+        <input type="text" id="addrStreet" class="form-input" placeholder="e.g. Flat 302, Sai Residency, 4th Main Road">
       </div>
       <div style="display:flex; gap:10px;">
         <div class="form-group" style="flex:1;">
           <label class="form-label">Area / Colony</label>
-          <input type="text" id="addrArea" class="form-input" placeholder="e.g. Madhurawada">
+          <input type="text" id="addrArea" class="form-input" placeholder="e.g. Sector 4, Near Landmark / Colony">
         </div>
         <div class="form-group" style="flex:1;">
           <label class="form-label">Pincode</label>
-          <input type="text" id="addrPincode" class="form-input" value="530041" placeholder="530041">
+          <input type="text" id="addrPincode" class="form-input" placeholder="e.g. 530041 / 560001">
         </div>
       </div>
       <div style="display:flex; gap:10px; margin-bottom:14px;">
@@ -887,19 +887,19 @@
       </div>
       <div class="form-group">
         <label class="form-label">Full Name</label>
-        <input type="text" id="profEditName" class="form-input" value="G Mounika Durga">
+        <input type="text" id="profEditName" class="form-input" placeholder="e.g. Rahul Sharma">
       </div>
       <div class="form-group">
         <label class="form-label">Email Address</label>
-        <input type="email" id="profEditEmail" class="form-input" value="uniqueexpressions@gmail.com">
+        <input type="email" id="profEditEmail" class="form-input" placeholder="e.g. name@domain.com">
       </div>
       <div class="form-group">
         <label class="form-label">Phone Number</label>
-        <input type="tel" id="profEditPhone" class="form-input" value="+91 8886662334">
+        <input type="tel" id="profEditPhone" class="form-input" placeholder="e.g. 9876543210">
       </div>
       <div class="form-group">
         <label class="form-label">Preferred Delivery City</label>
-        <input type="text" id="profEditCity" class="form-input" value="Visakhapatnam">
+        <input type="text" id="profEditCity" class="form-input" placeholder="e.g. Visakhapatnam, Hyderabad, Bengaluru">
       </div>
       <button class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="saveUserProfile()">Save Profile Changes</button>
     </div>
@@ -964,7 +964,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Your Name</label>
-        <input type="text" id="revNameInput" class="form-input" value="G Mounika Durga">
+        <input type="text" id="revNameInput" class="form-input" placeholder="e.g. Priya Sharma">
       </div>
       <div class="form-group">
         <label class="form-label">Attach Product Photo (Optional - Cloudinary)</label>
@@ -1030,7 +1030,7 @@
       <p style="font-size:11px; color:#64748b; margin-bottom:12px;">Get physical samples of return gift hampers, wooden crafts & stationery delivered to your institution/store.</p>
       <div class="form-group">
         <label class="form-label">Business / School Name</label>
-        <input type="text" id="sampleBizName" class="form-input" placeholder="e.g. Visakha Kids School / Store Name">
+        <input type="text" id="sampleBizName" class="form-input" placeholder="e.g. Visakha Kids School / Retail Store">
       </div>
       <div class="form-group">
         <label class="form-label">GSTIN (Optional)</label>
@@ -1038,11 +1038,11 @@
       </div>
       <div class="form-group">
         <label class="form-label">Contact Person</label>
-        <input type="text" id="samplePerson" class="form-input" value="Swaroop Sandy">
+        <input type="text" id="samplePerson" class="form-input" placeholder="e.g. Rajesh Kumar">
       </div>
       <div class="form-group">
         <label class="form-label">Phone Number</label>
-        <input type="tel" id="samplePhone" class="form-input" value="+91 8886662334">
+        <input type="tel" id="samplePhone" class="form-input" placeholder="e.g. 9876543210">
       </div>
       <div class="form-group">
         <label class="form-label">Sample Categories Requested</label>
@@ -1139,29 +1139,26 @@
         <p style="font-size:12px; color:#cbd5e1; margin:0;">Unlock VIP Offers, Order Tracking & Express Checkout</p>
       </div>
 
-      <!-- Auth Tab Switcher -->
+      <!-- Auth Tab Switcher (Email/Password Authentication) -->
       <div style="display:flex; border-bottom:1px solid #e2e8f0; background:#f8fafc;">
-        <button id="authTabBtnLogin" class="auth-tab-btn active" onclick="switchAuthTab('login')" style="flex:1; padding:12px; font-size:13px; font-weight:800; border:none; background:#ffffff; color:#0f172a; cursor:pointer; border-bottom:2px solid #0f172a; transition:all 0.2s ease;">
+        <button id="authTabBtnLogin" class="auth-tab-btn active" onclick="switchAuthTab('login')" style="flex:1; padding:13px; font-size:13.5px; font-weight:800; border:none; background:#ffffff; color:#0f172a; cursor:pointer; border-bottom:2px solid #0f172a; transition:all 0.2s ease;">
           🔑 Customer Login
         </button>
-        <button id="authTabBtnSignup" class="auth-tab-btn" onclick="switchAuthTab('signup')" style="flex:1; padding:12px; font-size:13px; font-weight:700; border:none; background:#f8fafc; color:#64748b; cursor:pointer; transition:all 0.2s ease;">
+        <button id="authTabBtnSignup" class="auth-tab-btn" onclick="switchAuthTab('signup')" style="flex:1; padding:13px; font-size:13.5px; font-weight:700; border:none; background:#f8fafc; color:#64748b; cursor:pointer; transition:all 0.2s ease;">
           ✨ New Registration
-        </button>
-        <button id="authTabBtnOtp" class="auth-tab-btn" onclick="switchAuthTab('otp')" style="flex:1; padding:12px; font-size:13px; font-weight:700; border:none; background:#f8fafc; color:#64748b; cursor:pointer; transition:all 0.2s ease;">
-          💬 WhatsApp OTP
         </button>
       </div>
 
       <!-- Body Content Area -->
-      <div style="padding:20px;">
+      <div style="padding:22px 20px;">
         <!-- TAB 1: LOGIN FORM -->
         <div id="authTabContentLogin" style="display:block;">
           <form onsubmit="handleUserLogin(event)">
             <div class="form-group" style="margin-bottom:14px;">
-              <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569;">Mobile Number or Email</label>
+              <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569;">Email Address or Mobile</label>
               <div style="position:relative;">
                 <i class="ri-mail-line" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>
-                <input type="text" id="authLoginId" class="form-input" style="padding-left:38px; height:42px; font-size:13px;" placeholder="e.g. +91 8886662334 or email" required>
+                <input type="text" id="authLoginId" class="form-input" style="padding-left:38px; height:42px; font-size:13px;" placeholder="name@domain.com or mobile" required>
               </div>
             </div>
             <div class="form-group" style="margin-bottom:14px;">
@@ -1181,20 +1178,14 @@
               </label>
               <span style="font-size:11px; color:#16a34a; font-weight:700;">🟢 256-Bit Encrypted</span>
             </div>
-            <button type="submit" class="m-hero-cta-button" style="width:100%; justify-content:center; height:46px; font-size:14px; background:#0f172a; color:#fff; border-radius:12px;">
+            <button type="submit" class="m-hero-cta-button" style="width:100%; justify-content:center; height:46px; font-size:14px; background:#0f172a; color:#fff; border-radius:12px; box-shadow:0 4px 14px rgba(15,23,42,0.25);">
               Login to Account &rarr;
             </button>
           </form>
-
-          <div style="display:flex; align-items:center; gap:10px; margin:16px 0;">
-            <div style="flex:1; height:1px; background:#e2e8f0;"></div>
-            <span style="font-size:11px; color:#94a3b8; font-weight:700;">OR EASY CONNECT</span>
-            <div style="flex:1; height:1px; background:#e2e8f0;"></div>
+          <div style="text-align:center; margin-top:16px;">
+            <span style="font-size:12px; color:#64748b;">Don't have an account yet?</span>
+            <button type="button" onclick="switchAuthTab('signup')" style="background:none; border:none; color:#2563eb; font-weight:800; font-size:12px; cursor:pointer; margin-left:4px;">Register Now &rarr;</button>
           </div>
-
-          <button onclick="switchAuthTab('otp')" style="width:100%; height:44px; display:flex; align-items:center; justify-content:center; gap:8px; background:#25D366; color:#ffffff; font-weight:800; font-size:13px; border:none; border-radius:12px; cursor:pointer; box-shadow:0 4px 12px rgba(37, 211, 102, 0.25);">
-            <i class="ri-whatsapp-fill" style="font-size:18px;"></i> Instant WhatsApp OTP Login
-          </button>
         </div>
 
         <!-- TAB 2: SIGNUP FORM -->
@@ -1208,7 +1199,7 @@
               </div>
             </div>
             <div class="form-group" style="margin-bottom:12px;">
-              <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569;">Mobile Number (WhatsApp)</label>
+              <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569;">Mobile Number</label>
               <div style="position:relative;">
                 <i class="ri-phone-line" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>
                 <input type="tel" id="authSignupPhone" class="form-input" style="padding-left:38px; height:40px; font-size:12.5px;" placeholder="+91 9876543210" required>
@@ -1229,41 +1220,17 @@
               </div>
             </div>
             <div class="form-group" style="margin-bottom:16px;">
-              <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569;">Visakhapatnam Delivery Pincode</label>
-              <input type="text" id="authSignupPincode" class="form-input" style="height:40px; font-size:12.5px;" value="530041" placeholder="530041">
+              <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569;">Delivery Pincode</label>
+              <input type="text" id="authSignupPincode" maxlength="6" class="form-input" style="height:40px; font-size:12.5px;" placeholder="e.g. 530041 / 560001">
             </div>
-            <button type="submit" class="m-hero-cta-button" style="width:100%; justify-content:center; height:46px; font-size:14px; background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#ffffff; border-radius:12px;">
-              Create Account & Claim VIP 10% Discount &rarr;
+            <button type="submit" class="m-hero-cta-button" style="width:100%; justify-content:center; height:46px; font-size:14px; background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#ffffff; border-radius:12px; box-shadow:0 4px 14px rgba(15,23,42,0.25);">
+              Create Account & Proceed &rarr;
             </button>
           </form>
-        </div>
-
-        <!-- TAB 3: WHATSAPP OTP LOGIN -->
-        <div id="authTabContentOtp" style="display:none; text-align:center;">
-          <div style="margin-bottom:16px;">
-            <span style="font-size:12px; color:#64748b;">Enter your 10-digit registered mobile number to receive a 4-digit OTP via WhatsApp.</span>
+          <div style="text-align:center; margin-top:14px;">
+            <span style="font-size:12px; color:#64748b;">Already registered?</span>
+            <button type="button" onclick="switchAuthTab('login')" style="background:none; border:none; color:#2563eb; font-weight:800; font-size:12px; cursor:pointer; margin-left:4px;">Login &rarr;</button>
           </div>
-          <div class="form-group" style="margin-bottom:16px;">
-            <input type="tel" id="authOtpMobileInput" class="form-input" style="text-align:center; height:44px; font-size:15px; font-weight:800; letter-spacing:1px;" placeholder="+91 8886662334" value="+91 8886662334">
-          </div>
-          <div id="otpInputRow" style="display:none; justify-content:center; gap:10px; margin-bottom:18px;">
-            <input type="text" maxlength="1" class="otp-box-input" id="otpBox1" style="width:48px; height:52px; text-align:center; font-size:22px; font-weight:900; border:2px solid #cbd5e1; border-radius:12px; background:#fff;" onkeyup="focusNextOtp(1)">
-            <input type="text" maxlength="1" class="otp-box-input" id="otpBox2" style="width:48px; height:52px; text-align:center; font-size:22px; font-weight:900; border:2px solid #cbd5e1; border-radius:12px; background:#fff;" onkeyup="focusNextOtp(2)">
-            <input type="text" maxlength="1" class="otp-box-input" id="otpBox3" style="width:48px; height:52px; text-align:center; font-size:22px; font-weight:900; border:2px solid #cbd5e1; border-radius:12px; background:#fff;" onkeyup="focusNextOtp(3)">
-            <input type="text" maxlength="1" class="otp-box-input" id="otpBox4" style="width:48px; height:52px; text-align:center; font-size:22px; font-weight:900; border:2px solid #cbd5e1; border-radius:12px; background:#fff;" onkeyup="focusNextOtp(4)">
-          </div>
-          <button id="sendOtpSubmitBtn" class="m-hero-cta-button" style="width:100%; justify-content:center; height:46px; font-size:14px; background:#25D366; color:#fff; border-radius:12px;" onclick="handleSendOtpCode()">
-            Send WhatsApp OTP Code &rarr;
-          </button>
-          <div id="otpTimerText" style="font-size:11.5px; color:#64748b; margin-top:12px; display:none;">
-            OTP sent to your number! Didn't receive? <a href="#" onclick="handleSendOtpCode(); return false;" style="color:#2563eb; font-weight:700;">Resend OTP</a>
-          </div>
-        </div>
-
-        <div style="padding:14px 24px 18px; text-align:center; background:#f8fafc; border-top:1px solid #f1f5f9;">
-          <a href="#" onclick="closeUserAuthModal(); switchView('checkout'); return false;" style="font-size:12px; font-weight:700; color:#475569; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
-            <span>Want to order faster?</span> <strong style="color:#2563eb;">Continue as Guest Checkout &rarr;</strong>
-          </a>
         </div>
       </div>
     </div>
@@ -1277,7 +1244,7 @@
   <!-- Razorpay Official Checkout SDK -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <!-- Main App -->
-  <script src="app.js?v=6.0"></script>
+  <script src="app.js?v=7.6"></script>
 
   <script>
     if (window.feather) feather.replace();

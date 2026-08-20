@@ -29,7 +29,7 @@ async function sbGetProducts() {
       reviewsCount: p.reviews_count,
       description: p.description,
       inStock: p.in_stock,
-      stockQty: p.stock_qty != null ? p.stock_qty : 12
+      stockQty: p.stock_qty != null ? p.stock_qty : 0
     }));
   } catch (err) {
     console.warn('[Supabase] getProducts failed:', err.message);
@@ -593,6 +593,27 @@ async function sbInitAuthFlow() {
         if (typeof applyAuthSession === 'function') {
           await applyAuthSession(data.session);
         }
+        if (window.location.search.includes('type=recovery') || window.location.hash.includes('type=recovery')) {
+          if (typeof openResetPasswordModal === 'function') setTimeout(openResetPasswordModal, 300);
+        }
+      }
+    }
+
+    // 2. Handle Implicit Fragment Recovery & Tokens (#access_token=...&type=recovery)
+    const hash = window.location.hash || '';
+    if (hash.includes('access_token=') && hash.includes('type=recovery')) {
+      const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      if (accessToken) {
+        const { data, error } = await _supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || ''
+        });
+        if (!error && data?.session) {
+          if (typeof applyAuthSession === 'function') await applyAuthSession(data.session);
+          if (typeof openResetPasswordModal === 'function') setTimeout(openResetPasswordModal, 300);
+        }
       }
     }
   } catch (e) {
@@ -603,9 +624,9 @@ async function sbInitAuthFlow() {
 async function sbResetPassword(identifier) {
   try {
     const authEmail = sbResolveAuthEmail(identifier);
-    const cleanOrigin = window.location.origin.replace(/\/+$/, '');
+    const origin = (window.location.origin || 'http://localhost:5000').replace(/\/+$/, '');
     const { error } = await _supabase.auth.resetPasswordForEmail(authEmail, {
-      redirectTo: `${cleanOrigin}/#view=profile&reset=1`
+      redirectTo: `${origin}/#type=recovery`
     });
     if (error) throw error;
     return { ok: true, error: null };
@@ -671,6 +692,8 @@ async function sbUpsertProfile(userId, profile) {
       addresses: profile.addresses || [],
       updated_at: new Date().toISOString()
     };
+    if (Array.isArray(profile.cart)) row.cart = profile.cart;
+    if (Array.isArray(profile.wishlist)) row.wishlist = profile.wishlist;
     const { error } = await _supabase.from('profiles').upsert(row, { onConflict: 'id' });
     if (error) throw error;
     return true;
