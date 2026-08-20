@@ -1,10 +1,7 @@
 const https = require('https');
 
-const rawUrl = process.env.SUPABASE_URL;
-const SUPABASE_URL = (rawUrl && !rawUrl.includes('your-supabase-project') && rawUrl.includes('supabase.co')) ? rawUrl : 'https://sfcxpvvqxldhdkvfyhgj.supabase.co';
-
-const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
-const SUPABASE_KEY = (rawKey && !rawKey.includes('your-anon-key') && rawKey.length > 30) ? rawKey : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmY3hwdnZxeGxkaGRrdmZ5aGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NzU4MTQsImV4cCI6MjEwMTE1MTgxNH0.ZNWPL7xNiapsnOrvJ45uT6KpaFqcvzz4vv7R7WGx39c';
+const SUPABASE_URL = 'https://sfcxpvvqxldhdkvfyhgj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmY3hwdnZxeGxkaGRrdmZ5aGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NzU4MTQsImV4cCI6MjEwMTE1MTgxNH0.ZNWPL7xNiapsnOrvJ45uT6KpaFqcvzz4vv7R7WGx39c';
 
 const ALLOWED_ORIGINS = [
   'https://shop.uniqueexpressions.in',
