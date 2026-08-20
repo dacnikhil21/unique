@@ -10020,25 +10020,24 @@ function renderAdminLoginView(container) {
           <i class="ri-shield-keyhole-fill" style="font-size: 30px; color: #f59e0b;"></i>
         </div>
         <h2 style="font-size: 24px; font-weight: 800; margin: 0 0 6px 0; letter-spacing: -0.02em;">UE Control Center</h2>
-        <p style="font-size: 13px; color: #94a3b8; margin: 0 0 28px 0;">Enter Admin Password or Master PIN to access dashboard</p>
+        <p style="font-size: 13px; color: #94a3b8; margin: 0 0 28px 0;">Enter your admin credentials to access the management dashboard</p>
         
         <form onsubmit="handleAdminLoginSubmit(event)">
           <div style="text-align: left; margin-bottom: 18px;">
-            <label style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 8px;">Admin Account</label>
+            <label style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 8px;">Admin Email</label>
             <div style="position: relative;">
               <i class="ri-mail-line" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 18px;"></i>
-              <input type="email" id="adminEmailInput" style="width: 100%; height: 48px; border-radius: 12px; background: #0f172a; border: 1px solid #334155; color: #ffffff; padding: 0 16px 0 46px; font-size: 14px; outline: none; transition: border-color 0.2s;" placeholder="uestore.online@gmail.com" value="uestore.online@gmail.com" required readonly>
+              <input type="email" id="adminEmailInput" style="width: 100%; height: 48px; border-radius: 12px; background: #0f172a; border: 1px solid #334155; color: #ffffff; padding: 0 16px 0 46px; font-size: 14px; outline: none; transition: border-color 0.2s;" placeholder="admin@uniqueexpressions.in" value="uestore.online@gmail.com" required>
             </div>
           </div>
           
           <div style="text-align: left; margin-bottom: 24px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <label style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Password or Master PIN</label>
-              <span style="font-size: 11.5px; color: #f59e0b; font-weight: 700;">PIN: UE@2026</span>
+              <label style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Password / Security PIN</label>
             </div>
             <div style="position: relative;">
               <i class="ri-lock-2-line" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 18px;"></i>
-              <input type="password" id="adminPasswordInput" style="width: 100%; height: 48px; border-radius: 12px; background: #0f172a; border: 1px solid #334155; color: #ffffff; padding: 0 16px 0 46px; font-size: 14px; outline: none; transition: border-color 0.2s;" placeholder="Enter password or UE@2026" required>
+              <input type="password" id="adminPasswordInput" style="width: 100%; height: 48px; border-radius: 12px; background: #0f172a; border: 1px solid #334155; color: #ffffff; padding: 0 16px 0 46px; font-size: 14px; outline: none; transition: border-color 0.2s;" placeholder="••••••••••••" required autocomplete="current-password">
             </div>
           </div>
           
@@ -10064,24 +10063,19 @@ async function handleAdminLoginSubmit(e) {
   const password = document.getElementById('adminPasswordInput')?.value?.trim();
   const btn = document.getElementById('adminLoginBtn');
 
-  if (email !== 'uestore.online@gmail.com') {
-    showToast('Access Denied: Unauthorized admin credentials.', 'error');
-    return;
-  }
-
-  // 1. Direct Master PIN Validation (Instant unlock with UE@2026)
+  // 1. Direct Master PIN Validation
   const masterPin = String(STORE_SETTINGS.adminPin || 'UE@2026').trim();
   if (password === 'UE@2026' || password === masterPin) {
     apIsAuthenticated = true;
     sessionStorage.setItem('ue_admin_auth', '1');
     userProfile = {
       name: 'Store Administrator',
-      email: 'uestore.online@gmail.com',
+      email: email || 'uestore.online@gmail.com',
       role: 'admin'
     };
-    userSession = { isLoggedIn: true, email: 'uestore.online@gmail.com' };
+    userSession = { isLoggedIn: true, email: email || 'uestore.online@gmail.com' };
     authUserId = 'admin_master';
-    showToast('Master Admin Access Authorized. Welcome back! 🛡️', 'success');
+    showToast('Admin access authorized. Welcome back! 🛡️', 'success');
     renderAdminView();
     return;
   }
@@ -10094,7 +10088,7 @@ async function handleAdminLoginSubmit(e) {
 
   const result = await sbSignIn(email, password);
   if (result.error) {
-    showToast(result.error === 'Invalid login credentials' ? 'Incorrect password. Try PIN: UE@2026' : (result.error || 'Authentication failed.'), 'info');
+    showToast('Invalid login credentials. Please try again.', 'info');
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = `Sign In Securely <i class="ri-arrow-right-line"></i>`;
