@@ -535,8 +535,9 @@ function calculateCheckoutTotals() {
   const wrapCost = giftWrapSelected ? (STORE_SETTINGS.giftWrapFee || 30) * cart.length : 0;
   const itemsTotal = subtotal + wrapCost;
   const couponResult = calculateCouponDiscount(itemsTotal, appliedCouponCode);
-  const discount = couponResult.valid ? (couponResult.discount || 0) : 0;
-  let shipping = itemsTotal >= (STORE_SETTINGS.freeShippingMin || 499) ? 0 : (STORE_SETTINGS.shippingFee || 50);
+  const freeMin = STORE_SETTINGS.freeShippingMin != null ? STORE_SETTINGS.freeShippingMin : 499;
+  const standardFee = STORE_SETTINGS.shippingFee != null ? STORE_SETTINGS.shippingFee : 50;
+  let shipping = itemsTotal >= freeMin ? 0 : standardFee;
   if (couponResult.valid && couponResult.shippingOverride === 0) shipping = 0;
   const grandTotal = Math.max(0, itemsTotal - discount + shipping);
   return { subtotal: itemsTotal, discount, shipping, grandTotal, couponResult };
@@ -12241,17 +12242,23 @@ function saveApStoreSettings() {
   STORE_SETTINGS.gstin = document.getElementById('apStGstin').value.trim();
   STORE_SETTINGS.email = document.getElementById('apStEmail').value.trim();
   STORE_SETTINGS.address = document.getElementById('apStAddress').value.trim();
-  STORE_SETTINGS.freeShippingMin = parseInt(document.getElementById('apStMinFree').value, 10) || 499;
-  STORE_SETTINGS.shippingFee = parseInt(document.getElementById('apStShipFee').value, 10) || 50;
-  STORE_SETTINGS.giftWrapFee = parseInt(document.getElementById('apStWrapFee').value, 10) || 30;
+  const minFreeVal = document.getElementById('apStMinFree')?.value;
+  const shipFeeVal = document.getElementById('apStShipFee')?.value;
+  const wrapFeeVal = document.getElementById('apStWrapFee')?.value;
+
+  STORE_SETTINGS.freeShippingMin = (minFreeVal !== '' && !isNaN(parseInt(minFreeVal, 10))) ? parseInt(minFreeVal, 10) : 499;
+  STORE_SETTINGS.shippingFee = (shipFeeVal !== '' && !isNaN(parseInt(shipFeeVal, 10))) ? parseInt(shipFeeVal, 10) : 50;
+  STORE_SETTINGS.giftWrapFee = (wrapFeeVal !== '' && !isNaN(parseInt(wrapFeeVal, 10))) ? parseInt(wrapFeeVal, 10) : 30;
+
   const newPin = (document.getElementById('apStAdminPin')?.value || '').trim();
-  if (newPin.length === 4 && /^\d{4}$/.test(newPin)) {
+  if (newPin.length >= 4) {
     STORE_SETTINGS.adminPin = newPin;
   }
 
+  localStorage.setItem('ue_store_settings_v5', JSON.stringify(STORE_SETTINGS));
   syncStorefrontState();
   switchApTab('settings');
-  showApToast(`Website Store Settings synchronized live!`, 'success');
+  showApToast(`Store Settings saved! Delivery Fee is now ₹${STORE_SETTINGS.shippingFee} (Free above ₹${STORE_SETTINGS.freeShippingMin})`, 'success');
 }
 
 /* 12. Analytics Module Renderer */

@@ -41,23 +41,23 @@ const SERVER_COUPONS = [
   { code: "UNIQUE10", type: "percent", value: 10, minSpend: 399, status: "Active" }
 ];
 
-function calculateServerOrderTotal(clientItems, couponCode, giftWrap = false) {
-  if (!Array.isArray(clientItems) || clientItems.length === 0) {
-    throw new Error('Cart is empty. Please add items to checkout.');
+function findServerProduct(id) {
+  return PRODUCT_CATALOG.find(p => String(p.id) === String(id));
+}
+
+function calculateServerOrderTotal(items, couponCode = null, giftWrap = false, clientShipping = null) {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error('Order items cannot be empty.');
   }
 
   let subtotal = 0;
   const verifiedItems = [];
 
-  for (const clientItem of clientItems) {
-    const product = PRODUCT_CATALOG.find(p => String(p.id) === String(clientItem.id));
-    const price = product ? parseFloat(product.price) : Math.max(0, parseFloat(clientItem.price) || 0);
+  for (const clientItem of items) {
+    const product = findServerProduct(clientItem.id);
+    const price = product ? product.price : (parseFloat(clientItem.price) || 0);
+    const qty = Math.max(1, parseInt(clientItem.qty, 10) || 1);
     const title = product ? product.title : (clientItem.title || 'Product');
-    const qty = Math.max(1, parseInt(clientItem.qty || clientItem.quantity, 10) || 1);
-
-    if (product && product.inStock === false) {
-      throw new Error(`Product "${title}" is out of stock.`);
-    }
 
     subtotal += price * qty;
 
@@ -77,7 +77,7 @@ function calculateServerOrderTotal(clientItems, couponCode, giftWrap = false) {
   const itemsTotal = subtotal + wrapFee;
 
   let discount = 0;
-  let shipping = itemsTotal >= 499 ? 0 : 50;
+  let shipping = (clientShipping === 0 || clientShipping === '0') ? 0 : (itemsTotal >= 499 ? 0 : (clientShipping != null ? parseFloat(clientShipping) : 50));
   let appliedCoupon = null;
 
   if (couponCode) {
@@ -228,7 +228,7 @@ module.exports = async (req, res) => {
       let calcResult;
       try {
         if (Array.isArray(payload.items) && payload.items.length > 0) {
-          calcResult = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap);
+          calcResult = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, payload.shipping);
         } else if (payload.amount && !isNaN(parseFloat(payload.amount))) {
           const amt = parseFloat(payload.amount);
           calcResult = { grandTotal: amt, subtotal: amt, discount: 0, shipping: 0, verifiedItems: [] };
