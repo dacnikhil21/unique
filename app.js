@@ -7748,6 +7748,116 @@ function updatePdpQty(change) {
   if (numEl) numEl.innerText = pdpSelectedQty;
 }
 
+function openAddReviewModal(productId) {
+  const p = ALL_PRODUCTS.find(x => String(x.id) === String(productId));
+  if (!p) return;
+  let overlay = document.getElementById('reviewModalOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'reviewModalOverlay';
+    overlay.className = 'ap-modal-backdrop';
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = `
+    <div class="ap-modal-container" style="max-width:440px; padding:24px; border-radius:20px;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;">Write a Review</h3>
+        <button onclick="document.getElementById('reviewModalOverlay')?.classList.remove('active')" style="background:none; border:none; font-size:20px; cursor:pointer; color:#64748b;">✕</button>
+      </div>
+      <p style="font-size:13px; color:#64748b; margin-bottom:16px;">Reviewing: <strong>${escapeHtml(p.title)}</strong></p>
+      
+      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:18px;">
+        <div>
+          <label style="display:block; font-size:11.5px; font-weight:700; color:#475569; margin-bottom:6px; text-transform:uppercase;">Your Name</label>
+          <input type="text" id="revAuthorName" class="form-input" style="width:100%; height:42px;" placeholder="e.g. Priya Sharma" value="${userProfile?.name || ''}">
+        </div>
+        <div>
+          <label style="display:block; font-size:11.5px; font-weight:700; color:#475569; margin-bottom:6px; text-transform:uppercase;">Rating</label>
+          <select id="revRating" class="form-input" style="width:100%; height:42px;">
+            <option value="5">★★★★★ (5/5) — Excellent</option>
+            <option value="4">★★★★☆ (4/5) — Very Good</option>
+            <option value="3">★★★☆☆ (3/5) — Average</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; font-size:11.5px; font-weight:700; color:#475569; margin-bottom:6px; text-transform:uppercase;">Review / Feedback</label>
+          <textarea id="revComment" class="form-input" style="width:100%; height:80px; padding:10px;" placeholder="How did you or your child like this product?"></textarea>
+        </div>
+      </div>
+
+      <button class="ap-btn ap-btn-primary" style="width:100%; height:44px; font-size:14px; font-weight:800; justify-content:center; background:#0f172a; color:#fff; border-radius:12px;" onclick="submitCustomerReview('${p.id}')">
+        Submit Verified Review
+      </button>
+    </div>
+  `;
+  overlay.classList.add('active');
+  setTimeout(() => document.getElementById('revAuthorName')?.focus(), 200);
+}
+
+async function submitCustomerReview(productId) {
+  const p = ALL_PRODUCTS.find(x => String(x.id) === String(productId));
+  if (!p) return;
+  const name = document.getElementById('revAuthorName')?.value.trim() || 'Verified Customer';
+  const rating = parseInt(document.getElementById('revRating')?.value, 10) || 5;
+  const comment = document.getElementById('revComment')?.value.trim();
+
+  if (!comment) {
+    showToast('Please enter a few words about your experience.', 'info');
+    return;
+  }
+
+  const newRev = {
+    name,
+    rating,
+    comment,
+    date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+    verified: true
+  };
+
+  if (!Array.isArray(p.reviews)) p.reviews = [];
+  p.reviews.unshift(newRev);
+  p.reviewsCount = (p.reviewsCount || 0) + 1;
+
+  if (typeof sbInsertReview === 'function') {
+    sbInsertReview(productId, newRev).catch(e => console.warn('[UE] Review sync note:', e));
+  }
+
+  document.getElementById('reviewModalOverlay')?.classList.remove('active');
+  showToast('Thank you for your review! ⭐', 'success');
+  if (currentView === 'pdp' && currentPdpProduct && String(currentPdpProduct.id) === String(productId)) {
+    renderProductDetailPage(productId);
+  }
+}
+
+let activeQuickViewProduct = null;
+
+function openQuickView(productId) {
+  const p = ALL_PRODUCTS.find(x => String(x.id) === String(productId));
+  if (!p) return;
+  activeQuickViewProduct = p;
+  const titleEl = document.getElementById('modalProductTitle');
+  const imgEl = document.getElementById('modalProductImage');
+  const catEl = document.getElementById('modalProductCategory');
+  const priceEl = document.getElementById('modalProductPrice');
+  const origEl = document.getElementById('modalProductOriginal');
+  const descEl = document.getElementById('modalProductDesc');
+
+  if (titleEl) titleEl.innerText = p.title;
+  if (imgEl) imgEl.src = p.image_url || p.image || 'logo.png';
+  if (catEl) catEl.innerText = p.category || 'General';
+  if (priceEl) priceEl.innerText = `₹${p.price}`;
+  if (origEl) origEl.innerText = p.originalPrice ? `₹${p.originalPrice}` : '';
+  if (descEl) descEl.innerText = p.description || 'High quality boutique product from UNIQUE EXPRESSIONS, Visakhapatnam.';
+
+  document.getElementById('modalBackdrop')?.classList.add('active');
+}
+
+function addModalProductToCart() {
+  if (!activeQuickViewProduct) return;
+  addToCart(activeQuickViewProduct.id);
+  closeAllModals();
+}
+
 function addPdpToCart(goToCheckout = false) {
   if (!currentPdpProduct) return;
   const available = getAvailableStock(currentPdpProduct);
