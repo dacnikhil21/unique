@@ -7,14 +7,13 @@
   <meta name="description" content="Shop 200+ educational toys, RC gadgets, return gift hampers, handicrafts & stationery at UNIQUE EXPRESSIONS. Same-day delivery in Visakhapatnam. GSTIN: 37BVTPG7761F1Z1">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://uniqueexpressions.in/">
-
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="logo.png">
-  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" type="image/png" href="favicon.png?v=2">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
 
   <!-- Open Graph / Social Share -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://uniqueexpressions.in/">
+  <meta property="og:url" content="https://shop.uniqueexpressions.in/">
   <meta property="og:title" content="UNIQUE EXPRESSIONS | Premium Toys & Gifts — Visakhapatnam">
   <meta property="og:description" content="Shop 200+ educational toys, RC gadgets, return gift hampers & handicrafts. Same-day delivery in Visakhapatnam. Official GSTIN: 37BVTPG7761F1Z1">
   <meta property="og:image" content="https://uniqueexpressions.in/hero_lifestyle.png">
@@ -27,7 +26,7 @@
   <meta name="twitter:description" content="Shop 200+ educational toys, RC gadgets, return gift hampers & handicrafts. Same-day delivery in Visakhapatnam.">
   <meta name="twitter:image" content="https://uniqueexpressions.in/hero_lifestyle.png">
 
-  <link rel="stylesheet" href="styles.css?v=7.3">
+  <link rel="stylesheet" href="styles.css?v=7.4">
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/feather-icons"></script>
@@ -43,19 +42,19 @@
       <img src="logo.png" alt="UNIQUE EXPRESSIONS" style="width:120px; margin-bottom:24px; border-radius:16px;">
       <h1 style="font-size:22px; font-weight:800; margin-bottom:8px;">UNIQUE EXPRESSIONS</h1>
       <p style="color:#94a3b8; margin-bottom:24px;">Please enable JavaScript to browse our store.</p>
-      <p style="font-size:15px;">📞 <a href="tel:+917799747575" style="color:#f472b6;">+91 7799747575</a></p>
-      <p style="font-size:15px;">💬 <a href="https://wa.me/917799747575" style="color:#4ade80;">WhatsApp Us</a></p>
-      <p style="font-size:13px; color:#64748b; margin-top:16px;">📍 2nd Floor LIG 347, Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam – 530041</p>
     </div>
   </noscript>
 </head>
 <body>
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
 
+  <!-- MAIN APP CONTAINER -->
   <div class="app-container">
 
-    <!-- DESKTOP TOP HEADER (3-TIER ARCHITECTURE - VISIBLE ON DESKTOP SCREENS ≥ 1024px) -->
+    <!-- DESKTOP TOP HEADER (1024px+) -->
     <header class="dt-header">
-      <!-- Tier 1: Announcement Top Bar -->
+      <!-- Tier 1: Announcement Bar (Global Shipping + GSTIN + Direct Store Contacts) -->
       <div class="dt-top-announcement-bar">
         <div class="dt-top-announcement-inner">
           <div class="dt-top-announce-left">
@@ -79,20 +78,20 @@
           <img src="logo.png" alt="UNIQUE EXPRESSIONS" class="dt-logo-img">
         </a>
 
-        <div class="dt-search-container">
+        <div class="dt-search-container" id="dtSearchContainer">
           <i class="ri-search-2-line dt-search-icon"></i>
-          <input type="text" class="dt-search-input" id="dtSearchInput" placeholder="Search 200+ Educational Toys, Smart Gadgets, Return Gifts, Handicrafts..." oninput="handleSearchInput(this.value)" onfocus="showSearchSuggestions(true)" onblur="setTimeout(() => showSearchSuggestions(false), 200)" onkeydown="if(event.key === 'Enter') triggerDesktopSearch()">
+          <input type="text" class="dt-search-input" id="dtSearchInput" placeholder="Search 200+ Educational Toys, Smart Gadgets, Return Gifts, Handicrafts..." oninput="handleSearchInput(this.value)" onfocus="showSearchSuggestions(true)" onkeydown="if(event.key === 'Enter') triggerDesktopSearch()" autocomplete="off">
           <button class="dt-search-btn" onclick="triggerDesktopSearch()">Search</button>
 
           <!-- Search Dropdown Box -->
           <div class="dt-search-dropdown-results" id="dtSearchDropdown">
             <div class="dt-search-section-label">Popular Searches</div>
             <div class="dt-search-pills">
-              <span onclick="applySearchQuery('360 Stunt Car')">🏎️ 360 Stunt Car</span>
-              <span onclick="applySearchQuery('Drone')">🚁 RC Drone</span>
-              <span onclick="applySearchQuery('Brass Ganesha')">🎨 Brass Ganesha</span>
-              <span onclick="applySearchQuery('Unicorn Pen')">✏️ Kawaii Pen</span>
-              <span onclick="applySearchQuery('Return Gift')">🎁 Return Gifts</span>
+              <span onmousedown="applySearchQuery('360 Stunt Car')">🏎️ 360 Stunt Car</span>
+              <span onmousedown="applySearchQuery('Drone')">🚁 RC Drone</span>
+              <span onmousedown="applySearchQuery('Brass Ganesha')">🎨 Brass Ganesha</span>
+              <span onmousedown="applySearchQuery('Unicorn Pen')">✏️ Kawaii Pen</span>
+              <span onmousedown="applySearchQuery('Return Gift')">🎁 Return Gifts</span>
             </div>
             <div id="dtSearchLiveItems"></div>
           </div>
@@ -152,11 +151,22 @@
     </header>
 
     <!-- 2. STICKY SEARCH BAR -->
-    <div class="m-search-wrap-sticky">
+    <div class="m-search-wrap-sticky" id="mSearchContainer" style="position:relative;">
       <div class="m-search-pill-input">
         <i class="ri-search-2-line" style="font-size:16px; color:var(--brand-magenta);"></i>
-        <input type="text" class="m-search-input" placeholder="Search Toys, Gifts, Gadgets..." oninput="handleSearchInput(this.value)" onkeydown="if(event.key === 'Enter') switchView('search', { query: this.value })">
-        <i class="ri-mic-2-line" style="font-size:16px; color:#64748b; cursor:pointer;" onclick="showToast('Voice search coming soon! Use text search above.', 'info')" title="Voice search coming soon"></i>
+        <input type="text" class="m-search-input" id="mSearchInput" placeholder="Search Toys, Gifts, Gadgets..." oninput="handleSearchInput(this.value)" onfocus="showMobileSearchSuggestions(true)" onkeydown="if(event.key === 'Enter') switchView('search', { query: this.value })" autocomplete="off">
+        <i class="ri-close-circle-fill" id="mSearchClearBtn" style="font-size:17px; color:#94a3b8; cursor:pointer; display:none;" onclick="clearMobileSearch()" title="Clear"></i>
+      </div>
+      <!-- Mobile Live Search Suggestions Dropdown -->
+      <div class="m-search-dropdown-results" id="mSearchDropdown">
+        <div class="dt-search-section-label">Popular Searches</div>
+        <div class="dt-search-pills">
+          <span onmousedown="applySearchQuery('360 Stunt Car')">🏎️ 360 Stunt Car</span>
+          <span onmousedown="applySearchQuery('Drone')">🚁 Drone</span>
+          <span onmousedown="applySearchQuery('Brass Ganesha')">🎨 Brass Ganesha</span>
+          <span onmousedown="applySearchQuery('Return Gift')">🎁 Return Gifts</span>
+        </div>
+        <div id="mSearchLiveItems"></div>
       </div>
     </div>
 
@@ -1244,7 +1254,7 @@
   <!-- Razorpay Official Checkout SDK -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <!-- Main App -->
-  <script src="app.js?v=7.6"></script>
+  <script src="app.js?v=7.7"></script>
 
   <script>
     if (window.feather) feather.replace();

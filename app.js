@@ -12616,40 +12616,98 @@ function productMatchesSearch(p, q) {
 }
 
 function handleSearchInput(query) {
-  const q = query.toLowerCase().trim();
+  const q = (query || '').toLowerCase().trim();
 
-  // Desktop Live Suggestions
+  // 1. Desktop Live Suggestions
+  const dtDropdown = document.getElementById('dtSearchDropdown');
   const dtLiveItems = document.getElementById('dtSearchLiveItems');
-  if (dtLiveItems) {
+  if (dtDropdown && dtLiveItems) {
     if (q.length === 0) {
       dtLiveItems.innerHTML = '';
+      showSearchSuggestions(false);
     } else {
-      const matches = ALL_PRODUCTS.filter(p => productMatchesSearch(p, q)).slice(0, 5);
+      showSearchSuggestions(true);
+      const matches = ALL_PRODUCTS.filter(p => productMatchesSearch(p, q)).slice(0, 6);
       if (matches.length === 0) {
-        dtLiveItems.innerHTML = `<div style="padding:12px; font-size:12px; color:#64748b; text-align:center;">No products found</div>`;
-      } else {
-        dtLiveItems.innerHTML = matches.map(p => `
-          <div class="dt-search-suggestion-item" onclick="openProductPage('${p.id}'); showSearchSuggestions(false);" onmouseover="this.style.background='#f8fafc';" onmouseout="this.style.background='transparent';" style="display:flex; align-items:center; gap:12px; padding:10px; cursor:pointer; border-radius:10px; transition: background 0.2s; border-bottom: 1px solid #f1f5f9;">
-            <img src="${p.image_url || p.image || 'logo.png'}" style="width:40px; height:40px; object-fit:cover; border-radius:8px;">
-            <div style="flex:1; min-width:0; text-align:left;">
-              <div style="font-size:13px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
-              <div style="font-size:11px; color:#64748b;">${p.category} • ₹${p.price}</div>
-            </div>
+        dtLiveItems.innerHTML = `
+          <div style="padding:16px; font-size:12.5px; color:#64748b; text-align:center;">
+            No products found matching "<strong>${escapeHtml(query)}</strong>"
           </div>
-        `).join('');
+        `;
+      } else {
+        dtLiveItems.innerHTML = `
+          <div class="dt-search-section-label" style="margin-top:6px;">Matching Products (${matches.length})</div>
+          ${matches.map(p => {
+            const stock = Math.max(0, parseInt(p.stockQty, 10) || 0);
+            return `
+              <div class="dt-search-suggestion-item" onmousedown="openProductPage('${p.id}'); showSearchSuggestions(false);">
+                <img src="${p.image_url || p.image || 'logo.png'}" alt="${p.title}" onerror="this.src='logo.png'">
+                <div style="flex:1; min-width:0;">
+                  <div style="font-size:13px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
+                  <div style="font-size:11.5px; color:#64748b; display:flex; align-items:center; gap:8px; margin-top:2px;">
+                    <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:600;">${p.category}</span>
+                    <strong style="color:#0f172a;">₹${p.price}</strong>
+                    ${stock <= 0 ? '<span style="color:#ef4444; font-weight:700; font-size:10.5px;">(Out of stock)</span>' : ''}
+                  </div>
+                </div>
+                <i class="ri-arrow-right-s-line" style="color:#94a3b8; font-size:18px;"></i>
+              </div>
+            `;
+          }).join('')}
+          <div style="text-align:center; padding-top:10px; border-top:1px solid #f1f5f9; margin-top:6px;">
+            <button class="ap-btn ap-btn-secondary" style="width:100%; height:32px; font-size:12px; font-weight:700; color:#0f172a; justify-content:center;" onmousedown="triggerDesktopSearch()">
+              View all results for "${escapeHtml(query)}" →
+            </button>
+          </div>
+        `;
       }
     }
   }
 
-  // Mobile sticky search input legacy behavior (only trigger if screen width is mobile)
-  if (window.innerWidth < 1024) {
-    if (currentView !== 'home') switchView('home');
-    const mobileContainer = document.getElementById('mobileProductGrid');
-    if (q.length === 0) { renderAllSections(); return; }
-    const results = ALL_PRODUCTS.filter(p => productMatchesSearch(p, q)).slice(0, 16);
-    if (mobileContainer) mobileContainer.innerHTML = results.map(p => createMobileTileHTML(p)).join('');
-    if (window.feather) feather.replace();
-    if (window.lucide) lucide.createIcons();
+  // 2. Mobile Live Suggestions
+  const mDropdown = document.getElementById('mSearchDropdown');
+  const mLiveItems = document.getElementById('mSearchLiveItems');
+  const mClearBtn = document.getElementById('mSearchClearBtn');
+  if (mClearBtn) mClearBtn.style.display = q.length > 0 ? 'inline-block' : 'none';
+
+  if (mDropdown && mLiveItems) {
+    if (q.length === 0) {
+      mLiveItems.innerHTML = '';
+      showMobileSearchSuggestions(false);
+    } else {
+      showMobileSearchSuggestions(true);
+      const matches = ALL_PRODUCTS.filter(p => productMatchesSearch(p, q)).slice(0, 5);
+      if (matches.length === 0) {
+        mLiveItems.innerHTML = `
+          <div style="padding:14px; font-size:12px; color:#64748b; text-align:center;">
+            No products found matching "${escapeHtml(query)}"
+          </div>
+        `;
+      } else {
+        mLiveItems.innerHTML = `
+          <div class="dt-search-section-label" style="margin-top:4px;">Products</div>
+          ${matches.map(p => `
+            <div class="dt-search-suggestion-item" onmousedown="openProductPage('${p.id}'); showMobileSearchSuggestions(false);" style="padding:8px 6px;">
+              <img src="${p.image_url || p.image || 'logo.png'}" style="width:38px; height:38px;" alt="${p.title}" onerror="this.src='logo.png'">
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:12.5px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
+                <div style="font-size:11px; color:#64748b; display:flex; gap:6px; margin-top:2px;">
+                  <span>${p.category}</span>
+                  <span>•</span>
+                  <strong style="color:#0f172a;">₹${p.price}</strong>
+                </div>
+              </div>
+              <i class="ri-arrow-right-s-line" style="color:#94a3b8; font-size:16px;"></i>
+            </div>
+          `).join('')}
+          <div style="text-align:center; padding-top:8px; border-top:1px solid #f1f5f9; margin-top:6px;">
+            <button style="width:100%; height:32px; border-radius:8px; background:#0f172a; color:#ffffff; font-size:11.5px; font-weight:700; border:none; cursor:pointer;" onmousedown="switchView('search', { query: '${escapeHtml(query)}' }); showMobileSearchSuggestions(false);">
+              View all results for "${escapeHtml(query)}" →
+            </button>
+          </div>
+        `;
+      }
+    }
   }
 }
 
@@ -12663,11 +12721,33 @@ function showSearchSuggestions(show) {
   }
 }
 
+function showMobileSearchSuggestions(show) {
+  const dropdown = document.getElementById('mSearchDropdown');
+  if (!dropdown) return;
+  if (show) {
+    dropdown.classList.add('active');
+  } else {
+    dropdown.classList.remove('active');
+  }
+}
+
+function clearMobileSearch() {
+  const input = document.getElementById('mSearchInput');
+  if (input) {
+    input.value = '';
+    handleSearchInput('');
+    input.focus();
+  }
+}
+
 function applySearchQuery(term) {
   const dtInput = document.getElementById('dtSearchInput');
   if (dtInput) dtInput.value = term;
+  const mInput = document.getElementById('mSearchInput');
+  if (mInput) mInput.value = term;
   switchView('search', { query: term });
   showSearchSuggestions(false);
+  showMobileSearchSuggestions(false);
 }
 
 function triggerDesktopSearch() {
@@ -12678,6 +12758,16 @@ function triggerDesktopSearch() {
   }
   showSearchSuggestions(false);
 }
+
+// Global click dismiss for search dropdowns
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#dtSearchContainer')) {
+    showSearchSuggestions(false);
+  }
+  if (!e.target.closest('#mSearchContainer')) {
+    showMobileSearchSuggestions(false);
+  }
+});
 
 function openAdminPinModal() {
   if (apIsAuthenticated) {
