@@ -3483,14 +3483,25 @@ body {
 .dt-hero-split-container { display: none; }
 #desktopHomeView { display: none; }
 
-/* 2. Desktop Media Query (≥ 1024px) */
-@media (min-width: 1024px) {
+@media (max-width: 859px) {
+  .dt-header,
+  .dt-footer,
+  #desktopHomeView,
+  .dt-hero-split-container {
+    display: none !important;
+  }
+}
+
+/* 2. Desktop Media Query (≥ 860px) */
+@media (min-width: 860px) {
   /* Hide Mobile Home View and Mobile Navigation Bars on Desktop */
   #mobileHomeView,
   .m-app-header,
   .m-search-wrap-sticky,
   .m-curved-bottom-nav,
-  .m-view-header-bar {
+  .m-view-header-bar,
+  .m-plp-bar-sticky,
+  .m-floating-cart-fab {
     display: none !important;
   }
 
@@ -3528,16 +3539,6 @@ body {
     font-weight: 800 !important;
     color: #0f172a !important;
     letter-spacing: -0.5px !important;
-  }
-
-  /* Mobile Elements Hidden on Desktop Screens (≥ 1024px) */
-  .m-view-header-bar,
-  .m-plp-bar-sticky,
-  .m-search-wrap-sticky,
-  .m-app-header,
-  .m-curved-bottom-nav,
-  .m-floating-cart-fab {
-    display: none !important;
   }
 
   /* Desktop Header Bar (Full Width Edge-to-Edge) */

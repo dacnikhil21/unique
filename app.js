@@ -8850,6 +8850,7 @@ async function placeOrderFinal(grandTotal) {
 
     try {
       // 1. Create Razorpay order via server (server recalculates prices & verifies stock)
+      const currentTotals = calculateCheckoutTotals();
       const res = await fetch('/api/razorpay/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -8861,8 +8862,10 @@ async function placeOrderFinal(grandTotal) {
             price: i.price,
             variant: i.selectedVariant || 'Standard Pack'
           })),
-          couponCode: (typeof appliedCoupon !== 'undefined' && appliedCoupon) ? appliedCoupon.code : null,
+          couponCode: (typeof appliedCouponCode !== 'undefined' && appliedCouponCode) ? appliedCouponCode : null,
           giftWrap: !!document.getElementById('chkGiftWrap')?.checked,
+          shipping: currentTotals.shipping,
+          grandTotal: currentTotals.grandTotal,
           customerName: name,
           phone: phone,
           address: fullAddress,
