@@ -1,3 +1,11 @@
+// ── Global Error Boundary & Crash Prevention ──────────────────────────────
+window.addEventListener('error', (event) => {
+  console.warn('[UE Safety Handler] Script error caught safely:', event.message);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.warn('[UE Safety Handler] Promise rejection caught safely:', event.reason);
+});
 
 let STORE_SETTINGS = (() => {
   try {
