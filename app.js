@@ -6188,8 +6188,14 @@ async function bootstrapCustomerAuth() {
       if (currentView === 'checkout') renderCheckoutView();
     });
   }
-  if (window.location.hash.includes('reset=1') || window.location.search.includes('type=recovery')) {
-    setTimeout(openResetPasswordModal, 400);
+  if (
+    window.location.hash.includes('reset=1') ||
+    window.location.hash.includes('type=recovery') ||
+    window.location.search.includes('type=recovery') ||
+    window.location.href.includes('type=recovery') ||
+    window.location.href.includes('recovery')
+  ) {
+    setTimeout(openResetPasswordModal, 300);
   }
 }
 
@@ -6291,8 +6297,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     history.replaceState({ view: 'admin', params: {} }, '', '#view=admin');
   }
 
-  // Restore view from URL hash (deep link from WhatsApp etc.) or default to home
-  const isAuthCallback = window.location.hash.includes('access_token=') || window.location.hash.includes('error=') || window.location.search.includes('code=');
+  // Check if current URL is an auth callback (password recovery, sign in link, etc.)
+  const isAuthCallback = window.location.hash.includes('access_token=') ||
+    window.location.hash.includes('error=') ||
+    window.location.hash.includes('type=recovery') ||
+    window.location.search.includes('code=') ||
+    window.location.search.includes('type=recovery') ||
+    window.location.href.includes('type=recovery') ||
+    window.location.href.includes('recovery');
+
   const restoredNav = parseNavHash();
   if (restoredNav) {
     history.replaceState({ view: 'home', params: {} }, '', '#view=home');
@@ -6302,6 +6315,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       history.replaceState({ view: 'home', params: {} }, '', '#view=home');
     }
     switchView('home', {}, true);
+  }
+
+  if (isAuthCallback && (window.location.href.includes('recovery') || window.location.href.includes('type=recovery'))) {
+    setTimeout(openResetPasswordModal, 500);
   }
   updateBadges();
   startHeroCarousel();
@@ -9126,16 +9143,38 @@ function openResetPasswordModal() {
     el.className = 'ap-modal-backdrop';
     document.body.appendChild(el);
   }
-  el.innerHTML = `<div class="ap-modal-container" style="max-width:420px;" onclick="event.stopPropagation()">
-    <div class="ap-modal-header"><h3 class="ap-modal-title">Set New Password</h3></div>
-    <div class="ap-modal-body" style="padding:20px;">
-      <input type="password" id="newPassInput" class="ap-search-input" style="width:100%;margin-bottom:10px;" placeholder="New password (min 6 chars)">
-      <input type="password" id="newPassConfirm" class="ap-search-input" style="width:100%;" placeholder="Confirm new password">
+  el.innerHTML = `
+    <div class="ap-modal-container" style="max-width:440px; padding:24px; border-radius:20px; box-shadow:0 24px 60px rgba(15,23,42,0.25);" onclick="event.stopPropagation()">
+      <div style="text-align:center; margin-bottom:20px;">
+        <div style="width:54px; height:54px; border-radius:50%; background:#f0fdf4; color:#16a34a; font-size:26px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px; border:1px solid #bbf7d0;">
+          <i class="ri-lock-password-line"></i>
+        </div>
+        <h3 style="font-size:20px; font-weight:800; color:#0f172a; margin:0 0 6px 0;">Create New Password</h3>
+        <p style="font-size:13px; color:#64748b; margin:0; line-height:1.4;">
+          Your recovery link was verified! Please enter your new secure password below.
+        </p>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
+        <div>
+          <label style="display:block; font-size:11.5px; font-weight:700; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">New Password</label>
+          <input type="password" id="newPassInput" class="form-input" style="width:100%; height:44px; font-size:14px; padding:0 14px; border-radius:10px; border:1px solid #cbd5e1;" placeholder="Minimum 6 characters" autocomplete="new-password">
+        </div>
+        <div>
+          <label style="display:block; font-size:11.5px; font-weight:700; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Confirm New Password</label>
+          <input type="password" id="newPassConfirm" class="form-input" style="width:100%; height:44px; font-size:14px; padding:0 14px; border-radius:10px; border:1px solid #cbd5e1;" placeholder="Re-enter your password" autocomplete="new-password" onkeydown="if(event.key==='Enter') submitNewPassword()">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button class="ap-btn ap-btn-primary" style="flex:1; height:46px; font-size:14px; font-weight:800; justify-content:center; border-radius:12px; background:#0f172a; color:#ffffff;" onclick="submitNewPassword()">
+          Save & Log In
+        </button>
+      </div>
     </div>
-    <div class="ap-modal-footer">
-      <button class="ap-btn ap-btn-primary" onclick="submitNewPassword()">Update Password</button>
-    </div></div>`;
+  `;
   el.classList.add('active');
+  setTimeout(() => document.getElementById('newPassInput')?.focus(), 250);
 }
 
 async function submitNewPassword() {
