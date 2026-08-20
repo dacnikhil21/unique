@@ -12869,6 +12869,46 @@ function productMatchesSearch(p, q) {
   return scoreProductForSearch(p, q) > 0;
 }
 
+function generateAutoSuggestions(query) {
+  if (!query || !query.trim()) return { phrases: [], categories: [] };
+  const q = query.toLowerCase().trim();
+  const phrases = new Set();
+  const matchingCats = [];
+
+  const allCats = [...new Set(ALL_PRODUCTS.map(p => p.category).filter(Boolean))];
+  allCats.forEach(cat => {
+    if (cat.toLowerCase().includes(q)) matchingCats.push(cat);
+  });
+
+  ALL_PRODUCTS.forEach(p => {
+    const title = p.title || '';
+    const titleLower = title.toLowerCase();
+    if (titleLower.includes(q)) {
+      const words = title.split(/\s+/).filter(Boolean);
+      if (titleLower.startsWith(q)) {
+        phrases.add(words.slice(0, 4).join(' '));
+      } else {
+        const qIdx = titleLower.indexOf(q);
+        const sub = title.substring(qIdx).split(/\s+/).filter(Boolean).slice(0, 3).join(' ');
+        if (sub && sub.length >= 3) phrases.add(sub);
+      }
+    }
+  });
+
+  return {
+    phrases: Array.from(phrases).slice(0, 4),
+    categories: matchingCats.slice(0, 2)
+  };
+}
+
+function highlightQueryText(text, query) {
+  if (!query || !text) return escapeHtml(text || '');
+  const escaped = escapeHtml(text);
+  const qEsc = escapeHtml(query);
+  const regex = new RegExp(`(${qEsc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return escaped.replace(regex, '<strong style="color:var(--brand-magenta);">$1</strong>');
+}
+
 function handleSearchInput(query) {
   const q = (query || '').toLowerCase().trim();
 
@@ -12884,25 +12924,52 @@ function handleSearchInput(query) {
     } else {
       if (dtInitial) dtInitial.style.display = 'none';
       showSearchSuggestions(true);
-      const matches = getGoldStandardSearchResults(q, 6);
-      if (matches.length === 0) {
+      const auto = generateAutoSuggestions(q);
+      const matches = getGoldStandardSearchResults(q, 5);
+
+      if (auto.phrases.length === 0 && auto.categories.length === 0 && matches.length === 0) {
         dtLiveItems.innerHTML = `
           <div style="padding:20px; font-size:13px; color:#64748b; text-align:center;">
             <div style="font-size:24px; margin-bottom:6px;">🔍</div>
             No exact matches found for "<strong>${escapeHtml(query)}</strong>".<br>
-            <span style="font-size:11.5px; color:#94a3b8;">Try checking your spelling or search by category like <em>RC Toys</em> or <em>Handicrafts</em>.</span>
+            <span style="font-size:11.5px; color:#94a3b8;">Try checking spelling or search <em>RC Toys</em>, <em>Gifts</em>, or <em>Stationery</em>.</span>
           </div>
         `;
       } else {
-        dtLiveItems.innerHTML = `
-          <div class="m-search-heading" style="margin-top:4px;"><i class="ri-sparkling-fill" style="color:var(--brand-magenta);"></i> Top Matches (${matches.length})</div>
-          ${matches.map(p => {
+        let html = '';
+
+        // Query Suggestions (YouTube / Amazon style)
+        if (auto.categories.length > 0 || auto.phrases.length > 0) {
+          html += `<div style="margin-bottom:6px;">`;
+          auto.categories.forEach(cat => {
+            html += `
+              <div class="search-phrase-item" onmousedown="filterCategory('${escapeHtml(cat)}'); showSearchSuggestions(false);">
+                <i class="ri-folder-line"></i>
+                <span>Explore all items in <strong style="color:var(--brand-magenta);">${escapeHtml(cat)}</strong></span>
+              </div>
+            `;
+          });
+          auto.phrases.forEach(phrase => {
+            html += `
+              <div class="search-phrase-item" onmousedown="applySearchQuery('${escapeHtml(phrase)}')">
+                <i class="ri-search-line"></i>
+                <span>${highlightQueryText(phrase, q)}</span>
+              </div>
+            `;
+          });
+          html += `</div>`;
+        }
+
+        // Product Cards
+        if (matches.length > 0) {
+          html += `<div class="search-divider-label"><i class="ri-shopping-bag-3-line"></i> Matching Products</div>`;
+          html += matches.map(p => {
             const stock = Math.max(0, parseInt(p.stockQty, 10) || 0);
             return `
               <div class="dt-search-suggestion-item" onmousedown="openProductPage('${p.id}'); showSearchSuggestions(false);">
                 <img src="${p.image_url || p.image || 'logo.png'}" alt="${p.title}" onerror="this.src='logo.png'">
                 <div style="flex:1; min-width:0;">
-                  <div style="font-size:13px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
+                  <div style="font-size:13px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${highlightQueryText(p.title, q)}</div>
                   <div style="font-size:11.5px; color:#64748b; display:flex; align-items:center; gap:8px; margin-top:2px;">
                     <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:600; font-size:10.5px;">${p.category}</span>
                     <strong style="color:#0f172a;">₹${p.price}</strong>
@@ -12912,13 +12979,18 @@ function handleSearchInput(query) {
                 <i class="ri-arrow-right-s-line" style="color:#94a3b8; font-size:18px;"></i>
               </div>
             `;
-          }).join('')}
-          <div style="text-align:center; padding-top:10px; border-top:1px solid #f1f5f9; margin-top:8px;">
-            <button class="ap-btn ap-btn-primary" style="width:100%; height:36px; font-size:12.5px; font-weight:700; background:#0f172a; color:#fff; border-radius:10px; justify-content:center;" onmousedown="triggerDesktopSearch()">
-              View all results for "${escapeHtml(query)}" →
-            </button>
-          </div>
-        `;
+          }).join('');
+
+          html += `
+            <div style="text-align:center; padding-top:10px; border-top:1px solid #f1f5f9; margin-top:8px;">
+              <button class="ap-btn ap-btn-primary" style="width:100%; height:36px; font-size:12.5px; font-weight:700; background:#0f172a; color:#fff; border-radius:10px; justify-content:center;" onmousedown="triggerDesktopSearch()">
+                View all results for "${escapeHtml(query)}" →
+              </button>
+            </div>
+          `;
+        }
+
+        dtLiveItems.innerHTML = html;
       }
     }
   }
@@ -12937,8 +13009,10 @@ function handleSearchInput(query) {
     } else {
       if (mInitial) mInitial.style.display = 'none';
       showMobileSearchSuggestions(true);
-      const matches = getGoldStandardSearchResults(q, 5);
-      if (matches.length === 0) {
+      const auto = generateAutoSuggestions(q);
+      const matches = getGoldStandardSearchResults(q, 4);
+
+      if (auto.phrases.length === 0 && auto.categories.length === 0 && matches.length === 0) {
         mLiveItems.innerHTML = `
           <div style="padding:18px 12px; font-size:12.5px; color:#64748b; text-align:center;">
             <div style="font-size:22px; margin-bottom:4px;">🔍</div>
@@ -12946,15 +13020,40 @@ function handleSearchInput(query) {
           </div>
         `;
       } else {
-        mLiveItems.innerHTML = `
-          <div class="m-search-heading" style="margin-top:4px;"><i class="ri-sparkling-fill" style="color:var(--brand-magenta);"></i> Top Matches</div>
-          ${matches.map(p => {
+        let html = '';
+
+        // Query Suggestions (YouTube / Amazon style)
+        if (auto.categories.length > 0 || auto.phrases.length > 0) {
+          html += `<div style="margin-bottom:6px;">`;
+          auto.categories.forEach(cat => {
+            html += `
+              <div class="search-phrase-item" onmousedown="filterCategory('${escapeHtml(cat)}'); showMobileSearchSuggestions(false);">
+                <i class="ri-folder-line"></i>
+                <span>Explore in <strong style="color:var(--brand-magenta);">${escapeHtml(cat)}</strong></span>
+              </div>
+            `;
+          });
+          auto.phrases.forEach(phrase => {
+            html += `
+              <div class="search-phrase-item" onmousedown="applySearchQuery('${escapeHtml(phrase)}')">
+                <i class="ri-search-line"></i>
+                <span>${highlightQueryText(phrase, q)}</span>
+              </div>
+            `;
+          });
+          html += `</div>`;
+        }
+
+        // Product Cards
+        if (matches.length > 0) {
+          html += `<div class="search-divider-label"><i class="ri-shopping-bag-3-line"></i> Matching Products</div>`;
+          html += matches.map(p => {
             const stock = Math.max(0, parseInt(p.stockQty, 10) || 0);
             return `
               <div class="dt-search-suggestion-item" onmousedown="openProductPage('${p.id}'); showMobileSearchSuggestions(false);">
                 <img src="${p.image_url || p.image || 'logo.png'}" alt="${p.title}" onerror="this.src='logo.png'">
                 <div style="flex:1; min-width:0;">
-                  <div style="font-size:12.5px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
+                  <div style="font-size:12.5px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${highlightQueryText(p.title, q)}</div>
                   <div style="font-size:11px; color:#64748b; display:flex; align-items:center; gap:6px; margin-top:2px;">
                     <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:600; font-size:10px;">${p.category}</span>
                     <strong style="color:#0f172a;">₹${p.price}</strong>
@@ -12964,13 +13063,18 @@ function handleSearchInput(query) {
                 <i class="ri-arrow-right-s-line" style="color:#94a3b8; font-size:16px;"></i>
               </div>
             `;
-          }).join('')}
-          <div style="text-align:center; padding-top:8px; border-top:1px solid #f1f5f9; margin-top:6px;">
-            <button style="width:100%; height:34px; border-radius:10px; background:#0f172a; color:#ffffff; font-size:12px; font-weight:700; border:none; cursor:pointer;" onmousedown="switchView('search', { query: '${escapeHtml(query)}' }); showMobileSearchSuggestions(false);">
-              View all results for "${escapeHtml(query)}" →
-            </button>
-          </div>
-        `;
+          }).join('');
+
+          html += `
+            <div style="text-align:center; padding-top:8px; border-top:1px solid #f1f5f9; margin-top:6px;">
+              <button style="width:100%; height:34px; border-radius:10px; background:#0f172a; color:#ffffff; font-size:12px; font-weight:700; border:none; cursor:pointer;" onmousedown="switchView('search', { query: '${escapeHtml(query)}' }); showMobileSearchSuggestions(false);">
+                View all results for "${escapeHtml(query)}" →
+              </button>
+            </div>
+          `;
+        }
+
+        mLiveItems.innerHTML = html;
       }
     }
   }

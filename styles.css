@@ -280,6 +280,44 @@ body {
   transform: translateY(-1px) !important;
 }
 
+.search-phrase-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 9px 10px !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  font-size: 13.5px !important;
+  color: #1e293b !important;
+  font-weight: 600 !important;
+  transition: all 0.15s ease !important;
+}
+
+.search-phrase-item:hover, .search-phrase-item:active {
+  background: #f1f5f9 !important;
+  color: var(--brand-magenta) !important;
+}
+
+.search-phrase-item i {
+  color: #94a3b8 !important;
+  font-size: 16px !important;
+  flex-shrink: 0 !important;
+}
+
+.search-divider-label {
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+  color: #64748b !important;
+  padding: 8px 4px 4px 4px !important;
+  border-top: 1px solid #f1f5f9 !important;
+  margin-top: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
 .dt-search-suggestion-item {
   display: flex !important;
   align-items: center !important;
