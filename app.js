@@ -12785,20 +12785,88 @@ function updateActiveCategoryThumbnails() {
   if (activeEl) activeEl.classList.add('active-cat');
 }
 
-function productMatchesSearch(p, q) {
-  if (!q || !p) return false;
-  const qStr = String(q).toLowerCase().trim();
-  const searchCorpus = `${p.title || ''} ${p.category || ''} ${p.sku || ''} ${p.description || ''}`.toLowerCase();
-
-  // 1. Direct substring match
-  if (searchCorpus.includes(qStr)) return true;
-
-  // 2. Tokenized multi-word match (e.g. "nikhil toys" matches product with title "nikhil" and category "toys")
-  const tokens = qStr.split(/\s+/).filter(t => t.length > 0);
-  if (tokens.length > 1) {
-    return tokens.every(token => searchCorpus.includes(token));
+// ── Gold-Standard E-Commerce Search Engine ────────────────────────────────
+function levenshteinDist(a, b) {
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) matrix[i][j] = matrix[i - 1][j - 1];
+      else matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+    }
   }
-  return false;
+  return matrix[b.length][a.length];
+}
+
+function wordMatchScore(targetWord, queryToken) {
+  const t = (targetWord || '').toLowerCase().replace(/s$/i, '');
+  const q = (queryToken || '').toLowerCase().replace(/s$/i, '');
+  if (!t || !q) return 0;
+  if (t === q) return 100;
+  if (t.startsWith(q)) return 85;
+  if (t.includes(q)) return 65;
+  if (q.length >= 3 && levenshteinDist(t, q) <= (q.length <= 4 ? 1 : 2)) {
+    return 50; // Typo match
+  }
+  return 0;
+}
+
+function scoreProductForSearch(product, query) {
+  if (!query || !product) return 0;
+  const q = query.toLowerCase().trim();
+  const tokens = q.split(/\s+/).filter(t => t.length > 0);
+  if (tokens.length === 0) return 0;
+
+  const titleWords = (product.title || '').split(/\s+/);
+  const catWords = (product.category || '').split(/\s+/);
+  const sku = (product.sku || '').toLowerCase();
+  const descWords = (product.description || '').split(/\s+/);
+
+  let totalScore = 0;
+  let allTokensMatched = true;
+
+  for (const token of tokens) {
+    let tokenMaxScore = 0;
+    if (sku.includes(token)) tokenMaxScore = Math.max(tokenMaxScore, 90);
+    for (const tw of titleWords) {
+      tokenMaxScore = Math.max(tokenMaxScore, wordMatchScore(tw, token) * 1.5);
+    }
+    for (const cw of catWords) {
+      tokenMaxScore = Math.max(tokenMaxScore, wordMatchScore(cw, token) * 1.0);
+    }
+    if (tokenMaxScore === 0) {
+      for (const dw of descWords.slice(0, 25)) {
+        tokenMaxScore = Math.max(tokenMaxScore, wordMatchScore(dw, token) * 0.4);
+      }
+    }
+    if (tokenMaxScore === 0) {
+      allTokensMatched = false;
+      break;
+    }
+    totalScore += tokenMaxScore;
+  }
+
+  if (!allTokensMatched) return 0;
+  if (product.stockQty > 0 || product.inStock !== false) totalScore += 25;
+  return totalScore;
+}
+
+function getGoldStandardSearchResults(query, limit = 6) {
+  if (!query || !query.trim()) return [];
+  const scored = [];
+  for (const p of ALL_PRODUCTS) {
+    const s = scoreProductForSearch(p, query);
+    if (s > 0) scored.push({ product: p, score: s });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map(x => x.product);
+}
+
+function productMatchesSearch(p, q) {
+  return scoreProductForSearch(p, q) > 0;
 }
 
 function handleSearchInput(query) {
@@ -12806,23 +12874,28 @@ function handleSearchInput(query) {
 
   // 1. Desktop Live Suggestions
   const dtDropdown = document.getElementById('dtSearchDropdown');
+  const dtInitial = document.getElementById('dtSearchInitialPills');
   const dtLiveItems = document.getElementById('dtSearchLiveItems');
+
   if (dtDropdown && dtLiveItems) {
     if (q.length === 0) {
+      if (dtInitial) dtInitial.style.display = 'block';
       dtLiveItems.innerHTML = '';
-      showSearchSuggestions(false);
     } else {
+      if (dtInitial) dtInitial.style.display = 'none';
       showSearchSuggestions(true);
-      const matches = ALL_PRODUCTS.filter(p => productMatchesSearch(p, q)).slice(0, 6);
+      const matches = getGoldStandardSearchResults(q, 6);
       if (matches.length === 0) {
         dtLiveItems.innerHTML = `
-          <div style="padding:16px; font-size:12.5px; color:#64748b; text-align:center;">
-            No products found matching "<strong>${escapeHtml(query)}</strong>"
+          <div style="padding:20px; font-size:13px; color:#64748b; text-align:center;">
+            <div style="font-size:24px; margin-bottom:6px;">🔍</div>
+            No exact matches found for "<strong>${escapeHtml(query)}</strong>".<br>
+            <span style="font-size:11.5px; color:#94a3b8;">Try checking your spelling or search by category like <em>RC Toys</em> or <em>Handicrafts</em>.</span>
           </div>
         `;
       } else {
         dtLiveItems.innerHTML = `
-          <div class="dt-search-section-label" style="margin-top:6px;">Matching Products (${matches.length})</div>
+          <div class="m-search-heading" style="margin-top:4px;"><i class="ri-sparkling-fill" style="color:var(--brand-magenta);"></i> Top Matches (${matches.length})</div>
           ${matches.map(p => {
             const stock = Math.max(0, parseInt(p.stockQty, 10) || 0);
             return `
@@ -12831,7 +12904,7 @@ function handleSearchInput(query) {
                 <div style="flex:1; min-width:0;">
                   <div style="font-size:13px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
                   <div style="font-size:11.5px; color:#64748b; display:flex; align-items:center; gap:8px; margin-top:2px;">
-                    <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:600;">${p.category}</span>
+                    <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:600; font-size:10.5px;">${p.category}</span>
                     <strong style="color:#0f172a;">₹${p.price}</strong>
                     ${stock <= 0 ? '<span style="color:#ef4444; font-weight:700; font-size:10.5px;">(Out of stock)</span>' : ''}
                   </div>
@@ -12840,8 +12913,8 @@ function handleSearchInput(query) {
               </div>
             `;
           }).join('')}
-          <div style="text-align:center; padding-top:10px; border-top:1px solid #f1f5f9; margin-top:6px;">
-            <button class="ap-btn ap-btn-secondary" style="width:100%; height:32px; font-size:12px; font-weight:700; color:#0f172a; justify-content:center;" onmousedown="triggerDesktopSearch()">
+          <div style="text-align:center; padding-top:10px; border-top:1px solid #f1f5f9; margin-top:8px;">
+            <button class="ap-btn ap-btn-primary" style="width:100%; height:36px; font-size:12.5px; font-weight:700; background:#0f172a; color:#fff; border-radius:10px; justify-content:center;" onmousedown="triggerDesktopSearch()">
               View all results for "${escapeHtml(query)}" →
             </button>
           </div>
@@ -12852,42 +12925,48 @@ function handleSearchInput(query) {
 
   // 2. Mobile Live Suggestions
   const mDropdown = document.getElementById('mSearchDropdown');
+  const mInitial = document.getElementById('mSearchInitialPills');
   const mLiveItems = document.getElementById('mSearchLiveItems');
   const mClearBtn = document.getElementById('mSearchClearBtn');
   if (mClearBtn) mClearBtn.style.display = q.length > 0 ? 'inline-block' : 'none';
 
   if (mDropdown && mLiveItems) {
     if (q.length === 0) {
+      if (mInitial) mInitial.style.display = 'block';
       mLiveItems.innerHTML = '';
-      showMobileSearchSuggestions(false);
     } else {
+      if (mInitial) mInitial.style.display = 'none';
       showMobileSearchSuggestions(true);
-      const matches = ALL_PRODUCTS.filter(p => productMatchesSearch(p, q)).slice(0, 5);
+      const matches = getGoldStandardSearchResults(q, 5);
       if (matches.length === 0) {
         mLiveItems.innerHTML = `
-          <div style="padding:14px; font-size:12px; color:#64748b; text-align:center;">
-            No products found matching "${escapeHtml(query)}"
+          <div style="padding:18px 12px; font-size:12.5px; color:#64748b; text-align:center;">
+            <div style="font-size:22px; margin-bottom:4px;">🔍</div>
+            No products found matching "<strong>${escapeHtml(query)}</strong>"
           </div>
         `;
       } else {
         mLiveItems.innerHTML = `
-          <div class="dt-search-section-label" style="margin-top:4px;">Products</div>
-          ${matches.map(p => `
-            <div class="dt-search-suggestion-item" onmousedown="openProductPage('${p.id}'); showMobileSearchSuggestions(false);" style="padding:8px 6px;">
-              <img src="${p.image_url || p.image || 'logo.png'}" style="width:38px; height:38px;" alt="${p.title}" onerror="this.src='logo.png'">
-              <div style="flex:1; min-width:0;">
-                <div style="font-size:12.5px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
-                <div style="font-size:11px; color:#64748b; display:flex; gap:6px; margin-top:2px;">
-                  <span>${p.category}</span>
-                  <span>•</span>
-                  <strong style="color:#0f172a;">₹${p.price}</strong>
+          <div class="m-search-heading" style="margin-top:4px;"><i class="ri-sparkling-fill" style="color:var(--brand-magenta);"></i> Top Matches</div>
+          ${matches.map(p => {
+            const stock = Math.max(0, parseInt(p.stockQty, 10) || 0);
+            return `
+              <div class="dt-search-suggestion-item" onmousedown="openProductPage('${p.id}'); showMobileSearchSuggestions(false);">
+                <img src="${p.image_url || p.image || 'logo.png'}" alt="${p.title}" onerror="this.src='logo.png'">
+                <div style="flex:1; min-width:0;">
+                  <div style="font-size:12.5px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
+                  <div style="font-size:11px; color:#64748b; display:flex; align-items:center; gap:6px; margin-top:2px;">
+                    <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:600; font-size:10px;">${p.category}</span>
+                    <strong style="color:#0f172a;">₹${p.price}</strong>
+                    ${stock <= 0 ? '<span style="color:#ef4444; font-weight:700; font-size:10px;">(Out of stock)</span>' : ''}
+                  </div>
                 </div>
+                <i class="ri-arrow-right-s-line" style="color:#94a3b8; font-size:16px;"></i>
               </div>
-              <i class="ri-arrow-right-s-line" style="color:#94a3b8; font-size:16px;"></i>
-            </div>
-          `).join('')}
+            `;
+          }).join('')}
           <div style="text-align:center; padding-top:8px; border-top:1px solid #f1f5f9; margin-top:6px;">
-            <button style="width:100%; height:32px; border-radius:8px; background:#0f172a; color:#ffffff; font-size:11.5px; font-weight:700; border:none; cursor:pointer;" onmousedown="switchView('search', { query: '${escapeHtml(query)}' }); showMobileSearchSuggestions(false);">
+            <button style="width:100%; height:34px; border-radius:10px; background:#0f172a; color:#ffffff; font-size:12px; font-weight:700; border:none; cursor:pointer;" onmousedown="switchView('search', { query: '${escapeHtml(query)}' }); showMobileSearchSuggestions(false);">
               View all results for "${escapeHtml(query)}" →
             </button>
           </div>
@@ -12900,21 +12979,15 @@ function handleSearchInput(query) {
 function showSearchSuggestions(show) {
   const dropdown = document.getElementById('dtSearchDropdown');
   if (!dropdown) return;
-  if (show) {
-    dropdown.classList.add('active');
-  } else {
-    dropdown.classList.remove('active');
-  }
+  if (show) dropdown.classList.add('active');
+  else dropdown.classList.remove('active');
 }
 
 function showMobileSearchSuggestions(show) {
   const dropdown = document.getElementById('mSearchDropdown');
   if (!dropdown) return;
-  if (show) {
-    dropdown.classList.add('active');
-  } else {
-    dropdown.classList.remove('active');
-  }
+  if (show) dropdown.classList.add('active');
+  else dropdown.classList.remove('active');
 }
 
 function clearMobileSearch() {

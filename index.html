@@ -28,7 +28,7 @@
   <meta name="twitter:description" content="Shop 200+ educational toys, RC gadgets, return gift hampers & handicrafts. Same-day delivery in Visakhapatnam.">
   <meta name="twitter:image" content="https://uniqueexpressions.in/hero_lifestyle.png">
 
-  <link rel="stylesheet" href="styles.css?v=7.6">
+  <link rel="stylesheet" href="styles.css?v=7.7">
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/feather-icons"></script>
@@ -85,15 +85,24 @@
           <input type="text" class="dt-search-input" id="dtSearchInput" placeholder="Search 200+ Educational Toys, Smart Gadgets, Return Gifts, Handicrafts..." oninput="handleSearchInput(this.value)" onfocus="showSearchSuggestions(true)" onkeydown="if(event.key === 'Enter') triggerDesktopSearch()" autocomplete="off">
           <button class="dt-search-btn" onclick="triggerDesktopSearch()">Search</button>
 
-          <!-- Search Dropdown Box -->
+          <!-- Search Dropdown Box (Desktop) -->
           <div class="dt-search-dropdown-results" id="dtSearchDropdown">
-            <div class="dt-search-section-label">Popular Searches</div>
-            <div class="dt-search-pills">
-              <span onmousedown="applySearchQuery('360 Stunt Car')">🏎️ 360 Stunt Car</span>
-              <span onmousedown="applySearchQuery('Drone')">🚁 RC Drone</span>
-              <span onmousedown="applySearchQuery('Brass Ganesha')">🎨 Brass Ganesha</span>
-              <span onmousedown="applySearchQuery('Unicorn Pen')">✏️ Kawaii Pen</span>
-              <span onmousedown="applySearchQuery('Return Gift')">🎁 Return Gifts</span>
+            <div id="dtSearchInitialPills">
+              <div class="m-search-heading"><i class="ri-fire-line" style="color:#f59e0b;"></i> Trending Searches</div>
+              <div class="dt-search-pills">
+                <span onmousedown="applySearchQuery('360 Stunt Car')">🏎️ 360 Stunt Car</span>
+                <span onmousedown="applySearchQuery('Drone')">🚁 RC Drone 4K</span>
+                <span onmousedown="applySearchQuery('Brass Ganesha')">🎨 Brass Ganesha</span>
+                <span onmousedown="applySearchQuery('Unicorn Pen')">✏️ Kawaii Pens</span>
+                <span onmousedown="applySearchQuery('Return Gift')">🎁 Return Gifts</span>
+              </div>
+              <div class="m-search-heading" style="margin-top:14px;"><i class="ri-grid-fill" style="color:var(--brand-magenta);"></i> Quick Categories</div>
+              <div class="dt-search-pills">
+                <span onmousedown="filterCategory('RC Toys'); showSearchSuggestions(false);">🏎️ RC Toys</span>
+                <span onmousedown="filterCategory('Educational Toys'); showSearchSuggestions(false);">🧩 Educational Toys</span>
+                <span onmousedown="filterCategory('Handicrafts'); showSearchSuggestions(false);">🎨 Handicrafts</span>
+                <span onmousedown="filterCategory('Stationary'); showSearchSuggestions(false);">✏️ Stationery</span>
+              </div>
             </div>
             <div id="dtSearchLiveItems"></div>
           </div>
@@ -159,14 +168,25 @@
         <input type="text" class="m-search-input" id="mSearchInput" placeholder="Search Toys, Gifts, Gadgets..." oninput="handleSearchInput(this.value)" onfocus="showMobileSearchSuggestions(true)" onkeydown="if(event.key === 'Enter') switchView('search', { query: this.value })" autocomplete="off">
         <i class="ri-close-circle-fill" id="mSearchClearBtn" style="font-size:17px; color:#94a3b8; cursor:pointer; display:none;" onclick="clearMobileSearch()" title="Clear"></i>
       </div>
-      <!-- Mobile Live Search Suggestions Dropdown -->
+      <!-- Mobile Live Search Suggestions Dropdown (Amazon-Grade UX) -->
       <div class="m-search-dropdown-results" id="mSearchDropdown">
-        <div class="dt-search-section-label">Popular Searches</div>
-        <div class="dt-search-pills">
-          <span onmousedown="applySearchQuery('360 Stunt Car')">🏎️ 360 Stunt Car</span>
-          <span onmousedown="applySearchQuery('Drone')">🚁 Drone</span>
-          <span onmousedown="applySearchQuery('Brass Ganesha')">🎨 Brass Ganesha</span>
-          <span onmousedown="applySearchQuery('Return Gift')">🎁 Return Gifts</span>
+        <div id="mSearchInitialPills">
+          <div class="m-search-heading"><i class="ri-fire-line" style="color:#f59e0b;"></i> Trending Searches</div>
+          <div class="m-search-pills-row">
+            <span class="m-search-pill" onmousedown="applySearchQuery('360 Stunt Car')">🏎️ 360 Stunt Car</span>
+            <span class="m-search-pill" onmousedown="applySearchQuery('Drone')">🚁 RC Drone</span>
+            <span class="m-search-pill" onmousedown="applySearchQuery('Brass Ganesha')">🎨 Brass Ganesha</span>
+            <span class="m-search-pill" onmousedown="applySearchQuery('Kawaii Pen')">✏️ Kawaii Pens</span>
+            <span class="m-search-pill" onmousedown="applySearchQuery('Return Gift')">🎁 Return Gifts</span>
+          </div>
+
+          <div class="m-search-heading" style="margin-top:14px;"><i class="ri-grid-fill" style="color:var(--brand-magenta);"></i> Quick Categories</div>
+          <div class="m-search-pills-row">
+            <span class="m-search-pill" onmousedown="filterCategory('RC Toys'); showMobileSearchSuggestions(false);">🏎️ RC Toys</span>
+            <span class="m-search-pill" onmousedown="filterCategory('Educational Toys'); showMobileSearchSuggestions(false);">🧩 Educational</span>
+            <span class="m-search-pill" onmousedown="filterCategory('Handicrafts'); showMobileSearchSuggestions(false);">🎨 Handicrafts</span>
+            <span class="m-search-pill" onmousedown="filterCategory('Stationary'); showMobileSearchSuggestions(false);">✏️ Stationery</span>
+          </div>
         </div>
         <div id="mSearchLiveItems"></div>
       </div>
@@ -1256,7 +1276,7 @@
   <!-- Razorpay Official Checkout SDK -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <!-- Main App -->
-  <script src="app.js?v=8.3"></script>
+  <script src="app.js?v=8.4"></script>
 
   <script>
     if (window.feather) feather.replace();
