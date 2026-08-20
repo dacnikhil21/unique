@@ -14,12 +14,17 @@ const ALLOWED_ORIGINS = [
 function sbFetch(path, options = {}) {
   return new Promise((resolve, reject) => {
     const urlObj = new URL(SUPABASE_URL + path);
+    const bodyData = options.body ? (typeof options.body === 'string' ? options.body : JSON.stringify(options.body)) : null;
+
     const headers = {
       'apikey': SUPABASE_KEY,
       'Authorization': 'Bearer ' + SUPABASE_KEY,
       'Content-Type': 'application/json',
       ...(options.headers || {})
     };
+    if (bodyData) {
+      headers['Content-Length'] = Buffer.byteLength(bodyData);
+    }
 
     const req = https.request({
       hostname: urlObj.hostname,
@@ -45,7 +50,7 @@ function sbFetch(path, options = {}) {
     });
 
     req.on('error', reject);
-    if (options.body) req.write(typeof options.body === 'string' ? options.body : JSON.stringify(options.body));
+    if (bodyData) req.write(bodyData);
     req.end();
   });
 }
