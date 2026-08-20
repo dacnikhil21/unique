@@ -61,14 +61,14 @@ const ALLOWED_ORIGINS = [
 ];
 
 const server = http.createServer((req, res) => {
-  // CORS Headers — restricted to known origins only
+  // CORS Headers — support localhost on all dev ports and production domains
   const origin = req.headers.origin || '';
-  if (ALLOWED_ORIGINS.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+  if (!origin || ALLOWED_ORIGINS.includes(origin) || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Vary', 'Origin');
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   // Security Headers
   res.setHeader('X-Content-Type-Options', 'nosniff');

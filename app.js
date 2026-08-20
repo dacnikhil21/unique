@@ -6421,6 +6421,18 @@ function switchView(viewName, params = {}, skipHistory = false) {
   const cartFab = document.getElementById('mFloatingCartFab');
   const bottomNav = document.querySelector('.m-bottom-nav');
 
+  // Floating WhatsApp Support Button Visibility (hidden on checkout & admin)
+  const floatingWaBtn = document.getElementById('floatingWhatsappBtn');
+  if (floatingWaBtn) {
+    if (viewName === 'checkout' || viewName === 'admin') {
+      floatingWaBtn.style.setProperty('display', 'none', 'important');
+      document.body.classList.add('checkout-active');
+    } else {
+      floatingWaBtn.style.display = 'flex';
+      document.body.classList.remove('checkout-active');
+    }
+  }
+
   if (viewName === 'admin') {
     if (dtHeader) dtHeader.style.setProperty('display', 'none', 'important');
     if (dtFooter) dtFooter.style.setProperty('display', 'none', 'important');
@@ -7001,13 +7013,7 @@ function injectProductJsonLd(product) {
   }, 50);
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   1. DESKTOP PDP RENDERER (60% Gallery / 40% Sticky Buy Box)
-   ────────────────────────────────────────────────────────────────────────── */
-
-/* ──────────────────────────────────────────────────────────────────────────
-   1. DESKTOP PDP RENDERER (Clean 2-Column Adaptation of Mobile PDP)
-   ────────────────────────────────────────────────────────────────────────── */
+let currentPdpSlideIndex = 0;
 
 function renderPDPDesktop(product) {
   const images = (Array.isArray(product.images) && product.images.length > 0) ? product.images : [product.image];
@@ -7020,7 +7026,7 @@ function renderPDPDesktop(product) {
   const videoHTML = buildVideoSectionHTML(product);
 
   const thumbsHTML = images.map((imgUrl, idx) => `
-    <div class="pdp-dt-thumb-card ${idx === 0 ? 'active' : ''}" onclick="switchDesktopPDPImg(this, '${imgUrl}')">
+    <div class="pdp-dt-thumb-card ${idx === 0 ? 'active' : ''}" id="pdpDtThumb-${idx}" onclick="switchDesktopPDPImg(this, '${imgUrl}', ${idx})">
       <img src="${imgUrl}" alt="Thumbnail ${idx + 1}" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=300'">
     </div>
   `).join('');
@@ -7043,7 +7049,7 @@ function renderPDPDesktop(product) {
       <div class="pdp-dt-hero-grid">
         <!-- LEFT COLUMN (55%): Gallery & Thumbnails Below Main Image -->
         <div class="pdp-dt-gallery-side">
-          <div class="pdp-dt-main-img-box" id="pdpMainBoxDesktop" onclick="openPDPModalLightbox(${JSON.stringify(images).replace(/"/g, '&quot;')}, 0)">
+          <div class="pdp-dt-main-img-box" id="pdpMainBoxDesktop" onclick="openPDPModalLightbox(${JSON.stringify(images).replace(/"/g, '&quot;')}, currentPdpSlideIndex)">
             <span style="position: absolute; top: 16px; left: 16px; background: #0f172a; color: #fff; font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 99px; z-index: 2;">
               🔥 ${discountPct}% OFF
             </span>
@@ -7051,10 +7057,16 @@ function renderPDPDesktop(product) {
               <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="color: ${isWishlisted ? '#0f172a' : '#94a3b8'};"></i>
             </button>
             
+            ${images.length > 1 ? `
+              <button class="pdp-slider-arrow pdp-slider-prev" onclick="event.stopPropagation(); navigatePdpDesktopImage(-1);" title="Previous Picture">‹</button>
+              <button class="pdp-slider-arrow pdp-slider-next" onclick="event.stopPropagation(); navigatePdpDesktopImage(1);" title="Next Picture">›</button>
+              <span class="pdp-img-counter-badge" id="pdpDesktopCounter">1 / ${images.length}</span>
+            ` : ''}
+            
             <img src="${images[0]}" id="pdpMainImage" alt="${product.title}" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=800'">
             
             <div id="pdpZoomLens" class="pdp-zoom-result"></div>
-            <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-top: 10px;">🔍 Hover to zoom • Click for full screen lightbox</div>
+            <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-top: 10px;">🔍 Swipe or click arrows to view photos • Click for full screen lightbox</div>
           </div>
 
           <!-- Product Thumbnails Row Below Main Picture -->
@@ -7148,55 +7160,61 @@ function renderPDPDesktop(product) {
       <!-- Below Hero 2-Column Info Grid -->
       <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; margin-top: 28px;">
         <!-- Left: About Product & Specs -->
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 24px;">
-          <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 10px 0;">About this Product</h3>
-          <p style="font-size: 13.5px; color: #334155; line-height: 1.7; margin: 0 0 20px 0;">
+        <div>
+          <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">About this item</h2>
+          <p style="font-size: 13.5px; line-height: 1.65; color: #334155; margin-bottom: 16px;">
             ${cleanProductDescriptionText(product.description)}
           </p>
 
           ${Array.isArray(product.features) && product.features.length > 0 ? `
-            <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 10px 0;">Key Highlights & Features:</h4>
-            <ul style="margin: 0 0 20px 0; padding-left: 18px; font-size: 13px; color: #475569; line-height: 1.7;">
+            <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Key Highlights:</h3>
+            <ul style="margin: 0 0 20px 0; padding-left: 20px; font-size: 13px; color: #475569; line-height: 1.6;">
               ${product.features.map(f => `<li>${f}</li>`).join('')}
             </ul>
           ` : ''}
 
-          <h3 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Product Specifications</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12.5px;">
-            ${specsEntries.map(([k, v]) => `
-              <div style="padding: 10px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
-                <span style="color: #64748b; font-size: 10.5px; display: block; font-weight: 700; text-transform: uppercase;">${k}</span>
-                <strong style="color: #0f172a;">${v}</strong>
+          <!-- Specifications Table -->
+          <h3 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 20px 0 10px 0;">Product Specifications</h3>
+          <div style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+            ${specsEntries.length > 0 ? specsEntries.map(([k, v], idx) => `
+              <div style="display: flex; padding: 10px 14px; font-size: 12.5px; ${idx % 2 === 0 ? 'background: #f8fafc;' : 'background: #ffffff;'} border-bottom: 1px solid #f1f5f9;">
+                <span style="width: 40%; font-weight: 700; color: #64748b;">${k}</span>
+                <span style="width: 60%; font-weight: 600; color: #0f172a;">${v}</span>
               </div>
-            `).join('')}
+            `).join('') : `
+              <div style="padding: 12px 14px; font-size: 12.5px; color: #64748b;">Certified Safe Quality Toy • Direct from Vizag Store</div>
+            `}
           </div>
         </div>
 
-        <!-- Right: Verified Customer Reviews -->
-        <div class="pdp-reviews-box" style="margin-top: 0;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-            <div>
-              <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;">Verified Customer Reviews</h3>
-              <div style="font-size: 12px; color: #64748b; margin-top: 2px;">★ ${product.rating || '4.9'} rating based on ${reviewsList.length} verified ratings</div>
-            </div>
+        <!-- Right: Ratings & Verified Reviews -->
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 0;">Customer Reviews</h2>
+            <button class="m-back-btn" style="padding: 4px 12px; font-size: 11.5px;" onclick="openAddReviewModal('${product.id}')">✍️ Write a Review</button>
           </div>
-          <div style="display: flex; flex-direction: column;">
-            ${reviewsList.map(r => `
-              <div class="pdp-review-card">
-                <div class="pdp-review-author">
-                  <span class="pdp-review-name">${r.name}</span>
-                  ${r.verified ? '<span class="pdp-review-badge">✔ Verified Purchaser</span>' : ''}
+
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px;">
+            ${reviewsList.length > 0 ? reviewsList.slice(0, 3).map(r => `
+              <div style="border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                  <strong style="font-size: 13px; color: #0f172a;">${r.name}</strong>
+                  <span style="font-size: 11px; color: #10b981; font-weight: 700;">✔ Verified Purchase</span>
                 </div>
-                <div class="pdp-review-stars">★ ★ ★ ★ ★</div>
-                <div class="pdp-review-text">${r.comment}</div>
-                <div style="font-size: 10.5px; color: #94a3b8; margin-top: 3px;">Reviewed on ${r.date || 'Recent'}</div>
+                <div style="color: #f59e0b; font-size: 12px; margin-bottom: 4px;">★ ★ ★ ★ ★</div>
+                <p style="font-size: 12.5px; color: #475569; margin: 0; line-height: 1.45;">${r.comment}</p>
               </div>
-            `).join('')}
+            `).join('') : `
+              <p style="font-size: 13px; color: #64748b; margin: 0;">Be the first in Visakhapatnam to review this product!</p>
+            `}
           </div>
         </div>
       </div>
 
-      <!-- Related Products Row -->
+      <!-- Frequently Bought Together / Combo Section -->
+      ${typeof renderFrequentlyBoughtTogether === 'function' ? renderFrequentlyBoughtTogether(product) : ''}
+
+      <!-- Related Items Grid -->
       ${relatedItems.length > 0 ? `
         <div style="margin-top: 32px;">
           <h3 style="font-size: 17px; font-weight: 800; color: #0f172a; margin-bottom: 14px;">More from ${product.category}</h3>
@@ -7217,11 +7235,6 @@ function renderPDPDesktop(product) {
     </div>
   `;
 }
-
-
-/* ──────────────────────────────────────────────────────────────────────────
-   3. PDP MICRO-INTERACTIONS BINDINGS
-   ────────────────────────────────────────────────────────────────────────── */
 
 /* ──────────────────────────────────────────────────────────────────────────
    2. MOBILE PDP RENDERER (Clean Mobile Shopping Flow)
@@ -7245,7 +7258,7 @@ function renderPDPMobile(product) {
   `).join('');
 
   const dotsHTML = images.map((_, idx) => `
-    <div class="pdp-mb-dot ${idx === 0 ? 'active' : ''}" id="pdpMbDot-${idx}"></div>
+    <div class="pdp-mb-dot ${idx === 0 ? 'active' : ''}" id="pdpMbDot-${idx}" onclick="setPdpMobileSlide(${idx})"></div>
   `).join('');
 
   return `
@@ -7264,12 +7277,19 @@ function renderPDPMobile(product) {
         <span style="position: absolute; top: 12px; left: 12px; background: #0f172a; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 99px; z-index: 5;">
           🔥 ${discountPct}% OFF
         </span>
+        ${images.length > 1 ? `
+          <button class="pdp-slider-arrow pdp-slider-prev" onclick="navigatePdpMobileImage(-1)" title="Previous Picture">‹</button>
+          <button class="pdp-slider-arrow pdp-slider-next" onclick="navigatePdpMobileImage(1)" title="Next Picture">›</button>
+          <span class="pdp-img-counter-badge" id="pdpMobileCounter">1 / ${images.length}</span>
+        ` : ''}
         <div class="pdp-mb-slider-track" id="pdpMbSliderTrack">
           ${slidesHTML}
         </div>
-        <div class="pdp-mb-dots">
-          ${dotsHTML}
-        </div>
+        ${images.length > 1 ? `
+          <div class="pdp-mb-dots">
+            ${dotsHTML}
+          </div>
+        ` : ''}
       </div>
 
       <!-- Title & Rating Block -->
@@ -7428,42 +7448,99 @@ function renderPDPMobile(product) {
   `;
 }
 
+function navigatePdpDesktopImage(direction) {
+  if (!currentPdpProduct) return;
+  const images = (Array.isArray(currentPdpProduct.images) && currentPdpProduct.images.length > 0) ? currentPdpProduct.images : [currentPdpProduct.image];
+  if (images.length <= 1) return;
+  currentPdpSlideIndex = (currentPdpSlideIndex + direction + images.length) % images.length;
+  const mainImg = document.getElementById('pdpMainImage');
+  if (mainImg) mainImg.src = images[currentPdpSlideIndex];
+  const counter = document.getElementById('pdpDesktopCounter');
+  if (counter) counter.innerText = `${currentPdpSlideIndex + 1} / ${images.length}`;
+  document.querySelectorAll('.pdp-dt-thumb-card').forEach((card, idx) => {
+    if (idx === currentPdpSlideIndex) card.classList.add('active');
+    else card.classList.remove('active');
+  });
+}
+
+function navigatePdpMobileImage(direction) {
+  if (!currentPdpProduct) return;
+  const images = (Array.isArray(currentPdpProduct.images) && currentPdpProduct.images.length > 0) ? currentPdpProduct.images : [currentPdpProduct.image];
+  if (images.length <= 1) return;
+  setPdpMobileSlide((currentPdpSlideIndex + direction + images.length) % images.length);
+}
+
+function setPdpMobileSlide(index) {
+  if (!currentPdpProduct) return;
+  const images = (Array.isArray(currentPdpProduct.images) && currentPdpProduct.images.length > 0) ? currentPdpProduct.images : [currentPdpProduct.image];
+  currentPdpSlideIndex = (index + images.length) % images.length;
+  const track = document.getElementById('pdpMbSliderTrack');
+  if (track) {
+    track.style.transform = `translateX(-${currentPdpSlideIndex * 100}%)`;
+  }
+  const counter = document.getElementById('pdpMobileCounter');
+  if (counter) counter.innerText = `${currentPdpSlideIndex + 1} / ${images.length}`;
+  document.querySelectorAll('.pdp-mb-dot').forEach((dot, idx) => {
+    if (idx === currentPdpSlideIndex) dot.classList.add('active');
+    else dot.classList.remove('active');
+  });
+}
 
 function initPDPInteractions(product, isDesktop) {
   const images = (Array.isArray(product.images) && product.images.length > 0) ? product.images : [product.image];
+  currentPdpSlideIndex = 0;
 
   if (isDesktop) {
     // Desktop Zoom Lens Binding
     initImageZoom('pdpMainImage', 'pdpZoomLens');
+    // Desktop Touch / Drag Swipe on Main Image Box
+    if (images.length > 1) {
+      initTouchSwipeGallery(
+        'pdpMainBoxDesktop',
+        () => navigatePdpDesktopImage(1),  // Swipe left -> next image
+        () => navigatePdpDesktopImage(-1) // Swipe right -> prev image
+      );
+    }
   } else {
     // Mobile Touch Slider & Swipe Binding
-    let currentSlide = 0;
-    const track = document.getElementById('pdpMbSliderTrack');
-
-    function updateSlider(index) {
-      currentSlide = (index + images.length) % images.length;
-      if (track) {
-        track.style.transform = `translateX(-${currentSlide * 100}%)`;
-      }
-      document.querySelectorAll('.pdp-mb-dot').forEach((dot, idx) => {
-        if (idx === currentSlide) dot.classList.add('active');
-        else dot.classList.remove('active');
-      });
+    if (images.length > 1) {
+      initTouchSwipeGallery(
+        'pdpMbHeroSlider',
+        () => navigatePdpMobileImage(1),  // Swipe left -> next
+        () => navigatePdpMobileImage(-1) // Swipe right -> prev
+      );
     }
-
-    initTouchSwipeGallery(
-      'pdpMbHeroSlider',
-      () => updateSlider(currentSlide + 1), // Swipe left -> next
-      () => updateSlider(currentSlide - 1)  // Swipe right -> prev
-    );
   }
+
+  // Keyboard navigation while viewing PDP
+  if (window._pdpKeyNavHandler) {
+    window.removeEventListener('keydown', window._pdpKeyNavHandler);
+  }
+  window._pdpKeyNavHandler = (e) => {
+    if (currentView !== 'pdp') return;
+    if (images.length <= 1) return;
+    if (e.key === 'ArrowLeft') {
+      if (isDesktop) navigatePdpDesktopImage(-1);
+      else navigatePdpMobileImage(-1);
+    } else if (e.key === 'ArrowRight') {
+      if (isDesktop) navigatePdpDesktopImage(1);
+      else navigatePdpMobileImage(1);
+    }
+  };
+  window.addEventListener('keydown', window._pdpKeyNavHandler);
 }
 
-function switchDesktopPDPImg(thumbEl, imgUrl) {
+function switchDesktopPDPImg(thumbEl, imgUrl, index = 0) {
+  currentPdpSlideIndex = index;
   document.querySelectorAll('.pdp-dt-thumb-card').forEach(el => el.classList.remove('active'));
   if (thumbEl) thumbEl.classList.add('active');
   const mainImg = document.getElementById('pdpMainImage');
   if (mainImg) mainImg.src = imgUrl;
+  const counter = document.getElementById('pdpDesktopCounter');
+  if (counter && currentPdpProduct) {
+    const images = (Array.isArray(currentPdpProduct.images) && currentPdpProduct.images.length > 0) ? currentPdpProduct.images : [currentPdpProduct.image];
+    counter.innerText = `${currentPdpSlideIndex + 1} / ${images.length}`;
+  }
 }
 
 function togglePDPAccordion(cardEl) {
@@ -7702,7 +7779,7 @@ function renderCategoriesView() {
           return `
             <div class="cat-directory-card-item" data-category="${cat.replace(/"/g, '&quot;')}" id="catSection_${idx}" style="background:#ffffff; border-radius:20px; border:1px solid #e2e8f0; padding:${isDesktop ? '24px' : '16px'}; box-shadow:0 4px 16px rgba(0,0,0,0.04); overflow:hidden;">
               <div style="display:flex; flex-direction:${isDesktop ? 'row' : 'column'}; align-items:${isDesktop ? 'center' : 'stretch'}; gap:14px; margin-bottom:14px;">
-                <img src="${bannerImg}" class="cat-card-full-banner" alt="${cat} Banner">
+                <img src="${bannerImg}" class="cat-card-full-banner" alt="${cat} Banner" loading="lazy" decoding="async">
                 <div style="flex:1;">
                   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
                     <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;">${cat}</h2>
@@ -8051,7 +8128,7 @@ function execLiveSearch(query) {
     localStorage.setItem('ue_search_history', JSON.stringify(searchHistory));
   }
 
-  const matches = ALL_PRODUCTS.filter(p => p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+  const matches = ALL_PRODUCTS.filter(p => productMatchesSearch(p, q));
   const isDesktop = window.innerWidth >= 1024;
 
   if (matches.length === 0) {
@@ -8081,6 +8158,10 @@ function openVoiceSearchModal() {
    NATIVE CHECKOUT & ADDRESS FLOW VIEW
    ========================================================================== */
 function renderCheckoutView() {
+  const floatingWaBtn = document.getElementById('floatingWhatsappBtn');
+  if (floatingWaBtn) floatingWaBtn.style.setProperty('display', 'none', 'important');
+  document.body.classList.add('checkout-active');
+
   const container = document.getElementById('viewCheckout');
   normalizeCartItems();
   const { subtotal, discount, shipping, grandTotal, couponResult } = calculateCheckoutTotals();
@@ -8389,6 +8470,26 @@ function finalizeOrderSuccess(orderMeta) {
   `;
 }
 
+// Helper to ensure Razorpay Checkout SDK is loaded
+function loadRazorpaySdk() {
+  return new Promise((resolve) => {
+    if (typeof window.Razorpay !== 'undefined') return resolve(true);
+    const existing = document.querySelector('script[src*="checkout.razorpay.com"]');
+    if (existing) {
+      existing.addEventListener('load', () => resolve(true));
+      existing.addEventListener('error', () => resolve(false));
+      setTimeout(() => resolve(typeof window.Razorpay !== 'undefined'), 1500);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 async function placeOrderFinal(grandTotal) {
   const nameInput = document.getElementById('chkName');
   const phoneInput = document.getElementById('chkPhone');
@@ -8402,6 +8503,12 @@ async function placeOrderFinal(grandTotal) {
     showApToast('⚠️ Please enter your Full Name and Mobile / WhatsApp Number to proceed!', 'info');
     if (!name && nameInput) nameInput.focus();
     else if (!phone && phoneInput) phoneInput.focus();
+    return;
+  }
+
+  if (!address) {
+    showApToast('⚠️ Please enter your Delivery Street Address to proceed!', 'info');
+    if (addressInput) addressInput.focus();
     return;
   }
 
@@ -8454,9 +8561,17 @@ async function placeOrderFinal(grandTotal) {
         throw new Error(data.error || 'Failed to initialize payment gateway');
       }
 
+      // Ensure Razorpay SDK is ready
       if (typeof window.Razorpay === 'undefined') {
-        throw new Error('Razorpay SDK not loaded. Please refresh your browser or check internet connection.');
+        const loaded = await loadRazorpaySdk();
+        if (!loaded || typeof window.Razorpay === 'undefined') {
+          throw new Error('Razorpay SDK could not be loaded. Please refresh your browser or check internet connection.');
+        }
       }
+
+      const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+      const prefillPhone = cleanPhone.length === 10 ? cleanPhone : phone;
+      const logoUrl = window.location.origin ? `${window.location.origin}/logo.png` : 'logo.png';
 
       // 2. Configure and open Razorpay Standard Checkout
       const rzpOptions = {
@@ -8465,11 +8580,11 @@ async function placeOrderFinal(grandTotal) {
         currency: data.order.currency || 'INR',
         name: 'UNIQUE EXPRESSIONS',
         description: `Order for ${cart.length} item${cart.length > 1 ? 's' : ''}`,
-        image: 'logo.png',
+        image: logoUrl,
         order_id: data.order.id,
         prefill: {
           name: name,
-          contact: phone,
+          contact: prefillPhone,
           email: userProfile?.email || 'customer@uniqueexpressions.in'
         },
         notes: {
@@ -11265,8 +11380,9 @@ function renderApCoupons() {
                 <td>₹${c.minSpend}</td>
                 <td>${c.usedCount} times used</td>
                 <td>${c.expiry}</td>
-                <td><span class="ap-badge ap-badge-success">${c.status}</span></td>
+                <td><span class="ap-badge ${c.status === 'Active' ? 'ap-badge-success' : 'ap-badge-danger'}">${c.status}</span></td>
                 <td>
+                  <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="toggleApCouponStatus(${idx})">${c.status === 'Active' ? 'Disable' : 'Enable'}</button>
                   <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="openApCouponModal(${idx})">Edit</button>
                   <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px; color:#ef4444;" onclick="deleteApCoupon(${idx})">Delete</button>
                 </td>
@@ -11396,6 +11512,16 @@ function deleteApCoupon(idx) {
     switchApTab('coupons');
     showApToast(`Coupon deleted!`, 'error');
   }
+}
+
+function toggleApCouponStatus(idx) {
+  const c = STORE_COUPONS[idx];
+  if (!c) return;
+  c.status = c.status === 'Active' ? 'Inactive' : 'Active';
+  normalizeStoreCoupons();
+  syncStorefrontState();
+  switchApTab('coupons');
+  showApToast(`Coupon ${c.code} ${c.status === 'Active' ? 'enabled' : 'disabled'}!`, c.status === 'Active' ? 'success' : 'info');
 }
 
 /* 9. Reviews Moderation Module Renderer */
@@ -12114,6 +12240,13 @@ function updateActiveCategoryThumbnails() {
   if (activeEl) activeEl.classList.add('active-cat');
 }
 
+function productMatchesSearch(p, q) {
+  if (!q) return false;
+  return (p.title || '').toLowerCase().includes(q)
+    || (p.category || '').toLowerCase().includes(q)
+    || (p.sku || '').toLowerCase().includes(q);
+}
+
 function handleSearchInput(query) {
   const q = query.toLowerCase().trim();
 
@@ -12123,7 +12256,7 @@ function handleSearchInput(query) {
     if (q.length === 0) {
       dtLiveItems.innerHTML = '';
     } else {
-      const matches = ALL_PRODUCTS.filter(p => p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)).slice(0, 5);
+      const matches = ALL_PRODUCTS.filter(p => productMatchesSearch(p, q)).slice(0, 5);
       if (matches.length === 0) {
         dtLiveItems.innerHTML = `<div style="padding:12px; font-size:12px; color:#64748b; text-align:center;">No products found</div>`;
       } else {
@@ -12145,7 +12278,7 @@ function handleSearchInput(query) {
     if (currentView !== 'home') switchView('home');
     const mobileContainer = document.getElementById('mobileProductGrid');
     if (q.length === 0) { renderAllSections(); return; }
-    const results = ALL_PRODUCTS.filter(p => p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)).slice(0, 16);
+    const results = ALL_PRODUCTS.filter(p => productMatchesSearch(p, q)).slice(0, 16);
     if (mobileContainer) mobileContainer.innerHTML = results.map(p => createMobileTileHTML(p)).join('');
     if (window.feather) feather.replace();
     if (window.lucide) lucide.createIcons();
@@ -13699,28 +13832,67 @@ function closePDPModalLightbox() {
   }
 }
 
-// 4. Native Touch / Swipe for Mobile Image Gallery
+// 4. Native Touch / Swipe / Mouse Drag for Product Image Galleries
 function initTouchSwipeGallery(containerId, onSwipeLeft, onSwipeRight) {
   const el = document.getElementById(containerId);
   if (!el) return;
 
   let startX = 0;
   let startY = 0;
+  let isPointerDown = false;
+  let hasMoved = false;
 
+  // Touch Events (Phones & Tablets)
   el.addEventListener('touchstart', (e) => {
+    if (!e.touches || !e.touches[0]) return;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
   }, { passive: true });
 
   el.addEventListener('touchend', (e) => {
+    if (!e.changedTouches || !e.changedTouches[0]) return;
     const diffX = e.changedTouches[0].clientX - startX;
     const diffY = e.changedTouches[0].clientY - startY;
 
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 40) {
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 25) {
       if (diffX < 0 && onSwipeLeft) onSwipeLeft();
       if (diffX > 0 && onSwipeRight) onSwipeRight();
     }
   }, { passive: true });
+
+  // Pointer / Mouse Drag Events (Desktops, Laptops & Emulators)
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return; // primary button only
+    // Don't trigger drag on interactive buttons
+    if (e.target.closest('button') || e.target.closest('.pdp-slider-arrow')) return;
+    isPointerDown = true;
+    hasMoved = false;
+    startX = e.clientX;
+    startY = e.clientY;
+  });
+
+  el.addEventListener('pointermove', (e) => {
+    if (!isPointerDown) return;
+    if (Math.abs(e.clientX - startX) > 8 || Math.abs(e.clientY - startY) > 8) {
+      hasMoved = true;
+    }
+  });
+
+  const handlePointerEnd = (e) => {
+    if (!isPointerDown) return;
+    isPointerDown = false;
+    if (!hasMoved) return;
+    const diffX = e.clientX - startX;
+    const diffY = e.clientY - startY;
+
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 25) {
+      if (diffX < 0 && onSwipeLeft) onSwipeLeft();
+      if (diffX > 0 && onSwipeRight) onSwipeRight();
+    }
+  };
+
+  el.addEventListener('pointerup', handlePointerEnd);
+  el.addEventListener('pointercancel', () => { isPointerDown = false; });
 }
 
 // 5. Frequently Bought Together (FBT) Cart Handler
