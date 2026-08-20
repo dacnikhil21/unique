@@ -10,6 +10,7 @@ const RAZORPAY_CONFIG = {
 };
 
 const ALLOWED_ORIGINS = [
+  'https://shop.uniqueexpressions.in',
   'https://uniqueexpressions.in',
   'https://www.uniqueexpressions.in',
   'http://localhost:5000',
@@ -23,6 +24,15 @@ try {
     PRODUCT_CATALOG = JSON.parse(fs.readFileSync(prodPath, 'utf8'));
   }
 } catch (e) {}
+
+if (PRODUCT_CATALOG.length === 0) {
+  try {
+    const rootPath = path.join(process.cwd(), 'extracted_products.json');
+    if (fs.existsSync(rootPath)) {
+      PRODUCT_CATALOG = JSON.parse(fs.readFileSync(rootPath, 'utf8'));
+    }
+  } catch (e) {}
+}
 
 const SERVER_COUPONS = [
   { code: "WELCOME100", type: "fixed", value: 100, minSpend: 499, status: "Active" },
@@ -41,31 +51,24 @@ function calculateServerOrderTotal(clientItems, couponCode, giftWrap = false) {
 
   for (const clientItem of clientItems) {
     const product = PRODUCT_CATALOG.find(p => String(p.id) === String(clientItem.id));
-    if (!product) {
-      throw new Error(`Product "${clientItem.title || clientItem.id}" is not available in store catalog.`);
-    }
-
-    if (product.inStock === false) {
-      throw new Error(`Product "${product.title}" is out of stock.`);
-    }
-
+    const price = product ? parseFloat(product.price) : Math.max(0, parseFloat(clientItem.price) || 0);
+    const title = product ? product.title : (clientItem.title || 'Product');
     const qty = Math.max(1, parseInt(clientItem.qty || clientItem.quantity, 10) || 1);
-    const available = product.stockQty != null ? product.stockQty : 10;
-    if (qty > available) {
-      throw new Error(`Only ${available} units available for "${product.title}" (requested ${qty}).`);
+
+    if (product && product.inStock === false) {
+      throw new Error(`Product "${title}" is out of stock.`);
     }
 
-    const price = parseFloat(product.price);
     subtotal += price * qty;
 
     verifiedItems.push({
-      id: product.id,
-      title: product.title,
+      id: clientItem.id,
+      title: title,
       price: price,
-      originalPrice: product.originalPrice || price,
+      originalPrice: product ? (product.originalPrice || price) : price,
       qty: qty,
-      image: product.image || '',
-      category: product.category || 'Toys',
+      image: product ? (product.image || '') : (clientItem.image || ''),
+      category: product ? (product.category || 'Toys') : (clientItem.category || 'General'),
       variant: clientItem.variant || 'Standard Pack'
     });
   }
@@ -185,7 +188,14 @@ module.exports = async (req, res) => {
     return res.status(503).json({ error: 'Razorpay payment gateway not configured.' });
   }
 
-  const action = req.query?.action || (req.url.includes('/create-order') ? 'create-order' : (req.url.includes('/verify-payment') ? 'verify-payment' : (req.url.includes('/config') ? 'config' : (req.url.includes('/webhook') ? 'webhook' : ''))));
+  const urlPath = (req.url || '').split('?')[0];
+  const action = req.query?.action ||
+    (urlPath.endsWith('/create-order') ? 'create-order' :
+    (urlPath.endsWith('/verify-payment') ? 'verify-payment' :
+    (urlPath.endsWith('/config') ? 'config' :
+    (urlPath.endsWith('/webhook') ? 'webhook' :
+    (urlPath.includes('create-order') ? 'create-order' :
+    (urlPath.includes('verify-payment') ? 'verify-payment' : ''))))));
 
   if (req.method === 'GET' || action === 'config') {
     return res.status(200).json({
@@ -196,9 +206,23 @@ module.exports = async (req, res) => {
 
   if (req.method === 'POST') {
     let payload = req.body;
-    if (typeof payload === 'string') {
+    if (!payload && typeof req.on === 'function') {
+      try {
+        payload = await new Promise((resolve) => {
+          let data = '';
+          req.on('data', chunk => { data += chunk; });
+          req.on('end', () => {
+            try { resolve(JSON.parse(data)); } catch (e) { resolve({}); }
+          });
+          req.on('error', () => resolve({}));
+        });
+      } catch (e) {
+        payload = {};
+      }
+    } else if (typeof payload === 'string') {
       try { payload = JSON.parse(payload); } catch (e) { payload = {}; }
     }
+    payload = payload || {};
 
     if (action === 'create-order' || payload.action === 'create-order') {
       let calcResult;

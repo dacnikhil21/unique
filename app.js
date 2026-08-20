@@ -8748,7 +8748,14 @@ async function placeOrderFinal(grandTotal) {
         })
       });
 
-      const data = await res.json();
+      let data;
+      try {
+        const resText = await res.text();
+        data = JSON.parse(resText);
+      } catch (jsonErr) {
+        throw new Error(`Payment server error (${res.status}). Please try again or refresh.`);
+      }
+
       if (!res.ok || !data.success || !data.order) {
         throw new Error(data.error || 'Failed to initialize payment gateway');
       }
@@ -8814,7 +8821,11 @@ async function placeOrderFinal(grandTotal) {
                 userId: typeof authUserId !== 'undefined' ? authUserId : null
               })
             });
-            const vData = await vRes.json();
+            let vData = {};
+            try {
+              const vText = await vRes.text();
+              vData = JSON.parse(vText);
+            } catch (e) {}
             if (vData.success && vData.verified) {
               finalizeOrderSuccess({
                 orderId: vData.orderId || ('UE-' + Math.floor(100000 + Math.random() * 900000)),

@@ -9,6 +9,7 @@ const CLOUDINARY_CONFIG = {
 };
 
 const ALLOWED_ORIGINS = [
+  'https://shop.uniqueexpressions.in',
   'https://uniqueexpressions.in',
   'https://www.uniqueexpressions.in',
   'http://localhost:5000',

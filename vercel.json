@@ -1,6 +1,9 @@
 {
   "rewrites": [
-    { "source": "/((?!.*\\..*).*)", "destination": "/index.html" }
+    { "source": "/api/razorpay/:path*", "destination": "/api/razorpay" },
+    { "source": "/api/razorpay", "destination": "/api/razorpay" },
+    { "source": "/api/upload", "destination": "/api/upload" },
+    { "source": "/((?!api/|.*\\..*).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
