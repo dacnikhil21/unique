@@ -535,6 +535,7 @@ function calculateCheckoutTotals() {
   const wrapCost = giftWrapSelected ? (STORE_SETTINGS.giftWrapFee || 30) * cart.length : 0;
   const itemsTotal = subtotal + wrapCost;
   const couponResult = calculateCouponDiscount(itemsTotal, appliedCouponCode);
+  const discount = couponResult.valid ? (couponResult.discount || 0) : 0;
   const freeMin = STORE_SETTINGS.freeShippingMin != null ? STORE_SETTINGS.freeShippingMin : 499;
   const standardFee = STORE_SETTINGS.shippingFee != null ? STORE_SETTINGS.shippingFee : 50;
   let shipping = itemsTotal >= freeMin ? 0 : standardFee;
@@ -6269,41 +6270,28 @@ window.addEventListener('popstate', (e) => {
 
 function mergeProductsFromSupabase(sbProds) {
   if (!sbProds || sbProds.length === 0) return ALL_PRODUCTS;
-  const merged = ALL_PRODUCTS.map(local => {
-    const sb = sbProds.find(p => String(p.id) === String(local.id));
-    if (!sb) return local;
-    return {
-      ...local,
-      ...sb,
-      image: sb.image || local.image,
-      images: (Array.isArray(sb.images) && sb.images.length > 0) ? sb.images : (local.images || (sb.image ? [sb.image] : [])),
-      stockQty: sb.stockQty != null ? sb.stockQty : (local.stockQty != null ? local.stockQty : 0),
-      inStock: sb.inStock != null ? sb.inStock : (local.inStock !== false),
-      sku: sb.sku || local.sku,
-      isFeatured: sb.isFeatured != null ? sb.isFeatured : (local.isFeatured ?? false)
-    };
-  });
-  sbProds.forEach(sb => {
-    if (!merged.some(p => String(p.id) === String(sb.id))) {
-      merged.push({
-        id: String(sb.id),
-        title: sb.title || 'Product',
-        price: parseFloat(sb.price) || 0,
-        originalPrice: parseFloat(sb.originalPrice) || parseFloat(sb.price) || 0,
-        category: sb.category || 'General',
-        image: sb.image || (Array.isArray(sb.images) && sb.images[0]) || 'logo.png',
-        images: (Array.isArray(sb.images) && sb.images.length > 0) ? sb.images : [sb.image || 'logo.png'],
-        stockQty: sb.stockQty != null ? sb.stockQty : 10,
-        inStock: sb.inStock !== false,
-        sku: sb.sku || '',
-        rating: sb.rating || 4.8,
-        reviewsCount: sb.reviewsCount || 12,
-        isFeatured: sb.isFeatured || false,
-        description: sb.description || ''
-      });
-    }
-  });
-  return merged;
+
+  const sbMapped = sbProds.map(sb => ({
+    id: String(sb.id),
+    title: sb.title || 'Product',
+    price: parseFloat(sb.price) || 0,
+    originalPrice: parseFloat(sb.originalPrice) || parseFloat(sb.original_price) || parseFloat(sb.price) || 0,
+    category: sb.category || 'General',
+    image: sb.image || (Array.isArray(sb.images) && sb.images[0]) || 'logo.png',
+    images: (Array.isArray(sb.images) && sb.images.length > 0) ? sb.images : [sb.image || 'logo.png'],
+    stockQty: sb.stockQty != null ? sb.stockQty : (sb.stock_qty != null ? sb.stock_qty : 10),
+    inStock: sb.inStock !== false && sb.in_stock !== false,
+    sku: sb.sku || `UE-PROD-${sb.id}`,
+    rating: String(sb.rating || '4.8'),
+    reviewsCount: sb.reviewsCount || sb.reviews_count || 12,
+    isFeatured: sb.isFeatured || sb.is_featured || false,
+    description: sb.description || ''
+  }));
+
+  const sbIds = new Set(sbMapped.map(s => String(s.id)));
+  const localRemaining = ALL_PRODUCTS.filter(p => !sbIds.has(String(p.id)));
+
+  return [...sbMapped, ...localRemaining];
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
