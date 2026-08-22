@@ -214,7 +214,9 @@ async function sbGetCategories() {
       .select('*')
       .order('sort_order', { ascending: true });
     if (error) throw error;
-    return (data || []).map(mapCategoryFromRow);
+    return (data || [])
+      .filter(c => !String(c.id).startsWith('__cms_'))
+      .map(mapCategoryFromRow);
   } catch (err) {
     console.warn('[Supabase] getCategories failed:', err.message);
     return null;
@@ -757,6 +759,122 @@ async function sbInsertProfile(profile) {
   return false;
 }
 
+/* ─────────────────────────────── CMS & SITE CONFIG CLOUD SYNC ─────────────────────────────── */
+
+async function sbGetFeaturedCollections() {
+  try {
+    const { data, error } = await _supabase
+      .from('categories')
+      .select('subcategories')
+      .eq('id', '__cms_featured_collections__')
+      .single();
+    if (error || !data || !Array.isArray(data.subcategories) || data.subcategories.length === 0) return null;
+    return data.subcategories;
+  } catch (err) {
+    console.warn('[Supabase] getFeaturedCollections failed:', err.message);
+    return null;
+  }
+}
+
+async function sbSaveFeaturedCollections(collections) {
+  try {
+    if (!Array.isArray(collections)) return false;
+    const row = {
+      id: '__cms_featured_collections__',
+      name: 'Featured Collections Config',
+      description: 'Global cross-device featured editorial collections',
+      subcategories: collections,
+      is_featured: false,
+      is_visible: false,
+      sort_order: 999,
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await _supabase.from('categories').upsert(row, { onConflict: 'id' });
+    if (error) throw error;
+    console.log('[Supabase] Featured Collections synced to cloud across all devices');
+    return true;
+  } catch (err) {
+    console.warn('[Supabase] saveFeaturedCollections failed:', err.message);
+    return false;
+  }
+}
+
+async function sbGetHeroSlides() {
+  try {
+    const { data, error } = await _supabase
+      .from('categories')
+      .select('subcategories')
+      .eq('id', '__cms_hero_slides__')
+      .single();
+    if (error || !data || !Array.isArray(data.subcategories) || data.subcategories.length === 0) return null;
+    return data.subcategories;
+  } catch (err) {
+    console.warn('[Supabase] getHeroSlides failed:', err.message);
+    return null;
+  }
+}
+
+async function sbSaveHeroSlides(slides) {
+  try {
+    if (!Array.isArray(slides)) return false;
+    const row = {
+      id: '__cms_hero_slides__',
+      name: 'Hero Slides Config',
+      description: 'Global cross-device hero carousel slides',
+      subcategories: slides,
+      is_featured: false,
+      is_visible: false,
+      sort_order: 998,
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await _supabase.from('categories').upsert(row, { onConflict: 'id' });
+    if (error) throw error;
+    console.log('[Supabase] Hero Slides synced to cloud across all devices');
+    return true;
+  } catch (err) {
+    console.warn('[Supabase] saveHeroSlides failed:', err.message);
+    return false;
+  }
+}
+
+async function sbGetStoreSettings() {
+  try {
+    const { data, error } = await _supabase
+      .from('categories')
+      .select('subcategories')
+      .eq('id', '__cms_store_settings__')
+      .single();
+    if (error || !data || !data.subcategories || typeof data.subcategories !== 'object') return null;
+    return data.subcategories;
+  } catch (err) {
+    console.warn('[Supabase] getStoreSettings failed:', err.message);
+    return null;
+  }
+}
+
+async function sbSaveStoreSettings(settings) {
+  try {
+    if (!settings || typeof settings !== 'object') return false;
+    const row = {
+      id: '__cms_store_settings__',
+      name: 'Store Settings Config',
+      description: 'Global cross-device store details and business settings',
+      subcategories: settings,
+      is_featured: false,
+      is_visible: false,
+      sort_order: 997,
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await _supabase.from('categories').upsert(row, { onConflict: 'id' });
+    if (error) throw error;
+    console.log('[Supabase] Store Settings synced to cloud across all devices');
+    return true;
+  } catch (err) {
+    console.warn('[Supabase] saveStoreSettings failed:', err.message);
+    return false;
+  }
+}
+
 /* ─────────────────────────────── PING TEST ─────────────────────────────── */
 
 async function sbPing() {
@@ -770,3 +888,4 @@ async function sbPing() {
     return false;
   }
 }
+
