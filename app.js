@@ -6140,6 +6140,17 @@ function syncStorefrontState() {
   syncCustomersFromOrders();
   localStorage.setItem('ue_customers_v5', JSON.stringify(STORE_CUSTOMERS));
 
+  // Sync to Cloud Supabase in Background (for all devices / worldwide visitors)
+  if (typeof sbSaveFeaturedCollections === 'function') {
+    sbSaveFeaturedCollections(FEATURED_COLLECTIONS).catch(err => console.warn('[UE] Cloud featured sync note:', err));
+  }
+  if (typeof sbSaveHeroSlides === 'function') {
+    sbSaveHeroSlides(HERO_SLIDES).catch(err => console.warn('[UE] Cloud hero slides sync note:', err));
+  }
+  if (typeof sbSaveStoreSettings === 'function') {
+    sbSaveStoreSettings(STORE_SETTINGS).catch(err => console.warn('[UE] Cloud store settings sync note:', err));
+  }
+
   if (typeof renderDesktopGrid === 'function') renderDesktopGrid();
   if (typeof renderCategoryBar === 'function') renderCategoryBar();
   if (typeof renderDynamicNavCategories === 'function') renderDynamicNavCategories();
@@ -6469,7 +6480,49 @@ document.addEventListener('DOMContentLoaded', async () => {
       await sbSeedCategories(CATEGORIES_DATA);
     }
 
-    // 7. Load returns from Supabase
+    // 7. Load Featured Collections from Cloud Database (for all devices worldwide)
+    try {
+      const sbFeat = await sbGetFeaturedCollections();
+      if (sbFeat && Array.isArray(sbFeat) && sbFeat.length > 0) {
+        FEATURED_COLLECTIONS = sbFeat;
+        localStorage.setItem('ue_featured_collections_v1', JSON.stringify(FEATURED_COLLECTIONS));
+        renderFeaturedCollections();
+      } else if (FEATURED_COLLECTIONS.length > 0) {
+        await sbSaveFeaturedCollections(FEATURED_COLLECTIONS);
+      }
+    } catch (featErr) {
+      console.warn('[UE] Cloud Featured Collections bootstrap note:', featErr);
+    }
+
+    // 8. Load Hero Slides from Cloud Database
+    try {
+      const sbHero = await sbGetHeroSlides();
+      if (sbHero && Array.isArray(sbHero) && sbHero.length > 0) {
+        HERO_SLIDES = sbHero;
+        localStorage.setItem('ue_hero_slides_v7', JSON.stringify(HERO_SLIDES));
+        localStorage.setItem('ue_hero_slides_v6', JSON.stringify(HERO_SLIDES));
+        if (typeof setHeroSlide === 'function') setHeroSlide(0);
+      } else if (HERO_SLIDES.length > 0) {
+        await sbSaveHeroSlides(HERO_SLIDES);
+      }
+    } catch (heroErr) {
+      console.warn('[UE] Cloud Hero Slides bootstrap note:', heroErr);
+    }
+
+    // 9. Load Store Settings from Cloud Database
+    try {
+      const sbSettings = await sbGetStoreSettings();
+      if (sbSettings && typeof sbSettings === 'object' && Object.keys(sbSettings).length > 0) {
+        STORE_SETTINGS = { ...STORE_SETTINGS, ...sbSettings };
+        localStorage.setItem('ue_store_settings_v5', JSON.stringify(STORE_SETTINGS));
+      } else if (STORE_SETTINGS) {
+        await sbSaveStoreSettings(STORE_SETTINGS);
+      }
+    } catch (setErr) {
+      console.warn('[UE] Cloud Store Settings bootstrap note:', setErr);
+    }
+
+    // 10. Load returns from Supabase
     const sbRets = await sbGetReturns();
     if (sbRets !== null && sbRets.length > 0) {
       const sbRetIds = new Set(sbRets.map(r => r.returnId));
@@ -6478,7 +6531,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       localStorage.setItem('ue_returns', JSON.stringify(userReturns));
     }
 
-    // 5. Load support tickets from Supabase
+    // 11. Load support tickets from Supabase
     const sbTix = await sbGetTickets();
     if (sbTix !== null && sbTix.length > 0) {
       const sbTixIds = new Set(sbTix.map(t => t.ticketId));
@@ -6487,7 +6540,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       localStorage.setItem('ue_tickets', JSON.stringify(supportTickets));
     }
 
-    console.log('[UE] Supabase sync complete');
+    console.log('[UE] Supabase cloud sync complete across all devices');
     refreshCategoryImagesFromCatalog();
     renderCategoryBar();
     renderDynamicNavCategories();
