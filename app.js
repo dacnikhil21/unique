@@ -324,19 +324,34 @@ let CATEGORIES = CATEGORIES_DATA.map(c => c.name);
 const CATEGORY_RENAME_MAP = {
   'Educational & STEM': 'Educational',
   'Educational Toys': 'Educational',
-  'Trending & Standard Toys': 'Standard Toys',
-  'Standard Toys': 'Standard Toys',
+  'Educational': 'Educational',
+  'Trending & Standard Toys': 'Toys',
+  'Standard Toys': 'Toys',
   'Traditional Handicrafts': 'Handicrafts',
   'Handicrafts': 'Handicrafts',
   'Fancy Imported Stationery': 'Stationery',
   'Stationary': 'Stationery',
+  'Stationery': 'Stationery',
   'Return Gift Studio': 'Return Gifts',
   'Return Gifts': 'Return Gifts',
   'Latest Arrivars': 'New Arrivals',
-  'Latest Arrivals': 'New Arrivals'
+  'Latest Arrivals': 'New Arrivals',
+  'New Arrivals': 'New Arrivals',
+  'RC Flying Toys': 'Flying Toys',
+  'Flying Toys': 'Flying Toys',
+  'Gifts & Gadgets': 'Gadgets',
+  'Kids Footwear': 'Footwear',
+  'Combos': 'Combos',
+  'RC Toys': 'RC Toys'
 };
 
 const AP_HIDDEN_TABS = ['wholesale', 'analytics', 'users'];
+
+function getCleanCategoryName(rawName) {
+  if (!rawName) return '';
+  const s = String(rawName).trim();
+  return CATEGORY_RENAME_MAP[s] || s;
+}
 
 function normalizeCatName(name) {
   if (!name) return '';
@@ -6712,13 +6727,14 @@ function renderCategoryBar() {
       const safeId = c.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
       const count = countFor(c.name);
       const img = resolveCategoryImage(c, idx);
+      const displayName = getCleanCategoryName(c.name);
       return `
         <div class="m-cat-pill-thumb" id="mCat-${safeId}" onclick="filterCategory('${esc(c.name)}')">
           <div class="m-cat-img-box">
-            <img src="${img}" alt="${c.name}" loading="lazy">
+            <img src="${img}" alt="${displayName}" loading="lazy">
           </div>
           <div class="m-cat-overlay-text">
-            <span class="m-cat-name-label">${c.name}</span>
+            <span class="m-cat-name-label">${displayName}</span>
             <span class="m-cat-count-label">${count > 0 ? count + '+ SKUs' : 'New'}</span>
           </div>
         </div>
@@ -6730,11 +6746,12 @@ function renderCategoryBar() {
   if (desktopGrid) {
     desktopGrid.innerHTML = visibleCats.map((c, idx) => {
       const img = resolveCategoryImage(c, idx);
+      const displayName = getCleanCategoryName(c.name);
       return `
       <div class="dt-category-card" onclick="filterCategory('${esc(c.name)}')">
-        <img src="${img}" alt="${c.name}" style="object-fit:cover;" loading="lazy">
+        <img src="${img}" alt="${displayName}" style="object-fit:cover;" loading="lazy">
         <div class="dt-category-overlay">
-          <h3>${c.name}</h3>
+          <h3>${displayName}</h3>
           <p>${c.description || 'Browse collection'}</p>
         </div>
       </div>
@@ -6745,22 +6762,28 @@ function renderCategoryBar() {
   // Shop By Store Categories — mobile chips + desktop occasion grid
   const mobileOccasion = document.querySelector('#mobileHomeView .m-occasion-scroll-row');
   if (mobileOccasion) {
-    mobileOccasion.innerHTML = visibleCats.map(c => `
+    mobileOccasion.innerHTML = visibleCats.map(c => {
+      const displayName = getCleanCategoryName(c.name);
+      return `
       <div class="m-occasion-chip-card" onclick="filterCategory('${esc(c.name)}')">
         <div class="m-occasion-emoji">${getCategoryEmoji(c.name)}</div>
-        <div class="m-occasion-label">${c.name.length > 14 ? c.name.slice(0, 12) + '…' : c.name}</div>
+        <div class="m-occasion-label">${displayName}</div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   const desktopOccasion = document.querySelector('#desktopHomeView .dt-occasion-grid');
   if (desktopOccasion) {
-    desktopOccasion.innerHTML = visibleCats.slice(0, 10).map(c => `
+    desktopOccasion.innerHTML = visibleCats.slice(0, 10).map(c => {
+      const displayName = getCleanCategoryName(c.name);
+      return `
       <div class="dt-occasion-card" onclick="filterCategory('${esc(c.name)}')">
         <span class="dt-occ-icon">${getCategoryEmoji(c.name)}</span>
-        <span class="dt-occ-title">${c.name}</span>
+        <span class="dt-occ-title">${displayName}</span>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 }
 
@@ -8043,12 +8066,13 @@ function renderCategoriesView() {
         ${categoriesList.map(cat => {
           const catObj = CATEGORIES_DATA.find(c => c.name === cat) || { name: cat };
           const thumbImg = getCategoryDisplayImage(catObj);
+          const displayName = getCleanCategoryName(cat);
           return `
             <button onclick="filterCategoryCircle('${cat.replace(/'/g, "\\'")}', this)" class="m-cat-circle-item">
               <div class="m-cat-circle-avatar">
-                <img src="${thumbImg}" alt="${cat}" loading="lazy">
+                <img src="${thumbImg}" alt="${displayName}" loading="lazy">
               </div>
-              <span class="m-cat-circle-label">${cat}</span>
+              <span class="m-cat-circle-label">${displayName}</span>
             </button>
           `;
         }).join('')}
@@ -8063,18 +8087,19 @@ function renderCategoriesView() {
       <!-- Organized Categories List -->
       <div style="display:flex; flex-direction:column; gap:20px; margin-bottom:40px;" id="catDirectoryContainer">
         ${categoriesList.map((cat, idx) => {
-          const prods = ALL_PRODUCTS.filter(p => p.category === cat);
+          const prods = ALL_PRODUCTS.filter(p => matchCategory(p.category, cat));
           const bannerImg = getBannerForCat(cat);
+          const displayName = getCleanCategoryName(cat);
           return `
             <div class="cat-directory-card-item" data-category="${cat.replace(/"/g, '&quot;')}" id="catSection_${idx}" style="background:#ffffff; border-radius:20px; border:1px solid #e2e8f0; padding:${isDesktop ? '24px' : '16px'}; box-shadow:0 4px 16px rgba(0,0,0,0.04); overflow:hidden;">
               <div style="display:flex; flex-direction:${isDesktop ? 'row' : 'column'}; align-items:${isDesktop ? 'center' : 'stretch'}; gap:14px; margin-bottom:14px;">
-                <img src="${bannerImg}" class="cat-card-full-banner" alt="${cat} Banner" loading="lazy" decoding="async">
+                <img src="${bannerImg}" class="cat-card-full-banner" alt="${displayName} Banner" loading="lazy" decoding="async">
                 <div style="flex:1;">
                   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                    <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;">${cat}</h2>
+                    <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;">${displayName}</h2>
                     <span style="background:#f1f5f9; color:#0f172a; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:99px; border:1px solid #cbd5e1;">${prods.length} Products</span>
                   </div>
-                  <p style="font-size:12.5px; color:#64748b; margin:0;">Curated ${cat} collection — same-day dispatch in Visakhapatnam.</p>
+                  <p style="font-size:12.5px; color:#64748b; margin:0;">Curated ${displayName} collection — same-day dispatch in Visakhapatnam.</p>
                 </div>
                 <button class="m-hero-cta-button" style="padding:10px 18px; font-size:13px; min-height:42px; justify-content:center; background:#0f172a; color:#fff; border-radius:12px; width:${isDesktop ? 'auto' : '100%'};" onclick="filterCategory('${cat}')">
                   Explore Category &rarr;
