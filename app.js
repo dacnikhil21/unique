@@ -10201,6 +10201,7 @@ function switchApTab(tabId) {
     customers: 'Customer Directory',
     coupons: 'Coupons & Discounts',
     banners: 'Banners & Homepage CMS',
+    featured: 'Featured Editorial Collections',
     reviews: 'Reviews Moderation',
     wholesale: 'Wholesale & B2B GST',
     analytics: 'Analytics & Sales Reports',
@@ -10228,6 +10229,7 @@ function switchApTab(tabId) {
   }
   else if (tabId === 'coupons') viewport.innerHTML = renderApCoupons();
   else if (tabId === 'banners') viewport.innerHTML = renderApBanners();
+  else if (tabId === 'featured') viewport.innerHTML = renderApFeaturedCollections();
   else if (tabId === 'reviews') viewport.innerHTML = renderApReviews();
   else if (tabId === 'wholesale') viewport.innerHTML = renderApWholesale();
   else if (tabId === 'analytics') viewport.innerHTML = renderApAnalytics();
@@ -10427,7 +10429,12 @@ function renderAdminView() {
             <span class="ap-nav-count-badge">${STORE_COUPONS.length}</span>
           </a>
           <a class="ap-nav-item ${apActiveTab === 'banners' ? 'active' : ''}" id="apNav-banners" onclick="switchApTab('banners')">
-            <div class="ap-nav-item-left"><i class="ri-image-line"></i><span>Banners & CMS</span></div>
+            <div class="ap-nav-item-left"><i class="ri-image-line"></i><span>Hero Carousel</span></div>
+            <span class="ap-nav-count-badge">${HERO_SLIDES.length}</span>
+          </a>
+          <a class="ap-nav-item ${apActiveTab === 'featured' ? 'active' : ''}" id="apNav-featured" onclick="switchApTab('featured')">
+            <div class="ap-nav-item-left"><i class="ri-layout-grid-line"></i><span>Featured Collections</span></div>
+            <span class="ap-nav-count-badge">${FEATURED_COLLECTIONS.length}</span>
           </a>
           <a class="ap-nav-item ${apActiveTab === 'reviews' ? 'active' : ''}" id="apNav-reviews" onclick="switchApTab('reviews')">
             <div class="ap-nav-item-left"><i class="ri-star-line"></i><span>Reviews</span></div>
@@ -11776,7 +11783,13 @@ function renderApBanners() {
   const uniqueCats = ['All', ...new Set(categoryOptions.filter(Boolean))];
 
   return `
-    <div style="display:flex; flex-direction:column; gap:28px;">
+    <div style="display:flex; flex-direction:column; gap:24px;">
+      <!-- Sub-Tabs Navigation -->
+      <div style="display:flex; gap:10px; align-items:center; background:#f1f5f9; padding:6px; border-radius:12px; width:fit-content;">
+        <button class="ap-btn ap-btn-primary" style="height:32px; font-size:12px;" onclick="switchApTab('banners')">🖼️ Hero Carousel (${HERO_SLIDES.length})</button>
+        <button class="ap-btn ap-btn-secondary" style="height:32px; font-size:12px;" onclick="switchApTab('featured')">🎨 Featured Collections (${FEATURED_COLLECTIONS.length})</button>
+      </div>
+
       <!-- Section 1: Hero Carousel Slides -->
       <div style="display:flex; flex-direction:column; gap:16px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -11840,8 +11853,23 @@ function renderApBanners() {
           </div>
         </div>
       </div>
+    </div>
+  `;
+}
 
-      <!-- Section 2: Featured Editorial Collections (Image 2) -->
+/* 6b. Dedicated Featured Editorial Collections CMS Module */
+function renderApFeaturedCollections() {
+  const categoryOptions = (CATEGORIES_DATA && CATEGORIES_DATA.length > 0 ? CATEGORIES_DATA : (CATEGORIES || [])).map(c => typeof c === 'string' ? c : c.name);
+  const uniqueCats = ['All', ...new Set(categoryOptions.filter(Boolean))];
+
+  return `
+    <div style="display:flex; flex-direction:column; gap:24px;">
+      <!-- Sub-Tabs Navigation -->
+      <div style="display:flex; gap:10px; align-items:center; background:#f1f5f9; padding:6px; border-radius:12px; width:fit-content;">
+        <button class="ap-btn ap-btn-secondary" style="height:32px; font-size:12px;" onclick="switchApTab('banners')">🖼️ Hero Carousel (${HERO_SLIDES.length})</button>
+        <button class="ap-btn ap-btn-primary" style="height:32px; font-size:12px;" onclick="switchApTab('featured')">🎨 Featured Collections (${FEATURED_COLLECTIONS.length})</button>
+      </div>
+
       <div style="display:flex; flex-direction:column; gap:16px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <div>
@@ -11852,7 +11880,7 @@ function renderApBanners() {
 
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
           <div class="ap-card">
-            <h4 style="font-size:14px; font-weight:800; margin-bottom:14px; color:#0f172a;">Active Editorial Banners</h4>
+            <h4 style="font-size:14px; font-weight:800; margin-bottom:14px; color:#0f172a;">Active Editorial Banners (${FEATURED_COLLECTIONS.length})</h4>
             <div style="display:flex; flex-direction:column; gap:12px;">
               ${FEATURED_COLLECTIONS.map((item, idx) => `
                 <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:12px; display:flex; gap:12px; align-items:center;">
@@ -12138,7 +12166,8 @@ function saveApEditorialBannerForm(idx = null) {
 
   syncStorefrontState();
   closeApEditorialModal();
-  switchApTab('banners');
+  if (apActiveTab === 'featured') switchApTab('featured');
+  else switchApTab('banners');
   showApToast(`Featured Editorial Banner saved successfully!`, 'success');
 }
 
@@ -12163,7 +12192,8 @@ function addApEditorialBanner() {
   });
 
   syncStorefrontState();
-  switchApTab('banners');
+  if (apActiveTab === 'featured') switchApTab('featured');
+  else switchApTab('banners');
   showApToast(`Banner added to Featured Collections!`, 'success');
 }
 
@@ -12171,7 +12201,8 @@ function deleteApEditorialBanner(idx) {
   if (confirm(`Delete featured collection banner "${FEATURED_COLLECTIONS[idx]?.title || idx + 1}"?`)) {
     FEATURED_COLLECTIONS.splice(idx, 1);
     syncStorefrontState();
-    switchApTab('banners');
+    if (apActiveTab === 'featured') switchApTab('featured');
+    else switchApTab('banners');
     showApToast(`Featured banner deleted!`, 'error');
   }
 }
