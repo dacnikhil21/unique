@@ -210,11 +210,11 @@ let CATEGORIES_DATA = (() => {
   },
   {
     "id": "-O_ulCIFrv0XxjtLO57Z",
-    "name": "Educational & STEM",
+    "name": "Educational",
     "description": "Educational & STEM collection at UNIQUE EXPRESSIONS",
     "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
     "subcategories": [
-      "Educational & STEM"
+      "Educational", "STEM"
     ],
     "isFeatured": true,
     "isVisible": true,
@@ -222,11 +222,11 @@ let CATEGORIES_DATA = (() => {
   },
   {
     "id": "-O_v2NV8oS3tXI0meXWL",
-    "name": "Trending & Standard Toys",
+    "name": "Standard Toys",
     "description": "Trending & Standard Toys collection at UNIQUE EXPRESSIONS",
     "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
     "subcategories": [
-      "Trending & Standard Toys"
+      "Standard Toys", "Trending Toys"
     ],
     "isFeatured": true,
     "isVisible": true,
@@ -234,11 +234,11 @@ let CATEGORIES_DATA = (() => {
   },
   {
     "id": "-O_VyIL9w369A00JEKUX",
-    "name": "Traditional Handicrafts",
+    "name": "Handicrafts",
     "description": "Traditional Handicrafts collection at UNIQUE EXPRESSIONS",
     "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
     "subcategories": [
-      "Traditional Handicrafts"
+      "Handicrafts", "Brass Idols"
     ],
     "isFeatured": true,
     "isVisible": true,
@@ -246,11 +246,11 @@ let CATEGORIES_DATA = (() => {
   },
   {
     "id": "-O_WcwUXR93XyalqJm8s",
-    "name": "Fancy Imported Stationery",
-    "description": "Fancy Imported Stationery collection at UNIQUE EXPRESSIONS",
+    "name": "Stationery",
+    "description": "Cute & Fancy Imported Stationery collection at UNIQUE EXPRESSIONS",
     "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
     "subcategories": [
-      "Fancy Imported Stationery"
+      "Stationery", "Cute Pens"
     ],
     "isFeatured": true,
     "isVisible": true,
@@ -259,7 +259,7 @@ let CATEGORIES_DATA = (() => {
   {
     "id": "-Oh9ZXwAtB_3QNn9Ld9r",
     "name": "Combos",
-    "description": "Combos collection at UNIQUE EXPRESSIONS",
+    "description": "Combos & Gift Packs collection at UNIQUE EXPRESSIONS",
     "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
     "subcategories": [
       "Combos"
@@ -294,11 +294,11 @@ let CATEGORIES_DATA = (() => {
   },
   {
     "id": "-O_WcsOAQRkDGH5FkmNE",
-    "name": "Return Gift Studio",
+    "name": "Return Gifts",
     "description": "Return Gift Studio collection at UNIQUE EXPRESSIONS",
     "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
     "subcategories": [
-      "Return Gift Studio"
+      "Return Gifts"
     ],
     "isFeatured": true,
     "isVisible": true,
@@ -306,11 +306,11 @@ let CATEGORIES_DATA = (() => {
   },
   {
     "id": "-OiCu94_rWjPcWX8nmt0",
-    "name": "Latest Arrivals",
-    "description": "Latest Arrivals collection at UNIQUE EXPRESSIONS",
+    "name": "New Arrivals",
+    "description": "New Arrivals collection at UNIQUE EXPRESSIONS",
     "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
     "subcategories": [
-      "Latest Arrivals"
+      "New Arrivals"
     ],
     "isFeatured": true,
     "isVisible": true,
@@ -320,21 +320,41 @@ let CATEGORIES_DATA = (() => {
 
 let CATEGORIES = CATEGORIES_DATA.map(c => c.name);
 
-/** Legacy admin category names → canonical product category names */
+/** Legacy category name normalization map to clean concise names */
 const CATEGORY_RENAME_MAP = {
-  'Educational Toys': 'Educational & STEM',
-  'Standard Toys': 'Trending & Standard Toys',
-  'Handicrafts': 'Traditional Handicrafts',
-  'Stationary': 'Fancy Imported Stationery',
-  'Return Gifts': 'Return Gift Studio',
-  'Latest Arrivars': 'Latest Arrivals'
+  'Educational & STEM': 'Educational',
+  'Educational Toys': 'Educational',
+  'Trending & Standard Toys': 'Standard Toys',
+  'Standard Toys': 'Standard Toys',
+  'Traditional Handicrafts': 'Handicrafts',
+  'Handicrafts': 'Handicrafts',
+  'Fancy Imported Stationery': 'Stationery',
+  'Stationary': 'Stationery',
+  'Return Gift Studio': 'Return Gifts',
+  'Return Gifts': 'Return Gifts',
+  'Latest Arrivars': 'New Arrivals',
+  'Latest Arrivals': 'New Arrivals'
 };
 
 const AP_HIDDEN_TABS = ['wholesale', 'analytics', 'users'];
 
+function normalizeCatName(name) {
+  if (!name) return '';
+  const trimmed = String(name).trim();
+  return CATEGORY_RENAME_MAP[trimmed] || trimmed;
+}
+
+function matchCategory(prodCat, targetCat) {
+  if (!targetCat || targetCat === 'All') return true;
+  if (!prodCat) return false;
+  const pNorm = normalizeCatName(prodCat).toLowerCase();
+  const tNorm = normalizeCatName(targetCat).toLowerCase();
+  return pNorm === tNorm || pNorm.includes(tNorm) || tNorm.includes(pNorm);
+}
+
 function productsInCategory(categoryName) {
   if (!categoryName || categoryName === 'All') return ALL_PRODUCTS || [];
-  return (ALL_PRODUCTS || []).filter(p => p.category === categoryName);
+  return (ALL_PRODUCTS || []).filter(p => matchCategory(p.category, categoryName));
 }
 
 function getAvailableStock(product) {
@@ -412,6 +432,7 @@ function migrateCategoriesForProduction() {
   }
   localStorage.setItem('ue_cat_migration_v1', 'done');
 }
+try { migrateCategoriesForProduction(); } catch (e) {}
 
 function apEscHtml(s) {
   return String(s ?? '')
@@ -6747,9 +6768,9 @@ function renderMobileGrid() {
   const container = document.getElementById('mobileProductGrid');
   if (!container) return;
 
-  let filtered = ALL_PRODUCTS;
+  let filtered = ALL_PRODUCTS || [];
   if (activeCategory !== 'All') {
-    filtered = ALL_PRODUCTS.filter(p => p.category === activeCategory);
+    filtered = (ALL_PRODUCTS || []).filter(p => matchCategory(p.category, activeCategory));
   }
 
   const heading = document.getElementById('mCategoryHeading');
@@ -6762,9 +6783,9 @@ function renderDesktopGrid() {
   const container = document.getElementById('desktopProductGrid');
   if (!container) return;
 
-  let filtered = ALL_PRODUCTS;
+  let filtered = ALL_PRODUCTS || [];
   if (activeCategory !== 'All') {
-    filtered = ALL_PRODUCTS.filter(p => p.category === activeCategory);
+    filtered = (ALL_PRODUCTS || []).filter(p => matchCategory(p.category, activeCategory));
   }
 
   container.innerHTML = filtered.slice(0, 20).map((p, idx) => createDesktopTileHTML(p, idx)).join('');
@@ -8087,9 +8108,9 @@ function renderPLPView(categoryName = 'All') {
   const container = document.getElementById('viewPLP');
   if (!container) return;
 
-  let filtered = ALL_PRODUCTS;
+  let filtered = ALL_PRODUCTS || [];
   if (plpCategory !== 'All') {
-    filtered = ALL_PRODUCTS.filter(p => p.category === plpCategory);
+    filtered = (ALL_PRODUCTS || []).filter(p => matchCategory(p.category, plpCategory));
   }
 
   if (plpMinRating > 0) {
