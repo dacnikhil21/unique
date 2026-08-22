@@ -237,6 +237,12 @@ const server = http.createServer((req, res) => {
     return res.end();
   }
 
+  // ── Endpoint: Products API Handler ────────────────────────────────────
+  if (req.url.startsWith('/api/products')) {
+    const productsApi = require('./api/products.js');
+    return productsApi(req, res);
+  }
+
   // ── Endpoint: Cloudinary Image Upload ──────────────────────────────────
   if (req.method === 'POST' && req.url === '/api/upload') {
     let body = '';
@@ -252,7 +258,7 @@ const server = http.createServer((req, res) => {
       }
       try {
         const payload = JSON.parse(body);
-        if (!payload.file || (!payload.file.startsWith('http') && !/^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(payload.file))) {
+        if (!payload.file || (!payload.file.startsWith('http') && !payload.file.startsWith('data:'))) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           return res.end(JSON.stringify({ error: 'Invalid image payload.' }));
         }

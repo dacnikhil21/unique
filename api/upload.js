@@ -101,7 +101,7 @@ module.exports = async (req, res) => {
     const payload = await parseBody(req);
     const file = payload?.file;
 
-    if (!file || (!file.startsWith('http') && !/^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(file))) {
+    if (!file || (!file.startsWith('http') && !file.startsWith('data:'))) {
       return res.status(400).json({ error: 'Invalid image payload' });
     }
 

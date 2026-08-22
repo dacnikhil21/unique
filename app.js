@@ -991,24 +991,6 @@ localStorage.setItem('ue_categories_data_v4', JSON.stringify(CATEGORIES_DATA));
 localStorage.setItem('ue_hero_slides_v7', JSON.stringify(HERO_SLIDES));
 localStorage.setItem('ue_hero_slides_v6', JSON.stringify(HERO_SLIDES));
 
-function syncStorefrontState() {
-  localStorage.setItem('ue_products_v8', JSON.stringify(ALL_PRODUCTS));
-  localStorage.setItem('ue_categories_data_v5', JSON.stringify(CATEGORIES_DATA));
-  localStorage.setItem('ue_categories_v5', JSON.stringify(CATEGORIES));
-  localStorage.setItem('ue_hero_slides_v6', JSON.stringify(HERO_SLIDES));
-  localStorage.setItem('ue_store_settings_v5', JSON.stringify(STORE_SETTINGS));
-  localStorage.setItem('ue_orders_v5', JSON.stringify(userOrders));
-  localStorage.setItem('ue_reviews_v5', JSON.stringify(STORE_REVIEWS));
-
-  // Live re-render all storefront components
-  if (typeof renderDesktopGrid === 'function') renderDesktopGrid();
-  if (typeof renderCategoryBar === 'function') renderCategoryBar();
-  if (typeof renderDynamicNavCategories === 'function') renderDynamicNavCategories();
-  if (typeof renderMobileHome === 'function') renderMobileHome();
-  if (typeof renderAllSections === 'function') renderAllSections();
-  if (typeof updateBadges === 'function') updateBadges();
-}
-
 const BOUTIQUE_SEED_CATALOG = [
   // RC Toys
   { title: "RC Police NEED FOR SPEED Racing", category: "RC Toys", price: 2499, originalPrice: 3500, discount: 28, stockQty: 12, image: "https://cdn.quicksell.co/-OPHhEadGd1W2rTwlBbp/products/-OlesbuVcd2XQC5UGyvR.jpg", isFeatured: true },
@@ -1064,7 +1046,7 @@ function generateSeedProducts() {
 let ALL_PRODUCTS = (() => {
   try {
     const stored = JSON.parse(localStorage.getItem('ue_products_v12'));
-    if (Array.isArray(stored) && stored.length >= 200) return stored;
+    if (Array.isArray(stored) && stored.length > 0) return stored;
   } catch (e) {}
   return null;
 })() || [
@@ -6307,22 +6289,34 @@ window.addEventListener('popstate', (e) => {
 function mergeProductsFromSupabase(sbProds) {
   if (!sbProds || sbProds.length === 0) return ALL_PRODUCTS;
 
-  const sbMapped = sbProds.map(sb => ({
-    id: String(sb.id),
-    title: sb.title || 'Product',
-    price: parseFloat(sb.price) || 0,
-    originalPrice: parseFloat(sb.originalPrice) || parseFloat(sb.original_price) || parseFloat(sb.price) || 0,
-    category: sb.category || 'General',
-    image: sb.image || (Array.isArray(sb.images) && sb.images[0]) || 'logo.png',
-    images: (Array.isArray(sb.images) && sb.images.length > 0) ? sb.images : [sb.image || 'logo.png'],
-    stockQty: sb.stockQty != null ? sb.stockQty : (sb.stock_qty != null ? sb.stock_qty : 10),
-    inStock: sb.inStock !== false && sb.in_stock !== false,
-    sku: sb.sku || `UE-PROD-${sb.id}`,
-    rating: String(sb.rating || '4.8'),
-    reviewsCount: sb.reviewsCount || sb.reviews_count || 12,
-    isFeatured: sb.isFeatured || sb.is_featured || false,
-    description: sb.description || ''
-  }));
+  const localMap = new Map(ALL_PRODUCTS.map(p => [String(p.id), p]));
+
+  const sbMapped = sbProds.map(sb => {
+    const local = localMap.get(String(sb.id));
+    // Preserve local rich images if remote only has single image
+    const sbImages = Array.isArray(sb.images) && sb.images.length > 0 ? sb.images : [];
+    const localImages = local && Array.isArray(local.images) && local.images.length > 0 ? local.images : [];
+    const mergedImages = sbImages.length > 0 ? sbImages : (localImages.length > 0 ? localImages : [sb.image || 'logo.png']);
+
+    return {
+      id: String(sb.id),
+      title: sb.title || (local ? local.title : 'Product'),
+      price: parseFloat(sb.price) || (local ? local.price : 0),
+      originalPrice: parseFloat(sb.originalPrice) || parseFloat(sb.original_price) || (local ? local.originalPrice : 0),
+      category: sb.category || (local ? local.category : 'General'),
+      image: mergedImages[0] || sb.image || 'logo.png',
+      images: mergedImages,
+      videoUrl: sb.videoUrl || (local ? local.videoUrl : '') || '',
+      boughtTogether: sb.boughtTogether || (local ? local.boughtTogether : []) || [],
+      stockQty: sb.stockQty != null ? sb.stockQty : (local ? local.stockQty : 10),
+      inStock: sb.inStock !== false && sb.in_stock !== false,
+      sku: sb.sku || (local ? local.sku : `UE-PROD-${sb.id}`),
+      rating: String(sb.rating || (local ? local.rating : '4.8')),
+      reviewsCount: sb.reviewsCount || sb.reviews_count || (local ? local.reviewsCount : 12),
+      isFeatured: sb.isFeatured || sb.is_featured || (local ? local.isFeatured : false),
+      description: sb.description || (local ? local.description : '')
+    };
+  });
 
   const sbIds = new Set(sbMapped.map(s => String(s.id)));
   const localRemaining = ALL_PRODUCTS.filter(p => !sbIds.has(String(p.id)));
@@ -6332,12 +6326,9 @@ function mergeProductsFromSupabase(sbProds) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    const cached = JSON.parse(localStorage.getItem('ue_products_v12') || localStorage.getItem('ue_products_v10') || '[]');
-    if (!Array.isArray(cached) || cached.length < 200) {
-      localStorage.removeItem('ue_products_v10');
-      localStorage.removeItem('ue_products_v9');
-      localStorage.removeItem('ue_products_v8');
-      localStorage.setItem('ue_products_v12', JSON.stringify(ALL_PRODUCTS));
+    const cached = JSON.parse(localStorage.getItem('ue_products_v12') || localStorage.getItem('ue_products_v9') || '[]');
+    if (Array.isArray(cached) && cached.length > 0) {
+      ALL_PRODUCTS = cached;
     }
   } catch (e) {}
   // Legacy /admin pathname → hash route (avoids 404 on static hosts)
@@ -6654,6 +6645,7 @@ function startHeroCarousel() {
 function setHeroSlide(idx, resetTimer = true) {
   currentHeroIndex = idx;
   const slide = HERO_SLIDES[idx];
+  if (!slide) return;
   const imgEl = document.getElementById('mHeroImg');
   const badgeEl = document.querySelector('.m-hero-badge-pill');
   const headingEl = document.getElementById('mHeroHeading');
@@ -6669,7 +6661,17 @@ function setHeroSlide(idx, resetTimer = true) {
   if (headingEl) headingEl.innerText = slide.title;
   if (subEl) subEl.innerText = slide.sub;
 
-  for (let i = 0; i < 3; i++) {
+  // Sync Desktop Hero Banner in Real-Time
+  const dtBadge = document.querySelector('.dt-hero-pill-badge');
+  const dtTitle = document.querySelector('.dt-hero-title');
+  const dtSub = document.querySelector('.dt-hero-sub');
+  const dtImg = document.querySelector('.dt-hero-image-right');
+  if (dtBadge && slide.badge) dtBadge.innerText = slide.badge;
+  if (dtTitle && slide.title) dtTitle.innerText = slide.title;
+  if (dtSub && slide.sub) dtSub.innerText = slide.sub;
+  if (dtImg && slide.img) dtImg.src = slide.img;
+
+  for (let i = 0; i < HERO_SLIDES.length; i++) {
     const dot = document.getElementById(`mDot${i}`);
     if (dot) {
       if (i === idx) dot.classList.add('active');
@@ -6701,7 +6703,12 @@ function getVisibleCategories() {
   if (Array.isArray(CATEGORIES_DATA) && CATEGORIES_DATA.length > 0) {
     return CATEGORIES_DATA
       .filter(c => c.isVisible !== false)
-      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      .sort((a, b) => {
+        // Prioritize Featured Categories to the front
+        if (a.isFeatured && !b.isFeatured) return -1;
+        if (!a.isFeatured && b.isFeatured) return 1;
+        return (a.sortOrder || 0) - (b.sortOrder || 0);
+      });
   }
   const names = [...new Set((ALL_PRODUCTS || []).map(p => p.category).filter(Boolean))];
   return names.map((name, i) => ({
@@ -7113,17 +7120,11 @@ function buildVideoSectionHTML(product) {
 
   return `
     <div style="margin-top: 12px; margin-bottom: 12px;">
-      <a href="${videoUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #0f172a; background: #ffffff; border: 1.5px solid #cbd5e1; padding: 11px 18px; border-radius: 14px; font-size: 13.5px; font-weight: 800; text-decoration: none; width: 100%; box-sizing: border-box; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.04); transition: all 0.2s ease;" onmouseover="this.style.borderColor='#94a3b8'; this.style.background='#f8fafc';" onmouseout="this.style.borderColor='#cbd5e1'; this.style.background='#ffffff';">
-        ${iconHtml} View Product Demonstration →
+      <a href="${videoUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #0f172a; background: #ffffff; border: 1.5px solid #cbd5e1; padding: 11px 18px; border-radius: 14px; font-size: 13.5px; font-weight: 800; text-decoration: none; width: 100%; box-sizing: border-box; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.04); transition: all 0.2s ease;">
+        ${iconHtml} View Product Video →
       </a>
     </div>
   `;
-}
-
-function playPDPInlineVideo(containerId, embedUrl) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  container.innerHTML = `<iframe src="${embedUrl}" style="width:100%; height:100%; border:none; border-radius:14px;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
 }
 
 
@@ -14182,6 +14183,16 @@ function openApProductModal(editId = null) {
   const p = ALL_PRODUCTS.find(item => String(item.id) === String(editId)) || null;
   const editIdJs = editId != null ? apJsAttr(editId) : 'null';
   
+  // Initialize product images state in exact display order
+  window.apModalProductImages = [];
+  if (p) {
+    if (Array.isArray(p.images) && p.images.length > 0) {
+      window.apModalProductImages = [...p.images.filter(Boolean)];
+    } else if (p.image) {
+      window.apModalProductImages = [p.image];
+    }
+  }
+
   let modalBackdrop = document.getElementById('apProductModalOverlay');
   if (!modalBackdrop) {
     modalBackdrop = document.createElement('div');
@@ -14193,27 +14204,30 @@ function openApProductModal(editId = null) {
   const categoryOptions = getAdminCategoryNames().map(c => `<option value="${apEscHtml(c)}" ${p && p.category === c ? 'selected' : ''}>${apEscHtml(c)}</option>`).join('');
 
   modalBackdrop.innerHTML = `
-    <div class="ap-modal-container" style="max-width:680px;">
+    <div class="ap-modal-container" style="max-width:720px;">
       <div class="ap-modal-header">
-        <h3 class="ap-modal-title">${p ? '✏️ Edit Product Details' : '➕ Add New Product'}</h3>
-        <button class="ap-btn-icon" onclick="closeApProductModal()"><i class="ri-close-line" style="font-size:18px;"></i></button>
+        <h3 class="ap-modal-title" style="display:flex; align-items:center; gap:8px;">
+          <i class="${p ? 'ri-edit-line' : 'ri-add-circle-line'}" style="color:#2563eb; font-size:20px;"></i>
+          <span>${p ? 'Edit Product Details' : 'Add New Product'}</span>
+        </h3>
+        <button class="ap-btn-icon" onclick="closeApProductModal()" title="Close"><i class="ri-close-line" style="font-size:18px;"></i></button>
       </div>
-      <div class="ap-modal-body">
+      <div class="ap-modal-body" style="max-height:80vh; overflow-y:auto; padding:20px 24px;">
         <form id="apProductForm" onsubmit="event.preventDefault(); saveApProductForm(${editIdJs});">
-          <div style="display:flex; flex-direction:column; gap:14px;">
+          <div style="display:flex; flex-direction:column; gap:16px;">
             <div>
-              <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Product Title *</label>
-              <input type="text" id="apFormTitle" class="ap-search-input" style="width:100%;" required value="${p ? p.title.replace(/"/g, '&quot;') : ''}" placeholder="e.g. RC Super Stunt Car 360">
+              <label class="ap-form-label">Product Title <span style="color:#ef4444;">*</span></label>
+              <input type="text" id="apFormTitle" class="ap-form-control" required value="${p ? p.title.replace(/"/g, '&quot;') : ''}" placeholder="e.g. Remote Control Stunt Car">
             </div>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
               <div>
-                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">SKU Code *</label>
-                <input type="text" id="apFormSku" class="ap-search-input" style="width:100%;" required value="${p ? (p.sku || `UE-SKU-${p.id}`) : `UE-SKU-${Date.now()}`}">
+                <label class="ap-form-label">SKU Code <span style="color:#ef4444;">*</span></label>
+                <input type="text" id="apFormSku" class="ap-form-control" required value="${p ? (p.sku || `UE-SKU-${p.id}`) : `UE-SKU-${Date.now()}`}">
               </div>
               <div>
-                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Category *</label>
-                <select id="apFormCategory" class="ap-search-input" style="width:100%; padding-left:12px;">
+                <label class="ap-form-label">Category <span style="color:#ef4444;">*</span></label>
+                <select id="apFormCategory" class="ap-form-control">
                   ${categoryOptions}
                 </select>
               </div>
@@ -14221,61 +14235,80 @@ function openApProductModal(editId = null) {
 
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
               <div>
-                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Selling Price (₹) *</label>
-                <input type="number" id="apFormPrice" class="ap-search-input" style="width:100%;" required value="${p ? p.price : ''}" placeholder="e.g. 499">
+                <label class="ap-form-label">Selling Price (₹) <span style="color:#ef4444;">*</span></label>
+                <input type="number" id="apFormPrice" class="ap-form-control" required value="${p ? p.price : ''}" placeholder="499">
               </div>
               <div>
-                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Original Price (₹)</label>
-                <input type="number" id="apFormOrigPrice" class="ap-search-input" style="width:100%;" value="${p ? (p.originalPrice || Math.round(p.price * 1.2)) : ''}" placeholder="e.g. 699">
+                <label class="ap-form-label">Original Price (₹)</label>
+                <input type="number" id="apFormOrigPrice" class="ap-form-control" value="${p ? (p.originalPrice || Math.round(p.price * 1.2)) : ''}" placeholder="699">
               </div>
               <div>
-                <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Stock Quantity *</label>
-                <input type="number" id="apFormStock" class="ap-search-input" style="width:100%;" required min="0" value="${p ? p.stockQty : ''}" placeholder="e.g. 25">
-                <span style="font-size:10px; color:#64748b;">Same count shown in Inventory tab — bulk updates there.</span>
+                <label class="ap-form-label">Stock Quantity <span style="color:#ef4444;">*</span></label>
+                <input type="number" id="apFormStock" class="ap-form-control" required min="0" value="${p ? p.stockQty : ''}" placeholder="25">
+                <span class="ap-form-hint">Shown in storefront</span>
               </div>
             </div>
 
             <div>
-              <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Product Image URL or Direct File Upload *</label>
-              <div style="display:flex; gap:10px; align-items:center;">
-                <input type="text" id="apFormImg" class="ap-search-input" style="flex:1;" required value="${p ? p.image : ''}" placeholder="https://images.unsplash.com/..." oninput="document.getElementById('apFormImgPrev').src=this.value">
-                <label class="ap-btn ap-btn-secondary" style="height:38px; font-size:11px; padding:0 10px; cursor:pointer; margin:0; display:flex; align-items:center; gap:4px;" title="Upload photo directly from phone or computer to Cloudinary">
-                  ☁️ Upload File
-                  <input type="file" accept="image/*" style="display:none;" onchange="uploadImageToCloudinary(this, 'apFormImg', 'apFormImgPrev')">
-                </label>
-                <img id="apFormImgPrev" src="${p ? p.image : 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' fill=\'%2394a3b8\' viewBox=\'0 0 24 24\'><path d=\'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z\'/></svg>'}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1;">
+              <label class="ap-form-label">Product Description</label>
+              <textarea id="apFormDesc" class="ap-form-control" style="min-height:75px;" placeholder="Add product details, specifications, etc. (optional)...">${p ? (p.description || '') : ''}</textarea>
+            </div>
+
+            <!-- MULTI-IMAGE GALLERY & ORDER MANAGER -->
+            <div class="ap-form-card" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:12px; padding:16px;">
+              <div class="ap-gallery-header">
+                <div>
+                  <label class="ap-form-label" style="font-size:13px; margin-bottom:2px;">
+                    <i class="ri-gallery-line" style="color:#2563eb; font-size:16px;"></i> Product Photos & Gallery (Ordered)
+                  </label>
+                  <span class="ap-form-hint" style="margin-top:0;">Image #1 is the <strong>Main Cover</strong>. Use arrows to change priority (1st, 2nd, 3rd...).</span>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                  <label class="ap-btn ap-btn-primary" style="height:36px; font-size:12px; font-weight:700; padding:0 12px; cursor:pointer; margin:0; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;" title="Upload photos from device">
+                    <i class="ri-upload-cloud-2-line" style="font-size:15px;"></i> Upload Multiple Photos
+                    <input type="file" id="apMultiFileInput" accept="image/*" multiple style="display:none;" onchange="uploadMultipleImagesToCloudinary(this)">
+                  </label>
+                </div>
               </div>
+
+              <!-- Add via URL input row -->
+              <div style="display:flex; gap:8px; margin-top:8px; margin-bottom:12px;">
+                <input type="text" id="apAddUrlInput" class="ap-form-control" style="height:36px; font-size:12px;" placeholder="Or paste image URL (e.g. https://...)" onkeyup="if(event.key==='Enter'){event.preventDefault(); apAddProductImageUrl();}">
+                <button type="button" class="ap-btn ap-btn-secondary" style="height:36px; font-size:12px; white-space:nowrap; padding:0 12px;" onclick="apAddProductImageUrl()">
+                  <i class="ri-add-line"></i> Add URL
+                </button>
+              </div>
+
+              <!-- Visual Gallery Items Grid -->
+              <div id="apGalleryGridContainer"></div>
+              
+              <!-- Hidden synced input for backward compatibility -->
+              <input type="hidden" id="apFormImg" value="${p ? p.image : ''}">
             </div>
 
             <div>
-              <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Product Description</label>
-              <textarea id="apFormDesc" class="ap-search-input" style="width:100%; height:60px; padding:8px;" placeholder="Enter product specifications and details...">${p ? (p.description || '') : ''}</textarea>
+              <label class="ap-form-label"><i class="ri-gift-line" style="color:#ec4899;"></i> Frequently Bought Together (Optional Upsell IDs)</label>
+              <input type="text" id="apFormFbt" class="ap-form-control" value="${p && Array.isArray(p.boughtTogether) ? p.boughtTogether.join(', ') : ''}" placeholder="e.g. 101, 102">
             </div>
 
-            <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; background: #f8fafc;">
-              <label style="font-size: 11px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">🖼️ Multi-Image URLs (One per line)</label>
-              <textarea id="apFormImagesList" class="ap-search-input" style="width:100%; height:60px; padding:8px;" placeholder="https://image1.jpg\nhttps://image2.jpg">${p ? (Array.isArray(p.images) ? p.images.join('\n') : p.image) : ''}</textarea>
-            </div>
-
-            <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; background: #f8fafc;">
-              <label style="font-size: 11px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">🎁 Frequently Bought Together (Product IDs, comma separated)</label>
-              <input type="text" id="apFormFbt" class="ap-search-input" style="width:100%;" value="${p ? (Array.isArray(p.boughtTogether) ? p.boughtTogether.join(', ') : '') : ''}" placeholder="e.g. 101, 102">
-            </div>
-
-            <div style="border:1.5px dashed #0f172a; border-radius:14px; padding:14px; background:#f8fafc;">
-              <label style="font-size:11px; font-weight:700; color:#0f172a; display:block; margin-bottom:4px;">🎬 YouTube / Instagram Video URL <span style="color:#94a3b8; font-weight:500;">(Optional)</span></label>
-              <input type="text" id="apFormVideoUrl" class="ap-search-input" style="width:100%;" value="${p ? (p.videoUrl || '') : ''}" placeholder="https://youtube.com/watch?v=... or https://instagram.com/reel/..." oninput="updateApVideoPreview(this.value)">
+            <div>
+              <label class="ap-form-label"><i class="ri-video-line" style="color:#ef4444;"></i> Video Showcase Link (Optional YouTube / Instagram Reel)</label>
+              <input type="text" id="apFormVideoUrl" class="ap-form-control" value="${p ? (p.videoUrl || '') : ''}" placeholder="https://youtube.com/watch?v=..." oninput="updateApVideoPreview(this.value)">
               <div id="apVideoPreview" style="margin-top:6px; display:${p && p.videoUrl ? 'block' : 'none'};">
-                <a href="${p ? (p.videoUrl || '#') : '#'}" target="_blank" id="apVideoLink" style="font-size:11px; color:#0f172a; font-weight:700; text-decoration:none;">▶ Preview Video Link →</a>
+                <a href="${p ? (p.videoUrl || '#') : '#'}" target="_blank" id="apVideoLink" style="font-size:11.5px; color:#2563eb; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                  <i class="ri-play-circle-line"></i> Preview Video Link →
+                </a>
               </div>
             </div>
 
-            <div style="display:flex; gap:20px; padding:6px 0;">
-              <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; cursor:pointer;">
-                <input type="checkbox" id="apFormInStock" ${!p || p.inStock !== false ? 'checked' : ''}> 🟢 Available In Stock
+            <div style="display:flex; gap:24px; padding:8px 0; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px;">
+              <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#0f172a; cursor:pointer;">
+                <input type="checkbox" id="apFormInStock" ${!p || p.inStock !== false ? 'checked' : ''} style="accent-color:#10b981; width:16px; height:16px;">
+                <span>🟢 In Stock & Purchasable</span>
               </label>
-              <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; cursor:pointer;">
-                <input type="checkbox" id="apFormFeatured" ${p && p.isFeatured ? 'checked' : ''}> ⭐ Feature on Storefront
+              <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#0f172a; cursor:pointer;">
+                <input type="checkbox" id="apFormFeatured" ${p && p.isFeatured ? 'checked' : ''} style="accent-color:#f59e0b; width:16px; height:16px;">
+                <span>⭐ Feature on Homepage</span>
               </label>
             </div>
           </div>
@@ -14291,6 +14324,188 @@ function openApProductModal(editId = null) {
   `;
 
   modalBackdrop.classList.add('active');
+  renderApProductImagesGallery();
+}
+
+function renderApProductImagesGallery() {
+  const container = document.getElementById('apGalleryGridContainer');
+  if (!container) return;
+
+  const images = window.apModalProductImages || [];
+
+  if (images.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:24px 16px; border:1.5px dashed #cbd5e1; border-radius:10px; color:#64748b; font-size:12.5px; background:#f8fafc;">
+        <i class="ri-image-add-line" style="font-size:28px; color:#94a3b8; display:block; margin-bottom:6px;"></i>
+        No photos added yet. Click <strong>"Upload Multiple Photos"</strong> or paste an image URL above.
+      </div>
+    `;
+    const formImg = document.getElementById('apFormImg');
+    if (formImg) formImg.value = '';
+    return;
+  }
+
+  // Update primary cover image reference
+  const formImg = document.getElementById('apFormImg');
+  if (formImg) formImg.value = images[0] || '';
+
+  container.innerHTML = `
+    <div class="ap-gallery-grid">
+      ${images.map((url, idx) => {
+        const isCover = idx === 0;
+        return `
+          <div class="ap-gallery-item ${isCover ? 'is-cover' : ''}">
+            <span class="ap-gallery-badge ${isCover ? 'is-cover' : ''}">
+              ${isCover ? '⭐ Cover' : `#${idx + 1}`}
+            </span>
+            <img src="${apEscHtml(url)}" class="ap-gallery-thumb" alt="Product Image #${idx + 1}" onerror="this.src='https://placehold.co/120x90?text=Invalid+Image'">
+            <div class="ap-gallery-actions">
+              <button type="button" class="ap-gallery-btn" title="Move Left (Earlier in sequence)" ${idx === 0 ? 'disabled' : ''} onclick="apMoveProductImage(${idx}, -1)">
+                <i class="ri-arrow-left-s-line"></i>
+              </button>
+              ${!isCover ? `
+                <button type="button" class="ap-gallery-btn btn-cover" title="Make Main Cover Image" onclick="apSetCoverProductImage(${idx})">
+                  <i class="ri-star-line"></i>
+                </button>
+              ` : `
+                <span style="font-size:10px; font-weight:800; color:#2563eb;">MAIN</span>
+              `}
+              <button type="button" class="ap-gallery-btn" title="Move Right (Later in sequence)" ${idx === images.length - 1 ? 'disabled' : ''} onclick="apMoveProductImage(${idx}, 1)">
+                <i class="ri-arrow-right-s-line"></i>
+              </button>
+              <button type="button" class="ap-gallery-btn btn-delete" title="Delete this image" onclick="apDeleteProductImage(${idx})">
+                <i class="ri-delete-bin-line"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function apAddProductImageUrl() {
+  const input = document.getElementById('apAddUrlInput');
+  if (!input) return;
+  const url = input.value.trim();
+  if (!url) {
+    showApToast('Please paste a valid image URL.', 'info');
+    return;
+  }
+  if (!window.apModalProductImages) window.apModalProductImages = [];
+  window.apModalProductImages.push(url);
+  input.value = '';
+  renderApProductImagesGallery();
+  showApToast('Image added to gallery!', 'success');
+}
+
+function apMoveProductImage(idx, direction) {
+  if (!window.apModalProductImages) return;
+  const targetIdx = idx + direction;
+  if (targetIdx < 0 || targetIdx >= window.apModalProductImages.length) return;
+  
+  const item = window.apModalProductImages.splice(idx, 1)[0];
+  window.apModalProductImages.splice(targetIdx, 0, item);
+  renderApProductImagesGallery();
+}
+
+function apSetCoverProductImage(idx) {
+  if (!window.apModalProductImages || idx <= 0) return;
+  const item = window.apModalProductImages.splice(idx, 1)[0];
+  window.apModalProductImages.unshift(item);
+  renderApProductImagesGallery();
+  showApToast('Set as main cover image!', 'success');
+}
+
+function apDeleteProductImage(idx) {
+  if (!window.apModalProductImages) return;
+  window.apModalProductImages.splice(idx, 1);
+  renderApProductImagesGallery();
+  showApToast('Image removed.', 'info');
+}
+
+function compressImageForUpload(file, maxWidth = 1600, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type || !file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      return reader.readAsDataURL(file);
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth || height > maxWidth) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxWidth) / height);
+            height = maxWidth;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedBase64);
+      };
+      img.onerror = () => resolve(e.target.result); // Fallback to raw data URL
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadMultipleImagesToCloudinary(fileInput) {
+  const files = Array.from(fileInput.files || []);
+  if (files.length === 0) return;
+
+  if (!window.apModalProductImages) window.apModalProductImages = [];
+
+  showApToast(`Uploading ${files.length} photo(s)...`, 'info');
+
+  let successCount = 0;
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    try {
+      showApToast(`Uploading photo ${i + 1} of ${files.length}...`, 'info');
+      // Auto-compress large phone photos to crisp web resolution (under 600KB)
+      const base64Data = await compressImageForUpload(file, 1600, 0.88);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: base64Data })
+      });
+      const data = await res.json();
+
+      if (data.success && data.url) {
+        window.apModalProductImages.push(data.url);
+        successCount++;
+        renderApProductImagesGallery();
+      } else {
+        console.warn('[Upload Error]', data.error);
+        showApToast(`Upload failed for photo ${i + 1}: ${data.error || 'Server error'}`, 'error');
+      }
+    } catch (err) {
+      console.error('[Upload Exception]', err);
+      showApToast(`Failed to upload photo ${i + 1}: ${err.message || 'Network error'}`, 'error');
+    }
+  }
+
+  // Reset file input so user can re-upload if needed
+  fileInput.value = '';
+
+  if (successCount > 0) {
+    showApToast(`✅ Uploaded ${successCount} of ${files.length} image(s)!`, 'success');
+  }
 }
 
 function updateApVideoPreview(url) {
@@ -14312,6 +14527,7 @@ function updateApVideoPreview(url) {
 function closeApProductModal() {
   const modalBackdrop = document.getElementById('apProductModalOverlay');
   if (modalBackdrop) modalBackdrop.classList.remove('active');
+  window.apModalProductImages = [];
 }
 
 async function saveApProductForm(editId = null) {
@@ -14324,13 +14540,17 @@ async function saveApProductForm(editId = null) {
   const price = parseInt(document.getElementById('apFormPrice')?.value, 10) || 0;
   const originalPrice = parseInt(document.getElementById('apFormOrigPrice')?.value, 10) || Math.round(price * 1.2);
   const stockQty = parseInt(document.getElementById('apFormStock')?.value, 10) || 0;
-  const image = document.getElementById('apFormImg')?.value.trim() || '';
   const description = document.getElementById('apFormDesc')?.value.trim() || '';
   const inStock = document.getElementById('apFormInStock')?.checked;
   const isFeatured = document.getElementById('apFormFeatured')?.checked;
   const videoUrl = (document.getElementById('apFormVideoUrl')?.value || '').trim();
-  const rawImages = (document.getElementById('apFormImagesList')?.value || '').trim().split('\n').map(s => s.trim()).filter(Boolean);
-  const images = rawImages.length > 0 ? rawImages : [image];
+  
+  // Collect images strictly in gallery order
+  const images = (window.apModalProductImages && window.apModalProductImages.length > 0)
+    ? [...window.apModalProductImages]
+    : [];
+  const image = images.length > 0 ? images[0] : (document.getElementById('apFormImg')?.value.trim() || '');
+
   const rawFbt = (document.getElementById('apFormFbt')?.value || '').trim().split(',').map(s => s.trim()).filter(Boolean);
   const boughtTogether = rawFbt;
 
@@ -14339,13 +14559,8 @@ async function saveApProductForm(editId = null) {
     return;
   }
 
-  if (!image) {
-    showApToast('Please upload a photo or paste an image URL.', 'info');
-    return;
-  }
-
-  if (image.startsWith('data:')) {
-    showApToast('Image upload still in progress or failed. Wait for "uploaded successfully" or paste an image URL.', 'error');
+  if (!image && images.length === 0) {
+    showApToast('Please upload at least one product photo or add an image URL.', 'info');
     return;
   }
 
@@ -14364,7 +14579,7 @@ async function saveApProductForm(editId = null) {
     existing.inStock = inStock && stockQty > 0;
     existing.isFeatured = isFeatured;
     existing.videoUrl = videoUrl;
-    existing.images = images;
+    existing.images = images.length > 0 ? images : [image];
     existing.boughtTogether = boughtTogether;
     existing.discount = Math.round(((originalPrice - price) / originalPrice) * 100) || 0;
     savedProduct = existing;
@@ -14385,7 +14600,7 @@ async function saveApProductForm(editId = null) {
       inStock: inStock && stockQty > 0,
       isFeatured,
       videoUrl,
-      images,
+      images: images.length > 0 ? images : [image],
       boughtTogether
     };
     ALL_PRODUCTS.unshift(savedProduct);
@@ -14432,20 +14647,14 @@ async function saveApProductForm(editId = null) {
   }
 }
 
-function uploadImageToCloudinary(fileInput, targetInputId, targetPrevId) {
+async function uploadImageToCloudinary(fileInput, targetInputId, targetPrevId) {
   const file = fileInput.files[0];
   if (!file) return;
 
-  if (file.size > 8 * 1024 * 1024) {
-    showApToast('Image too large. Please use a file under 8MB.', 'error');
-    return;
-  }
+  showApToast('Optimizing & uploading image...', 'info');
 
-  showApToast('Uploading image to Cloudinary...', 'info');
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const base64Data = e.target.result;
+  try {
+    const base64Data = await compressImageForUpload(file, 1600, 0.88);
 
     fetch('/api/upload', {
       method: 'POST',
@@ -14465,9 +14674,9 @@ function uploadImageToCloudinary(fileInput, targetInputId, targetPrevId) {
     .catch(() => {
       showApToast('Upload failed on this server. Paste an image URL instead.', 'error');
     });
-  };
-  reader.onerror = () => showApToast('Could not read image file.', 'error');
-  reader.readAsDataURL(file);
+  } catch (err) {
+    showApToast('Could not process image file.', 'error');
+  }
 }
 
 
