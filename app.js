@@ -83,11 +83,13 @@ function safeParseStorage(key, fallback = null) {
 
 // ── WhatsApp Support Helper ────────────────────────────────────────
 function openWhatsAppChat(message) {
-  const waNumber = '917799747575';
+  const rawWa = (STORE_SETTINGS && STORE_SETTINGS.whatsapp) ? String(STORE_SETTINGS.whatsapp) : '7799747575';
+  const cleanWa = rawWa.replace(/\D/g, '').slice(-10) || '7799747575';
+  const storeName = (STORE_SETTINGS && STORE_SETTINGS.storeName) ? STORE_SETTINGS.storeName : 'UNIQUE EXPRESSIONS';
   const text = message
     ? encodeURIComponent(message)
-    : encodeURIComponent('Hi UNIQUE EXPRESSIONS, I need help with my order!');
-  window.open(`https://wa.me/${waNumber}?text=${text}`, '_blank', 'noopener,noreferrer');
+    : encodeURIComponent(`Hi ${storeName}, I need help with my order / inquiry!`);
+  window.open(`https://wa.me/91${cleanWa}?text=${text}`, '_blank', 'noopener,noreferrer');
 }
 
 // ── Production Schema Migrator & Enhancer ────────────────────────
@@ -170,6 +172,49 @@ let HERO_SLIDES = safeParseStorage('ue_hero_slides_v7') || [
     sub: "Volume discounts & input credit invoices (GSTIN: 37BVTPG7761F1Z1) for store owners & event planners.",
     ctaText: "Wholesale Partner Portal",
     ctaLink: "#view=wholesale",
+    active: true
+  }
+];
+
+let FEATURED_COLLECTIONS = safeParseStorage('ue_featured_collections_v1') || [
+  {
+    id: 1,
+    tag: "POPULAR & TRENDING",
+    title: "High-Speed RC & Flying Toys",
+    category: "RC Toys",
+    img: "assets/banners/rc_toys_banner.png",
+    active: true
+  },
+  {
+    id: 2,
+    tag: "BRAIN & CREATIVITY",
+    title: "Educational & STEM Learning Kits",
+    category: "Educational Toys",
+    img: "assets/banners/educational_banner.png",
+    active: true
+  },
+  {
+    id: 3,
+    tag: "ARTISAN & BOUTIQUE",
+    title: "Handicrafts & Fancy Stationery",
+    category: "Handicrafts",
+    img: "assets/banners/handicrafts_banner.png",
+    active: true
+  },
+  {
+    id: 4,
+    tag: "BOUTIQUE IMPORTS",
+    title: "Cute Fancy Stationery",
+    category: "Stationary",
+    img: "assets/banners/stationery_banner.png",
+    active: true
+  },
+  {
+    id: 5,
+    tag: "BESTSELLER BUNDLE",
+    title: "Return Gift Studio & Hampers",
+    category: "Return Gifts",
+    img: "assets/banners/return_gifts_banner.png",
     active: true
   }
 ];
@@ -6085,6 +6130,7 @@ function syncStorefrontState() {
   localStorage.setItem('ue_categories_v5', JSON.stringify(CATEGORIES));
   localStorage.setItem('ue_hero_slides_v7', JSON.stringify(HERO_SLIDES));
   localStorage.setItem('ue_hero_slides_v6', JSON.stringify(HERO_SLIDES));
+  localStorage.setItem('ue_featured_collections_v1', JSON.stringify(FEATURED_COLLECTIONS));
   localStorage.setItem('ue_store_settings_v5', JSON.stringify(STORE_SETTINGS));
   localStorage.setItem('ue_customers_v5', JSON.stringify(STORE_CUSTOMERS));
   localStorage.setItem('ue_coupons_v5', JSON.stringify(STORE_COUPONS));
@@ -6097,6 +6143,7 @@ function syncStorefrontState() {
   if (typeof renderDesktopGrid === 'function') renderDesktopGrid();
   if (typeof renderCategoryBar === 'function') renderCategoryBar();
   if (typeof renderDynamicNavCategories === 'function') renderDynamicNavCategories();
+  if (typeof renderFeaturedCollections === 'function') renderFeaturedCollections();
   if (typeof renderMobileHome === 'function') renderMobileHome();
   if (typeof renderAllSections === 'function') renderAllSections();
   if (typeof updateBadges === 'function') updateBadges();
@@ -6686,10 +6733,43 @@ function getEffectivePrice(basePrice) {
   return basePrice;
 }
 
+function renderFeaturedCollections() {
+  const mobileContainer = document.getElementById('mFeaturedCardsContainer');
+  const desktopContainer = document.getElementById('dtFeaturedGrid');
+  if (!Array.isArray(FEATURED_COLLECTIONS) || FEATURED_COLLECTIONS.length === 0) return;
+
+  const activeBanners = FEATURED_COLLECTIONS.filter(b => b.active !== false);
+
+  if (mobileContainer) {
+    mobileContainer.innerHTML = activeBanners.map(item => `
+      <div class="m-featured-bundle-card" onclick="filterCategory('${(item.category || 'All').replace(/'/g, "\\'")}')">
+        <img src="${item.img || 'assets/banners/return_gifts_banner.png'}" alt="${apEscHtml(item.title || '')}" loading="lazy">
+        <div class="m-featured-card-overlay">
+          <span class="m-featured-tag">${apEscHtml(item.tag || 'FEATURED')}</span>
+          <h4 class="m-featured-title">${apEscHtml(item.title || '')}</h4>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  if (desktopContainer) {
+    desktopContainer.innerHTML = activeBanners.map(item => `
+      <div class="dt-featured-card" onclick="filterCategory('${(item.category || 'All').replace(/'/g, "\\'")}')">
+        <img src="${item.img || 'assets/banners/return_gifts_banner.png'}" alt="${apEscHtml(item.title || '')}" style="object-fit:cover;" loading="lazy">
+        <div class="dt-featured-overlay">
+          <span class="dt-tag-badge">${apEscHtml(item.tag || 'FEATURED')}</span>
+          <h3>${apEscHtml(item.title || '')}</h3>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
 function renderAllSections() {
   renderMobileGrid();
   renderDesktopGrid();
   renderCategoryBar();
+  renderFeaturedCollections();
   renderRecentlyViewed();
   renderBestSellers();
   renderRecommended();
@@ -11692,57 +11772,138 @@ function saveApInventoryMatrix() {
 
 /* 6. Banners & Homepage CMS Module Renderer */
 function renderApBanners() {
+  const categoryOptions = (CATEGORIES_DATA && CATEGORIES_DATA.length > 0 ? CATEGORIES_DATA : (CATEGORIES || [])).map(c => typeof c === 'string' ? c : c.name);
+  const uniqueCats = ['All', ...new Set(categoryOptions.filter(Boolean))];
+
   return `
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
-      <div class="ap-card">
-        <h3 style="font-size:15px; font-weight:800; margin-bottom:16px;">🖼️ Active Hero Carousel Slides (${HERO_SLIDES.length})</h3>
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          ${HERO_SLIDES.map((slide, idx) => `
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:10px; display:flex; gap:12px; align-items:center;">
-              <img src="${slide.img}" style="width:70px; height:50px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1;">
-              <div style="flex:1; overflow:hidden;">
-                <div style="font-size:10px; font-weight:800; color:#d82b7d;">${slide.badge}</div>
-                <div style="font-size:13px; font-weight:800; color:#0f172a;">${slide.title}</div>
-                <div style="font-size:11px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${slide.sub}</div>
-              </div>
-              <div style="display:flex; gap:6px;">
-                <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px;" onclick="openApBannerModal(${idx})">Edit</button>
-                <button class="ap-btn ap-btn-secondary" style="height:26px; padding:0 8px; font-size:11px; color:#ef4444;" onclick="deleteApBannerSlide(${idx})">Delete</button>
-              </div>
+    <div style="display:flex; flex-direction:column; gap:28px;">
+      <!-- Section 1: Hero Carousel Slides -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h3 style="font-size:16px; font-weight:800; margin:0; color:#0f172a;">🖼️ Hero Banner Carousel (${HERO_SLIDES.length} Slides)</h3>
+            <span style="font-size:12px; color:#64748b;">Primary sliding promotional hero showcase on top of homepage</span>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="ap-card">
+            <h4 style="font-size:14px; font-weight:800; margin-bottom:14px; color:#0f172a;">Active Carousel Slides</h4>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              ${HERO_SLIDES.map((slide, idx) => `
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:12px; display:flex; gap:12px; align-items:center;">
+                  <img src="${slide.img}" style="width:70px; height:50px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600'">
+                  <div style="flex:1; overflow:hidden;">
+                    <div style="font-size:10px; font-weight:800; color:#d82b7d;">${apEscHtml(slide.badge)}</div>
+                    <div style="font-size:13px; font-weight:800; color:#0f172a;">${apEscHtml(slide.title)}</div>
+                    <div style="font-size:11px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${apEscHtml(slide.sub)}</div>
+                  </div>
+                  <div style="display:flex; gap:6px;">
+                    <button class="ap-btn ap-btn-secondary" style="height:28px; padding:0 10px; font-size:11px; font-weight:700;" onclick="openApBannerModal(${idx})">Edit</button>
+                    <button class="ap-btn ap-btn-secondary" style="height:28px; padding:0 10px; font-size:11px; font-weight:700; color:#ef4444;" onclick="deleteApBannerSlide(${idx})">Delete</button>
+                  </div>
+                </div>
+              `).join('')}
             </div>
-          `).join('')}
+          </div>
+
+          <div class="ap-card">
+            <h4 style="font-size:14px; font-weight:800; margin-bottom:14px; color:#0f172a;">➕ Add Hero Carousel Slide</h4>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#475569;">Badge Text</label>
+                <input type="text" id="apBannerBadge" class="ap-search-input" placeholder="✨ SPECIAL BOUTIQUE OFFER">
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#475569;">Main Title</label>
+                <input type="text" id="apBannerTitle" class="ap-search-input" placeholder="e.g. Discover Extraordinary Toys & Gifts">
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#475569;">Subtitle Description</label>
+                <input type="text" id="apBannerSub" class="ap-search-input" placeholder="e.g. Curated Educational Toys & Handicrafts">
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#475569;">Banner Image URL or Direct File Upload</label>
+                <div style="display:flex; gap:10px; align-items:center; margin-top:4px;">
+                  <input type="text" id="apBannerImg" class="ap-search-input" style="flex:1;" placeholder="https://images.unsplash.com/..." oninput="this.value=this.value.trim(); document.getElementById('apBannerImgPrev').src=this.value;">
+                  <label class="ap-btn ap-btn-secondary" style="height:38px; font-size:11px; padding:0 10px; cursor:pointer; margin:0; display:flex; align-items:center; gap:4px;" title="Upload photo directly from phone or computer">
+                    ☁️ Upload Media
+                    <input type="file" accept="image/*" style="display:none;" onchange="uploadImageToCloudinary(this, 'apBannerImg', 'apBannerImgPrev')">
+                  </label>
+                  <img id="apBannerImgPrev" src="assets/banners/return_gifts_banner.png" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600'" style="width:50px; height:35px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1;">
+                </div>
+              </div>
+              <button class="ap-btn ap-btn-primary" style="margin-top:8px; width:100%; justify-content:center;" onclick="addApBannerSlide()">
+                + Add Slide to Hero Carousel
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="ap-card">
-        <h3 style="font-size:15px; font-weight:800; margin-bottom:16px;">➕ Add Hero Carousel Slide</h3>
-        <div style="display:flex; flex-direction:column; gap:12px;">
+      <!-- Section 2: Featured Editorial Collections (Image 2) -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <label style="font-size:11px; font-weight:700; color:#475569;">Badge Text</label>
-            <input type="text" id="apBannerBadge" class="ap-search-input" placeholder="✨ SPECIAL BOUTIQUE OFFER">
+            <h3 style="font-size:16px; font-weight:800; margin:0; color:#0f172a;">🎨 Featured Editorial Collections (${FEATURED_COLLECTIONS.length} Banners)</h3>
+            <span style="font-size:12px; color:#64748b;">Manage the curated 16:9 banner cards shown on Desktop & Mobile Homepage Feeds</span>
           </div>
-          <div>
-            <label style="font-size:11px; font-weight:700; color:#475569;">Main Title</label>
-            <input type="text" id="apBannerTitle" class="ap-search-input" placeholder="e.g. Discover Extraordinary Toys & Gifts">
-          </div>
-          <div>
-            <label style="font-size:11px; font-weight:700; color:#475569;">Subtitle Description</label>
-            <input type="text" id="apBannerSub" class="ap-search-input" placeholder="e.g. Curated Educational Toys & Handicrafts">
-          </div>
-          <div>
-            <label style="font-size:11px; font-weight:700; color:#475569;">Banner Image URL or Direct File Upload</label>
-            <div style="display:flex; gap:10px; align-items:center; margin-top:4px;">
-              <input type="text" id="apBannerImg" class="ap-search-input" style="flex:1;" placeholder="https://images.unsplash.com/..." oninput="this.value=this.value.trim(); document.getElementById('apBannerImgPrev').src=this.value;">
-              <label class="ap-btn ap-btn-secondary" style="height:38px; font-size:11px; padding:0 10px; cursor:pointer; margin:0; display:flex; align-items:center; gap:4px;" title="Upload photo directly from phone or computer">
-                ☁️ Upload Media
-                <input type="file" accept="image/*" style="display:none;" onchange="uploadImageToCloudinary(this, 'apBannerImg', 'apBannerImgPrev')">
-              </label>
-              <img id="apBannerImgPrev" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='50' height='35' fill='%2394a3b8' viewBox='0 0 24 24'><path d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/></svg>" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600'" style="width:50px; height:35px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1;">
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="ap-card">
+            <h4 style="font-size:14px; font-weight:800; margin-bottom:14px; color:#0f172a;">Active Editorial Banners</h4>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              ${FEATURED_COLLECTIONS.map((item, idx) => `
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:12px; display:flex; gap:12px; align-items:center;">
+                  <img src="${item.img || 'assets/banners/return_gifts_banner.png'}" style="width:70px; height:50px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600'">
+                  <div style="flex:1; overflow:hidden;">
+                    <span style="font-size:9px; font-weight:800; color:#d82b7d; background:#fce7f3; padding:2px 6px; border-radius:4px; text-transform:uppercase;">${apEscHtml(item.tag || 'FEATURED')}</span>
+                    <div style="font-size:13px; font-weight:800; color:#0f172a; margin-top:3px;">${apEscHtml(item.title)}</div>
+                    <div style="font-size:11px; color:#64748b;">📂 Target Category: <strong>${apEscHtml(item.category || 'All')}</strong></div>
+                  </div>
+                  <div style="display:flex; gap:6px;">
+                    <button class="ap-btn ap-btn-secondary" style="height:28px; padding:0 10px; font-size:11px; font-weight:700;" onclick="openApEditorialModal(${idx})">Edit</button>
+                    <button class="ap-btn ap-btn-secondary" style="height:28px; padding:0 10px; font-size:11px; font-weight:700; color:#ef4444;" onclick="deleteApEditorialBanner(${idx})">Delete</button>
+                  </div>
+                </div>
+              `).join('')}
             </div>
           </div>
-          <button class="ap-btn ap-btn-primary" style="margin-top:8px;" onclick="addApBannerSlide()">
-            + Add Slide to Hero Carousel
-          </button>
+
+          <div class="ap-card">
+            <h4 style="font-size:14px; font-weight:800; margin-bottom:14px; color:#0f172a;">➕ Add Featured Editorial Banner</h4>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#475569;">Badge Tag (e.g. POPULAR & TRENDING)</label>
+                <input type="text" id="apEdTag" class="ap-search-input" placeholder="e.g. POPULAR & TRENDING / BESTSELLER">
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#475569;">Banner Title Headline</label>
+                <input type="text" id="apEdTitle" class="ap-search-input" placeholder="e.g. High-Speed RC & Flying Toys">
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#475569;">Linked Store Category</label>
+                <select id="apEdCategory" class="ap-search-input" style="background:#fff;">
+                  ${uniqueCats.map(cat => `<option value="${apEscHtml(cat)}">${apEscHtml(cat)}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#475569;">Banner Image URL or Upload</label>
+                <div style="display:flex; gap:10px; align-items:center; margin-top:4px;">
+                  <input type="text" id="apEdImg" class="ap-search-input" style="flex:1;" placeholder="assets/banners/... or https://..." oninput="this.value=this.value.trim(); document.getElementById('apEdImgPrev').src=this.value;">
+                  <label class="ap-btn ap-btn-secondary" style="height:38px; font-size:11px; padding:0 10px; cursor:pointer; margin:0; display:flex; align-items:center; gap:4px;" title="Upload photo directly">
+                    ☁️ Upload Media
+                    <input type="file" accept="image/*" style="display:none;" onchange="uploadImageToCloudinary(this, 'apEdImg', 'apEdImgPrev')">
+                  </label>
+                  <img id="apEdImgPrev" src="assets/banners/rc_toys_banner.png" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600'" style="width:50px; height:35px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1;">
+                </div>
+              </div>
+              <button class="ap-btn ap-btn-primary" style="margin-top:8px; width:100%; justify-content:center;" onclick="addApEditorialBanner()">
+                + Add to Featured Collections
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -11873,6 +12034,145 @@ function deleteApBannerSlide(idx) {
     syncStorefrontState();
     switchApTab('banners');
     showApToast(`Slide deleted!`, 'error');
+  }
+}
+
+function openApEditorialModal(idx = null) {
+  const banner = idx !== null ? FEATURED_COLLECTIONS[idx] : null;
+  const categoryOptions = (CATEGORIES_DATA && CATEGORIES_DATA.length > 0 ? CATEGORIES_DATA : (CATEGORIES || [])).map(c => typeof c === 'string' ? c : c.name);
+  const uniqueCats = ['All', ...new Set(categoryOptions.filter(Boolean))];
+
+  let modalBackdrop = document.getElementById('apEdBannerModalOverlay');
+  if (!modalBackdrop) {
+    modalBackdrop = document.createElement('div');
+    modalBackdrop.id = 'apEdBannerModalOverlay';
+    modalBackdrop.className = 'ap-modal-backdrop';
+    document.body.appendChild(modalBackdrop);
+  }
+
+  modalBackdrop.innerHTML = `
+    <div class="ap-modal-container" style="max-width:540px;">
+      <div class="ap-modal-header">
+        <h3 class="ap-modal-title">${banner ? '✏️ Edit Featured Editorial Banner' : '➕ Add Featured Editorial Banner'}</h3>
+        <button class="ap-btn-icon" onclick="closeApEditorialModal()"><i class="ri-close-line" style="font-size:18px;"></i></button>
+      </div>
+      <div class="ap-modal-body">
+        <form onsubmit="event.preventDefault(); saveApEditorialBannerForm(${idx !== null ? idx : 'null'});">
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div>
+              <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Badge Tag *</label>
+              <input type="text" id="apFormEdTag" class="ap-search-input" style="width:100%;" required value="${banner ? apEscHtml(banner.tag || '') : 'POPULAR & TRENDING'}" placeholder="e.g. POPULAR & TRENDING / BESTSELLER">
+            </div>
+
+            <div>
+              <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Banner Title Headline *</label>
+              <input type="text" id="apFormEdTitle" class="ap-search-input" style="width:100%;" required value="${banner ? apEscHtml(banner.title || '') : ''}" placeholder="e.g. High-Speed RC & Flying Toys">
+            </div>
+
+            <div>
+              <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Linked Store Category *</label>
+              <select id="apFormEdCategory" class="ap-search-input" style="width:100%; background:#fff;">
+                ${uniqueCats.map(cat => `
+                  <option value="${apEscHtml(cat)}" ${banner && banner.category === cat ? 'selected' : ''}>${apEscHtml(cat)}</option>
+                `).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Banner Image URL *</label>
+              <div style="display:flex; gap:10px; align-items:center;">
+                <input type="text" id="apFormEdImg" class="ap-search-input" style="flex:1;" required value="${banner ? (banner.img || '') : 'assets/banners/rc_toys_banner.png'}" oninput="document.getElementById('apFormEdImgPrev').src=this.value">
+                <label class="ap-btn ap-btn-secondary" style="height:38px; font-size:11px; padding:0 10px; cursor:pointer; margin:0; display:flex; align-items:center; gap:4px;" title="Upload photo directly">
+                  ☁️ Upload Media
+                  <input type="file" accept="image/*" style="display:none;" onchange="uploadImageToCloudinary(this, 'apFormEdImg', 'apFormEdImgPrev')">
+                </label>
+                <img id="apFormEdImgPrev" src="${banner ? (banner.img || 'assets/banners/rc_toys_banner.png') : 'assets/banners/rc_toys_banner.png'}" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600'" style="width:50px; height:35px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1;">
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="ap-modal-footer">
+        <button class="ap-btn ap-btn-secondary" onclick="closeApEditorialModal()">Cancel</button>
+        <button class="ap-btn ap-btn-primary" onclick="saveApEditorialBannerForm(${idx !== null ? idx : 'null'})">
+          <i class="ri-check-line"></i> Save Banner Changes
+        </button>
+      </div>
+    </div>
+  `;
+
+  modalBackdrop.classList.add('active');
+}
+
+function closeApEditorialModal() {
+  const modalBackdrop = document.getElementById('apEdBannerModalOverlay');
+  if (modalBackdrop) modalBackdrop.classList.remove('active');
+}
+
+function saveApEditorialBannerForm(idx = null) {
+  const tag = document.getElementById('apFormEdTag').value.trim() || 'FEATURED';
+  const title = document.getElementById('apFormEdTitle').value.trim();
+  const category = document.getElementById('apFormEdCategory').value.trim() || 'All';
+  const img = document.getElementById('apFormEdImg').value.trim() || 'assets/banners/return_gifts_banner.png';
+
+  if (!title) {
+    showToast('Please enter a banner title headline.', 'info');
+    return;
+  }
+
+  if (idx !== null && FEATURED_COLLECTIONS[idx]) {
+    FEATURED_COLLECTIONS[idx].tag = tag;
+    FEATURED_COLLECTIONS[idx].title = title;
+    FEATURED_COLLECTIONS[idx].category = category;
+    FEATURED_COLLECTIONS[idx].img = img;
+  } else {
+    FEATURED_COLLECTIONS.push({
+      id: Date.now(),
+      tag,
+      title,
+      category,
+      img,
+      active: true
+    });
+  }
+
+  syncStorefrontState();
+  closeApEditorialModal();
+  switchApTab('banners');
+  showApToast(`Featured Editorial Banner saved successfully!`, 'success');
+}
+
+function addApEditorialBanner() {
+  const tag = document.getElementById('apEdTag').value.trim() || 'POPULAR & TRENDING';
+  const title = document.getElementById('apEdTitle').value.trim();
+  const category = document.getElementById('apEdCategory').value.trim() || 'All';
+  const img = document.getElementById('apEdImg').value.trim() || 'assets/banners/return_gifts_banner.png';
+
+  if (!title) {
+    showToast('Please enter a banner title headline.', 'info');
+    return;
+  }
+
+  FEATURED_COLLECTIONS.push({
+    id: Date.now(),
+    tag,
+    title,
+    category,
+    img,
+    active: true
+  });
+
+  syncStorefrontState();
+  switchApTab('banners');
+  showApToast(`Banner added to Featured Collections!`, 'success');
+}
+
+function deleteApEditorialBanner(idx) {
+  if (confirm(`Delete featured collection banner "${FEATURED_COLLECTIONS[idx]?.title || idx + 1}"?`)) {
+    FEATURED_COLLECTIONS.splice(idx, 1);
+    syncStorefrontState();
+    switchApTab('banners');
+    showApToast(`Featured banner deleted!`, 'error');
   }
 }
 
@@ -13337,45 +13637,61 @@ function submitB2BQuoteRequest() {
     showToast('Please enter your Business Name and Contact Phone Number.', 'info');
     return;
   }
-  showApToast(`Thank you! Your GST Wholesale Inquiry for "${biz}" has been received. Owner Swaroop Sandy will send your official quotation via WhatsApp (+91 7799747575, 'info');.`);
+  const owner = (STORE_SETTINGS && STORE_SETTINGS.ownerName) ? STORE_SETTINGS.ownerName : 'G MOUNIKA DURGA';
+  const wa = (STORE_SETTINGS && STORE_SETTINGS.whatsapp) ? STORE_SETTINGS.whatsapp : '7799747575';
+  showApToast(`Thank you! Your GST Wholesale Inquiry for "${biz}" has been received. Our team will send your official quotation via WhatsApp (+91 ${wa}).`, 'success');
 }
 
 /* 1. ABOUT US PAGE */
 function renderAboutView() {
   const container = document.getElementById('viewAbout');
+  if (!container) return;
+  const store = STORE_SETTINGS || {};
+  const isDesktop = window.innerWidth >= 1024;
+
   container.innerHTML = `
-    <div class="checkout-container">
-      <div class="dt-breadcrumb-strip">
-        <a href="#" onclick="switchView('home'); return false;">Home</a>
-        <i class="ri-arrow-right-s-line"></i>
-        <span>About Unique Expressions</span>
+    ${!isDesktop ? `
+      <div class="m-view-header-bar">
+        <button class="m-back-btn" onclick="switchView('home')">← Home</button>
+        <span class="m-view-title">About Us</span>
+        <button class="m-icon-btn-circle" onclick="openWhatsAppChat()" title="WhatsApp"><i class="ri-whatsapp-line" style="color:#25d366;"></i></button>
       </div>
+    ` : ''}
+
+    <div class="checkout-container">
+      ${isDesktop ? `
+        <div class="dt-breadcrumb-strip">
+          <a href="#" onclick="switchView('home'); return false;">Home</a>
+          <i class="ri-arrow-right-s-line"></i>
+          <span>About Unique Expressions</span>
+        </div>
+      ` : ''}
 
       <div class="dt-2col-grid">
         <div class="info-content-card" style="margin:0; border-radius:24px; padding:32px;">
           <span class="profile-vip-pill" style="margin-bottom:8px;">LUXURY E-COMMERCE BOUTIQUE</span>
-          <h1 class="info-hero-title" style="font-size:28px; color:#0f172a; margin:8px 0 12px 0;">UNIQUE EXPRESSIONS</h1>
+          <h1 class="info-hero-title" style="font-size:28px; color:#0f172a; margin:8px 0 12px 0;">${apEscHtml(store.storeName || 'UNIQUE EXPRESSIONS')}</h1>
           <p class="info-text-p" style="font-size:13px; line-height:1.7;">
-            Founded and managed by <strong>Swaroop Sandy</strong>, UNIQUE EXPRESSIONS is Visakhapatnam's premier boutique storefront for curated Kids Toys, Smart Gadgets, Traditional Handicrafts, Fancy Imported Stationery, and Customized Return Gift Hampers.
+            Owned and founded by <strong>${apEscHtml(store.ownerName || 'G MOUNIKA DURGA')}</strong>, UNIQUE EXPRESSIONS is Visakhapatnam's premier boutique storefront for curated Kids Toys, Smart Gadgets, Traditional Handicrafts, Fancy Imported Stationery, and Customized Return Gift Hampers.
           </p>
           <p class="info-text-p" style="font-size:13px; line-height:1.7;">
-            We bring together high-grade educational toys for toddlers, innovative gadgets for tech enthusiasts, traditional Indian handicrafts crafted by master artisans, aesthetic school stationery, and custom birthday party return gifts under one roof.
+            We bring together high-grade educational toys for toddlers, innovative RC vehicles for hobbyists, traditional Indian handicrafts crafted by master artisans, aesthetic school stationery, and custom birthday party return gifts under one roof.
           </p>
         </div>
 
         <div class="info-content-card" style="margin:0; border-radius:24px; padding:32px;">
           <h3 class="info-section-heading" style="font-size:18px;">🏢 Store Physical Address & Official GSTIN</h3>
           <div style="font-size:13px; color:#334155; line-height:1.7; background:#f8fafc; padding:18px; border-radius:16px; border:1px solid #e2e8f0; margin-bottom:20px;">
-            <strong>Store Owner:</strong> Swaroop Sandy<br>
-            <strong>Official GSTIN:</strong> <code>37BVTPG7761F1Z1</code><br>
-            <strong>Address:</strong> Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam – 530041, Andhra Pradesh<br>
-            <strong>Landmark:</strong> Beside More Supermarket, Opp RR Complex, Madhurawada<br>
-            <strong>Contact / WhatsApp:</strong> +91 7799747575<br>
-            <strong>Support Email:</strong> uniqueexpressions.in@gmail.com
+            <strong>Store Owner:</strong> ${apEscHtml(store.ownerName || 'G MOUNIKA DURGA')}<br>
+            <strong>Official GSTIN:</strong> <code>${store.gstin || '37BVTPG7761F1Z1'}</code><br>
+            <strong>Address:</strong> ${apEscHtml(store.address || '2nd floor LIG 347, 2-115/9/1, near Shivalayam, Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041')}<br>
+            <strong>Landmark:</strong> Near Shivalayam, Midhilapuri VUDA Colony, Madhurawada<br>
+            <strong>Contact / WhatsApp:</strong> +91 ${store.whatsapp || '7799747575'}<br>
+            <strong>Support Email:</strong> ${store.email || 'uniqueexpressions.in@gmail.com'}
           </div>
 
           <button class="m-hero-cta-button" style="width:100%; height:48px; justify-content:center; background:#25D366; font-size:14px;" onclick="openWhatsAppChat()">
-            💬 Connect Directly on WhatsApp (+91 7799747575) →
+            💬 Connect Directly on WhatsApp (+91 ${store.whatsapp || '7799747575'}) →
           </button>
         </div>
       </div>
@@ -14043,22 +14359,51 @@ function renderStoreLocatorView() {
   const container = document.getElementById('viewStoreLocator');
   if (!container) return;
 
+  const store = STORE_SETTINGS || {};
+  const isDesktop = window.innerWidth >= 1024;
+  const storeName = store.storeName || 'UNIQUE EXPRESSIONS';
+  const ownerName = store.ownerName || 'G MOUNIKA DURGA';
+  const address = store.address || '2nd floor LIG 347, 2-115/9/1, near Shivalayam, Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041';
+  const phone = store.phone || '7799747575';
+  const whatsapp = store.whatsapp || '7799747575';
+  const email = store.email || 'uniqueexpressions.in@gmail.com';
+  const gstin = store.gstin || '37BVTPG7761F1Z1';
+
   container.innerHTML = `
-    <div class="checkout-container">
-      <div class="dt-breadcrumb-strip">
-        <a href="#" onclick="switchView('home'); return false;">Home</a>
-        <i class="ri-arrow-right-s-line"></i>
-        <span>Visakhapatnam Store Locator</span>
+    ${!isDesktop ? `
+      <div class="m-view-header-bar">
+        <button class="m-back-btn" onclick="switchView('home')">← Home</button>
+        <span class="m-view-title">Store Locator</span>
+        <button class="m-icon-btn-circle" onclick="openWhatsAppChat()" title="WhatsApp"><i class="ri-whatsapp-line" style="color:#25d366;"></i></button>
       </div>
+    ` : ''}
+
+    <div class="checkout-container">
+      ${isDesktop ? `
+        <div class="dt-breadcrumb-strip">
+          <a href="#" onclick="switchView('home'); return false;">Home</a>
+          <i class="ri-arrow-right-s-line"></i>
+          <span>Visakhapatnam Store Locator</span>
+        </div>
+      ` : ''}
 
       <div class="dt-2col-grid">
         <!-- Left: Interactive Map Card -->
-        <div class="store-map-card" style="height:100%; min-height:480px; margin:0; border-radius:24px;">
-          <div class="store-map-overlay" style="padding:28px;">
+        <div class="store-map-card" style="height:100%; min-height:480px; margin:0; border-radius:24px; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end;">
+          <iframe 
+            src="https://maps.google.com/maps?q=${encodeURIComponent('UNIQUE EXPRESSIONS Midhilapuri VUDA Colony Madhurawada Visakhapatnam 530041')}&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+            width="100%" 
+            height="100%" 
+            style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" 
+            allowfullscreen="" 
+            loading="lazy" 
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+          <div class="store-map-overlay" style="position:relative; z-index:2; padding:24px; background:linear-gradient(to top, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.7) 60%, transparent 100%);">
             <span style="font-size:11px; font-weight:800; text-transform:uppercase; color:var(--func-gold); letter-spacing:1px;">FLAGSHIP BOUTIQUE STORE</span>
-            <h2 style="font-size:24px; font-weight:900; margin:4px 0 6px 0; color:#fff;">UNIQUE EXPRESSIONS</h2>
-            <p style="font-size:13px; opacity:0.9; margin-bottom:16px; color:#cbd5e1;">Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041</p>
-            <a href="https://maps.google.com/?q=Midhilapuri+VUDA+Colony+Madhurwada+Visakhapatnam" target="_blank" style="display:inline-flex; align-items:center; gap:8px; background:#ffffff; color:#0f172a; padding:10px 20px; border-radius:99px; font-size:13px; font-weight:800; text-decoration:none; box-shadow:0 8px 20px rgba(0,0,0,0.2);">
+            <h2 style="font-size:22px; font-weight:900; margin:4px 0 6px 0; color:#fff;">${apEscHtml(storeName)}</h2>
+            <p style="font-size:12px; opacity:0.9; margin-bottom:14px; color:#cbd5e1;">${apEscHtml(address)}</p>
+            <a href="https://maps.google.com/?q=${encodeURIComponent(address)}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:8px; background:#ffffff; color:#0f172a; padding:10px 20px; border-radius:99px; font-size:13px; font-weight:800; text-decoration:none; box-shadow:0 8px 20px rgba(0,0,0,0.2);">
               <i class="ri-navigation-fill" style="color:var(--brand-magenta);"></i> Get Google Maps Directions
             </a>
           </div>
@@ -14067,35 +14412,36 @@ function renderStoreLocatorView() {
         <!-- Right: Address & Facilities -->
         <div class="info-content-card" style="margin:0; border-radius:24px; padding:32px;">
           <h3 class="info-section-heading" style="font-size:18px;">🏢 Store Details & Physical Address</h3>
-          <p class="info-text-p" style="font-size:13px; line-height:1.7;">
-            <strong>Owner Name:</strong> Swaroop Sandy<br>
-            <strong>Address:</strong> UNIQUE EXPRESSIONS, Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam – 530041, Andhra Pradesh<br>
-            <strong>Landmark:</strong> Beside More Supermarket, Opp RR Complex, Madhurawada<br>
-            <strong>Contact Number:</strong> +91 7799747575<br>
-            <strong>Support Email:</strong> uniqueexpressions.in@gmail.com<br>
-            <strong>GSTIN:</strong> <code>37BVTPG7761F1Z1</code>
+          <p class="info-text-p" style="font-size:13px; line-height:1.8;">
+            <strong>Store Name:</strong> ${apEscHtml(storeName)}<br>
+            <strong>Owner Name:</strong> ${apEscHtml(ownerName)}<br>
+            <strong>Address:</strong> ${apEscHtml(address)}<br>
+            <strong>Contact Phone:</strong> <a href="tel:+91${phone}" style="color:inherit; font-weight:700;">+91 ${phone}</a><br>
+            <strong>WhatsApp Support:</strong> <a href="https://wa.me/91${whatsapp}" target="_blank" style="color:#25d366; font-weight:700;">+91 ${whatsapp}</a><br>
+            <strong>Support Email:</strong> <a href="mailto:${email}" style="color:inherit;">${email}</a><br>
+            <strong>GSTIN Tax Number:</strong> <code style="font-weight:700; color:#0f172a; background:#f1f5f9; padding:2px 6px; border-radius:4px;">${gstin}</code>
           </p>
 
           <h3 class="info-section-heading" style="font-size:18px; margin-top:20px;">🕒 Operating Hours</h3>
           <p class="info-text-p" style="font-size:13px; line-height:1.7;">
             • <strong>Monday to Sunday:</strong> 9:30 AM – 9:30 PM (Open 7 Days a Week)<br>
-            • <strong>Festival Days:</strong> Special extended hours for Diwali, Sankranti & Christmas shopping.
+            • <strong>Express Dispatch:</strong> Orders placed before 3:00 PM dispatched same-day in Visakhapatnam.
           </p>
 
           <h3 class="info-section-heading" style="font-size:18px; margin-top:20px;">🛍️ In-Store Facilities & Services</h3>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
             <div class="facility-badge">🎁 Custom Gift Hampers</div>
-            <div class="facility-badge">📦 Wholesale Counter</div>
+            <div class="facility-badge">📦 Direct Wholesale GST Counter</div>
             <div class="facility-badge">⚡ Express Store Pickup</div>
             <div class="facility-badge">💳 Cards, UPI & Cash</div>
           </div>
 
           <div style="display:flex; gap:12px; margin-top:24px;">
-            <button class="m-hero-cta-button" style="flex:1; justify-content:center; height:46px;" onclick="window.location.href='tel:+917799747575'">
+            <button class="m-hero-cta-button" style="flex:1; justify-content:center; height:46px;" onclick="window.location.href='tel:+91${phone}'">
               <i class="ri-phone-line"></i> Call Store Now
             </button>
             <button class="m-hero-cta-button" style="flex:1; justify-content:center; background:#25D366; box-shadow:none; height:46px;" onclick="openWhatsAppChat()">
-              <i class="ri-whatsapp-line"></i> WhatsApp Location
+              <i class="ri-whatsapp-line"></i> WhatsApp Store
             </button>
           </div>
         </div>
@@ -14173,7 +14519,8 @@ function submitSampleKitRequest() {
     return;
   }
   closeSampleKitModal();
-  showToast('Thank you! Your Wholesale Sample Kit request has been registered. Our representative Swaroop Sandy will contact you within 24 hours.', 'info');
+  const wa = (STORE_SETTINGS && STORE_SETTINGS.whatsapp) ? STORE_SETTINGS.whatsapp : '7799747575';
+  showToast(`Thank you! Your Wholesale Sample Kit request has been registered. Our representative will contact you via WhatsApp (+91 ${wa}) within 24 hours.`, 'info');
 }
 
 /* ==========================================================================

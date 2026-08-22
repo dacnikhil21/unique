@@ -4365,10 +4365,10 @@ body {
     font-family: monospace !important;
   }
 
-  /* Desktop Featured Collections (3 Editorial Cards, Fixed Height 200px) */
+  /* Desktop Featured Collections (Editorial Cards, Responsive Grid) */
   .dt-featured-grid {
     display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
     gap: 20px !important;
     margin: 16px 0 36px 0 !important;
     width: 100% !important;
