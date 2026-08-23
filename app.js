@@ -12020,7 +12020,7 @@ function closeApBannerModal() {
   if (modalBackdrop) modalBackdrop.classList.remove('active');
 }
 
-function saveApBannerForm(idx = null) {
+async function saveApBannerForm(idx = null) {
   const badge = document.getElementById('apFormBannerBadge').value.trim();
   const title = document.getElementById('apFormBannerTitle').value.trim();
   const sub = document.getElementById('apFormBannerSub').value.trim();
@@ -12030,6 +12030,8 @@ function saveApBannerForm(idx = null) {
     showToast('Please enter a banner title.', 'info');
     return;
   }
+
+  const prev = JSON.parse(JSON.stringify(HERO_SLIDES));
 
   if (idx !== null && HERO_SLIDES[idx]) {
     HERO_SLIDES[idx].badge = badge;
@@ -12047,18 +12049,29 @@ function saveApBannerForm(idx = null) {
     });
   }
 
+  showApToast('Saving Hero Slide to cloud database...', 'info');
+  const res = await sbSaveHeroSlides(HERO_SLIDES);
+  if (!res || !res.success) {
+    HERO_SLIDES = prev;
+    showApToast('Failed to save Hero Slide: ' + (res?.error || 'Check admin permissions'), 'error');
+    return;
+  }
+
+  localStorage.setItem('ue_hero_slides_v7', JSON.stringify(HERO_SLIDES));
+  localStorage.setItem('ue_hero_slides_v6', JSON.stringify(HERO_SLIDES));
   syncStorefrontState();
   closeApBannerModal();
   switchApTab('banners');
-  showApToast(`Hero Slide saved successfully!`, 'success');
+  showApToast('Hero Slide saved & synced across all devices!', 'success');
 }
 
-function addApBannerSlide() {
+async function addApBannerSlide() {
   const badge = document.getElementById('apBannerBadge').value.trim() || '✨ SPECIAL OFFER';
   const title = document.getElementById('apBannerTitle').value.trim() || 'New Store Collection';
   const sub = document.getElementById('apBannerSub').value.trim() || 'Unique Expressions Visakhapatnam';
   const img = document.getElementById('apBannerImg').value.trim() || 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=800&auto=format&fit=crop';
 
+  const prev = JSON.parse(JSON.stringify(HERO_SLIDES));
   HERO_SLIDES.push({
     id: Date.now(),
     badge,
@@ -12067,17 +12080,40 @@ function addApBannerSlide() {
     img,
     active: true
   });
+
+  showApToast('Saving Hero Slide to cloud database...', 'info');
+  const res = await sbSaveHeroSlides(HERO_SLIDES);
+  if (!res || !res.success) {
+    HERO_SLIDES = prev;
+    showApToast('Failed to save Hero Slide: ' + (res?.error || 'Check admin permissions'), 'error');
+    return;
+  }
+
+  localStorage.setItem('ue_hero_slides_v7', JSON.stringify(HERO_SLIDES));
+  localStorage.setItem('ue_hero_slides_v6', JSON.stringify(HERO_SLIDES));
   syncStorefrontState();
   switchApTab('banners');
-  showApToast(`Hero Slide added to carousel!`, 'success');
+  showApToast('Hero Slide added & synced across all devices!', 'success');
 }
 
-function deleteApBannerSlide(idx) {
+async function deleteApBannerSlide(idx) {
   if (confirm(`Delete hero slide #${idx + 1}?`)) {
+    const prev = JSON.parse(JSON.stringify(HERO_SLIDES));
     HERO_SLIDES.splice(idx, 1);
+
+    showApToast('Deleting Hero Slide from cloud database...', 'info');
+    const res = await sbSaveHeroSlides(HERO_SLIDES);
+    if (!res || !res.success) {
+      HERO_SLIDES = prev;
+      showApToast('Failed to delete Hero Slide: ' + (res?.error || 'Check admin permissions'), 'error');
+      return;
+    }
+
+    localStorage.setItem('ue_hero_slides_v7', JSON.stringify(HERO_SLIDES));
+    localStorage.setItem('ue_hero_slides_v6', JSON.stringify(HERO_SLIDES));
     syncStorefrontState();
     switchApTab('banners');
-    showApToast(`Slide deleted!`, 'error');
+    showApToast('Slide deleted from database across all devices!', 'success');
   }
 }
 
@@ -12643,7 +12679,9 @@ function renderApSettings() {
   `;
 }
 
-function saveApStoreSettings() {
+async function saveApStoreSettings() {
+  const prev = JSON.parse(JSON.stringify(STORE_SETTINGS));
+
   STORE_SETTINGS.storeName = document.getElementById('apStName').value.trim();
   STORE_SETTINGS.ownerName = document.getElementById('apStOwner').value.trim();
   STORE_SETTINGS.phone = document.getElementById('apStPhone').value.trim();
@@ -12664,10 +12702,18 @@ function saveApStoreSettings() {
     STORE_SETTINGS.adminPin = newPin;
   }
 
+  showApToast('Saving Store Settings to cloud database...', 'info');
+  const res = await sbSaveStoreSettings(STORE_SETTINGS);
+  if (!res || !res.success) {
+    STORE_SETTINGS = prev;
+    showApToast('Failed to save Store Settings: ' + (res?.error || 'Check admin permissions'), 'error');
+    return;
+  }
+
   localStorage.setItem('ue_store_settings_v5', JSON.stringify(STORE_SETTINGS));
   syncStorefrontState();
   switchApTab('settings');
-  showApToast(`Store Settings saved! Delivery Fee is now ₹${STORE_SETTINGS.shippingFee} (Free above ₹${STORE_SETTINGS.freeShippingMin})`, 'success');
+  showApToast(`Store Settings saved & synced to all devices! Delivery Fee: ₹${STORE_SETTINGS.shippingFee} (Free above ₹${STORE_SETTINGS.freeShippingMin})`, 'success');
 }
 
 /* 12. Analytics Module Renderer */
