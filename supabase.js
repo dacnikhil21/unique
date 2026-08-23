@@ -69,7 +69,6 @@ async function sbSeedProducts(products) {
 
 async function sbAdminInsertProduct(product) {
   try {
-    // 1. Try direct Supabase client
     const { data, error } = await _supabase
       .from('products')
       .insert({
@@ -90,26 +89,11 @@ async function sbAdminInsertProduct(product) {
       .select()
       .single();
 
-    if (!error && data) return data;
-    throw error || new Error('Direct insert failed');
+    if (error) throw error;
+    return { success: true, product: data, id: data?.id };
   } catch (err) {
-    console.warn('[Supabase Direct Insert Warning]:', err.message, '— Attempting API fallback...');
-    // 2. Fallback to /api/products serverless endpoint
-    try {
-      const res = await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', ...product })
-      });
-      const json = await res.json();
-      if (json.success && json.product) {
-        console.log('[Supabase API Fallback] Product inserted successfully:', json.product.id);
-        return json.product;
-      }
-    } catch (apiErr) {
-      console.error('[Supabase API Fallback Error]:', apiErr.message);
-    }
-    return null;
+    console.error('[Supabase Insert Error]:', err.message);
+    return { success: false, error: err.message || 'Insert failed in Supabase' };
   }
 }
 
@@ -138,41 +122,22 @@ async function sbAdminUpdateProduct(product) {
       .select()
       .single();
 
-    if (!error && data) return data;
-    throw error || new Error('Direct update failed');
+    if (error) throw error;
+    return { success: true, product: data };
   } catch (err) {
-    console.warn('[Supabase Direct Update Warning]:', err.message, '— Attempting API fallback...');
-    try {
-      const res = await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update', ...product })
-      });
-      const json = await res.json();
-      if (json.success && json.product) return json.product;
-    } catch (apiErr) {}
-    return null;
+    console.error('[Supabase Update Error]:', err.message);
+    return { success: false, error: err.message || 'Update failed in Supabase' };
   }
 }
 
 async function sbAdminDeleteProduct(id) {
   try {
     const { error } = await _supabase.from('products').delete().eq('id', id);
-    if (!error) return true;
-    throw error;
+    if (error) throw error;
+    return { success: true };
   } catch (err) {
-    console.warn('[Supabase Direct Delete Warning]:', err.message, '— Attempting API fallback...');
-    try {
-      const res = await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', id: id })
-      });
-      const json = await res.json();
-      return json.success === true;
-    } catch (apiErr) {
-      return false;
-    }
+    console.error('[Supabase Delete Error]:', err.message);
+    return { success: false, error: err.message || 'Delete failed in Supabase' };
   }
 }
 
@@ -778,7 +743,7 @@ async function sbGetFeaturedCollections() {
 
 async function sbSaveFeaturedCollections(collections) {
   try {
-    if (!Array.isArray(collections)) return false;
+    if (!Array.isArray(collections)) return { success: false, error: 'Invalid collections array' };
     const row = {
       id: '__cms_featured_collections__',
       name: 'Featured Collections Config',
@@ -792,10 +757,10 @@ async function sbSaveFeaturedCollections(collections) {
     const { error } = await _supabase.from('categories').upsert(row, { onConflict: 'id' });
     if (error) throw error;
     console.log('[Supabase] Featured Collections synced to cloud across all devices');
-    return true;
+    return { success: true };
   } catch (err) {
-    console.warn('[Supabase] saveFeaturedCollections failed:', err.message);
-    return false;
+    console.error('[Supabase] saveFeaturedCollections failed:', err.message);
+    return { success: false, error: err.message || 'Failed to save Featured Collections to database' };
   }
 }
 
@@ -816,7 +781,7 @@ async function sbGetHeroSlides() {
 
 async function sbSaveHeroSlides(slides) {
   try {
-    if (!Array.isArray(slides)) return false;
+    if (!Array.isArray(slides)) return { success: false, error: 'Invalid slides array' };
     const row = {
       id: '__cms_hero_slides__',
       name: 'Hero Slides Config',
@@ -830,10 +795,10 @@ async function sbSaveHeroSlides(slides) {
     const { error } = await _supabase.from('categories').upsert(row, { onConflict: 'id' });
     if (error) throw error;
     console.log('[Supabase] Hero Slides synced to cloud across all devices');
-    return true;
+    return { success: true };
   } catch (err) {
-    console.warn('[Supabase] saveHeroSlides failed:', err.message);
-    return false;
+    console.error('[Supabase] saveHeroSlides failed:', err.message);
+    return { success: false, error: err.message || 'Failed to save Hero Slides to database' };
   }
 }
 
@@ -854,7 +819,7 @@ async function sbGetStoreSettings() {
 
 async function sbSaveStoreSettings(settings) {
   try {
-    if (!settings || typeof settings !== 'object') return false;
+    if (!settings || typeof settings !== 'object') return { success: false, error: 'Invalid settings object' };
     const row = {
       id: '__cms_store_settings__',
       name: 'Store Settings Config',
@@ -868,10 +833,10 @@ async function sbSaveStoreSettings(settings) {
     const { error } = await _supabase.from('categories').upsert(row, { onConflict: 'id' });
     if (error) throw error;
     console.log('[Supabase] Store Settings synced to cloud across all devices');
-    return true;
+    return { success: true };
   } catch (err) {
-    console.warn('[Supabase] saveStoreSettings failed:', err.message);
-    return false;
+    console.error('[Supabase] saveStoreSettings failed:', err.message);
+    return { success: false, error: err.message || 'Failed to save Store Settings to database' };
   }
 }
 

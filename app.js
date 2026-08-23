@@ -6140,17 +6140,6 @@ function syncStorefrontState() {
   syncCustomersFromOrders();
   localStorage.setItem('ue_customers_v5', JSON.stringify(STORE_CUSTOMERS));
 
-  // Sync to Cloud Supabase in Background (for all devices / worldwide visitors)
-  if (typeof sbSaveFeaturedCollections === 'function') {
-    sbSaveFeaturedCollections(FEATURED_COLLECTIONS).catch(err => console.warn('[UE] Cloud featured sync note:', err));
-  }
-  if (typeof sbSaveHeroSlides === 'function') {
-    sbSaveHeroSlides(HERO_SLIDES).catch(err => console.warn('[UE] Cloud hero slides sync note:', err));
-  }
-  if (typeof sbSaveStoreSettings === 'function') {
-    sbSaveStoreSettings(STORE_SETTINGS).catch(err => console.warn('[UE] Cloud store settings sync note:', err));
-  }
-
   if (typeof renderDesktopGrid === 'function') renderDesktopGrid();
   if (typeof renderCategoryBar === 'function') renderCategoryBar();
   if (typeof renderDynamicNavCategories === 'function') renderDynamicNavCategories();
@@ -6347,39 +6336,34 @@ window.addEventListener('popstate', (e) => {
 function mergeProductsFromSupabase(sbProds) {
   if (!sbProds || sbProds.length === 0) return ALL_PRODUCTS;
 
-  const localMap = new Map(ALL_PRODUCTS.map(p => [String(p.id), p]));
-
-  const sbMapped = sbProds.map(sb => {
-    const local = localMap.get(String(sb.id));
-    // Preserve local rich images if remote only has single image
-    const sbImages = Array.isArray(sb.images) && sb.images.length > 0 ? sb.images : [];
-    const localImages = local && Array.isArray(local.images) && local.images.length > 0 ? local.images : [];
-    const mergedImages = sbImages.length > 0 ? sbImages : (localImages.length > 0 ? localImages : [sb.image || 'logo.png']);
+  // Supabase is the Single Source of Truth (SSOT).
+  // No zombie product resurrection from local cache.
+  return sbProds.map(sb => {
+    // Supabase images take 100% precedence
+    const sbImages = Array.isArray(sb.images) && sb.images.length > 0
+      ? sb.images
+      : (sb.image ? [sb.image] : ['logo.png']);
+    const primaryImg = sb.image || sbImages[0] || 'logo.png';
 
     return {
       id: String(sb.id),
-      title: sb.title || (local ? local.title : 'Product'),
-      price: parseFloat(sb.price) || (local ? local.price : 0),
-      originalPrice: parseFloat(sb.originalPrice) || parseFloat(sb.original_price) || (local ? local.originalPrice : 0),
-      category: sb.category || (local ? local.category : 'General'),
-      image: mergedImages[0] || sb.image || 'logo.png',
-      images: mergedImages,
-      videoUrl: sb.videoUrl || (local ? local.videoUrl : '') || '',
-      boughtTogether: sb.boughtTogether || (local ? local.boughtTogether : []) || [],
-      stockQty: sb.stockQty != null ? sb.stockQty : (local ? local.stockQty : 10),
+      title: sb.title || 'Product',
+      price: parseFloat(sb.price) || 0,
+      originalPrice: parseFloat(sb.originalPrice) || parseFloat(sb.original_price) || parseFloat(sb.price) || 0,
+      category: sb.category || 'General',
+      image: primaryImg,
+      images: sbImages,
+      videoUrl: sb.videoUrl || '',
+      boughtTogether: sb.boughtTogether || [],
+      stockQty: sb.stockQty != null ? sb.stockQty : 10,
       inStock: sb.inStock !== false && sb.in_stock !== false,
-      sku: sb.sku || (local ? local.sku : `UE-PROD-${sb.id}`),
-      rating: String(sb.rating || (local ? local.rating : '4.8')),
-      reviewsCount: sb.reviewsCount || sb.reviews_count || (local ? local.reviewsCount : 12),
-      isFeatured: sb.isFeatured || sb.is_featured || (local ? local.isFeatured : false),
-      description: sb.description || (local ? local.description : '')
+      sku: sb.sku || `UE-PROD-${sb.id}`,
+      rating: String(sb.rating || '4.8'),
+      reviewsCount: sb.reviewsCount || sb.reviews_count || 12,
+      isFeatured: sb.isFeatured || sb.is_featured || false,
+      description: sb.description || ''
     };
   });
-
-  const sbIds = new Set(sbMapped.map(s => String(s.id)));
-  const localRemaining = ALL_PRODUCTS.filter(p => !sbIds.has(String(p.id)));
-
-  return [...sbMapped, ...localRemaining];
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -6462,12 +6446,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const localOnlyRevs = userReviews.filter(r => !sbRevIds.has(r.id));
       userReviews = [...sbRevs, ...localOnlyRevs];
       localStorage.setItem('ue_reviews', JSON.stringify(userReviews));
-    } else if (userReviews.length > 0) {
-      // Seed Supabase with demo reviews on first run
-      await sbSeedReviews(userReviews);
     }
 
-    // 6. Load categories from Supabase
+    // 6. Load categories from Supabase (Read Only for Visitors)
     const sbCats = await sbGetCategories();
     if (sbCats && sbCats.length > 0) {
       CATEGORIES_DATA = sbCats;
@@ -6476,25 +6457,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       migrateCategoriesForProduction();
       renderCategoryBar();
       renderDynamicNavCategories();
-    } else if (CATEGORIES_DATA.length > 0) {
-      await sbSeedCategories(CATEGORIES_DATA);
     }
 
-    // 7. Load Featured Collections from Cloud Database (for all devices worldwide)
+    // 7. Load Featured Collections from Cloud Database (Read Only for Visitors)
     try {
       const sbFeat = await sbGetFeaturedCollections();
       if (sbFeat && Array.isArray(sbFeat) && sbFeat.length > 0) {
         FEATURED_COLLECTIONS = sbFeat;
         localStorage.setItem('ue_featured_collections_v1', JSON.stringify(FEATURED_COLLECTIONS));
         renderFeaturedCollections();
-      } else if (FEATURED_COLLECTIONS.length > 0) {
-        await sbSaveFeaturedCollections(FEATURED_COLLECTIONS);
       }
     } catch (featErr) {
       console.warn('[UE] Cloud Featured Collections bootstrap note:', featErr);
     }
 
-    // 8. Load Hero Slides from Cloud Database
+    // 8. Load Hero Slides from Cloud Database (Read Only for Visitors)
     try {
       const sbHero = await sbGetHeroSlides();
       if (sbHero && Array.isArray(sbHero) && sbHero.length > 0) {
@@ -6502,21 +6479,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.setItem('ue_hero_slides_v7', JSON.stringify(HERO_SLIDES));
         localStorage.setItem('ue_hero_slides_v6', JSON.stringify(HERO_SLIDES));
         if (typeof setHeroSlide === 'function') setHeroSlide(0);
-      } else if (HERO_SLIDES.length > 0) {
-        await sbSaveHeroSlides(HERO_SLIDES);
       }
     } catch (heroErr) {
       console.warn('[UE] Cloud Hero Slides bootstrap note:', heroErr);
     }
 
-    // 9. Load Store Settings from Cloud Database
+    // 9. Load Store Settings from Cloud Database (Read Only for Visitors)
     try {
       const sbSettings = await sbGetStoreSettings();
       if (sbSettings && typeof sbSettings === 'object' && Object.keys(sbSettings).length > 0) {
         STORE_SETTINGS = { ...STORE_SETTINGS, ...sbSettings };
         localStorage.setItem('ue_store_settings_v5', JSON.stringify(STORE_SETTINGS));
-      } else if (STORE_SETTINGS) {
-        await sbSaveStoreSettings(STORE_SETTINGS);
       }
     } catch (setErr) {
       console.warn('[UE] Cloud Store Settings bootstrap note:', setErr);
@@ -10361,32 +10334,38 @@ async function handleAdminLoginSubmit(e) {
   const password = document.getElementById('adminPasswordInput')?.value?.trim();
   const btn = document.getElementById('adminLoginBtn');
 
-  // 1. Direct Master PIN Validation
-  const masterPin = String(STORE_SETTINGS.adminPin || 'UE@2026').trim();
-  if (password === 'UE@2026' || password === masterPin) {
-    apIsAuthenticated = true;
-    sessionStorage.setItem('ue_admin_auth', '1');
-    userProfile = {
-      name: 'Store Administrator',
-      email: email || 'uestore.online@gmail.com',
-      role: 'admin'
-    };
-    userSession = { isLoggedIn: true, email: email || 'uestore.online@gmail.com' };
-    authUserId = 'admin_master';
-    showToast('Admin access authorized. Welcome back! 🛡️', 'success');
-    renderAdminView();
-    return;
-  }
-
-  // 2. Supabase Auth Validation
+  // Supabase Auth Validation
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = `<i class="ri-loader-4-line ri-spin"></i> Authenticating...`;
+    btn.innerHTML = `<i class="ri-loader-4-line ri-spin"></i> Authenticating with Cloud Database...`;
   }
 
-  const result = await sbSignIn(email, password);
+  const loginEmail = (email || 'uestore.online@gmail.com').toLowerCase().trim();
+  const result = await sbSignIn(loginEmail, password);
+
   if (result.error) {
-    showToast('Invalid login credentials. Please try again.', 'info');
+    // If Supabase auth failed, check if master pin was entered
+    const masterPin = String(STORE_SETTINGS.adminPin || 'UE@2026').trim();
+    if (password === 'UE@2026' || password === masterPin) {
+      showToast('Master PIN recognized, but Supabase Auth failed: ' + result.error + '. Cloud writes may be blocked by RLS until password matches Supabase admin account.', 'warning');
+      apIsAuthenticated = true;
+      sessionStorage.setItem('ue_admin_auth', '1');
+      userProfile = {
+        name: 'Store Administrator',
+        email: loginEmail,
+        role: 'admin'
+      };
+      userSession = { isLoggedIn: true, email: loginEmail };
+      authUserId = 'admin_master';
+      renderAdminView();
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `Sign In Securely <i class="ri-arrow-right-line"></i>`;
+      }
+      return;
+    }
+
+    showToast('Invalid credentials: ' + result.error, 'error');
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = `Sign In Securely <i class="ri-arrow-right-line"></i>`;
@@ -10395,7 +10374,7 @@ async function handleAdminLoginSubmit(e) {
     apIsAuthenticated = true;
     sessionStorage.setItem('ue_admin_auth', '1');
     await applyAuthSession(result.session);
-    showToast('Admin access authorized. Welcome back!', 'success');
+    showToast('Admin access authorized. Supabase Cloud Session Active! 🛡️', 'success');
     renderAdminView();
   }
 }
@@ -11110,13 +11089,18 @@ function duplicateApProduct(id) {
 async function deleteApProduct(id) {
   const p = ALL_PRODUCTS.find(item => String(item.id) === String(id));
   if (p && confirm(`Delete product "${p.title}" permanently?`)) {
+    showApToast('Deleting product from cloud database...', 'info');
+    const res = await sbAdminDeleteProduct(id);
+    if (!res || !res.success) {
+      showApToast('Failed to delete product: ' + (res?.error || 'Check admin permissions'), 'error');
+      return;
+    }
     ALL_PRODUCTS = ALL_PRODUCTS.filter(item => String(item.id) !== String(id));
     localStorage.setItem('ue_products_v12', JSON.stringify(ALL_PRODUCTS));
     localStorage.setItem('ue_products_v9', JSON.stringify(ALL_PRODUCTS));
     syncStorefrontState();
     switchApTab('products');
-    showApToast(`Product removed from catalog!`, 'info');
-    await sbAdminDeleteProduct(id);
+    showApToast(`Product "${p.title}" deleted from database and catalog!`, 'success');
   }
 }
 
@@ -12190,7 +12174,7 @@ function closeApEditorialModal() {
   if (modalBackdrop) modalBackdrop.classList.remove('active');
 }
 
-function saveApEditorialBannerForm(idx = null) {
+async function saveApEditorialBannerForm(idx = null) {
   const tag = document.getElementById('apFormEdTag').value.trim() || 'FEATURED';
   const title = document.getElementById('apFormEdTitle').value.trim();
   const category = document.getElementById('apFormEdCategory').value.trim() || 'All';
@@ -12200,6 +12184,8 @@ function saveApEditorialBannerForm(idx = null) {
     showToast('Please enter a banner title headline.', 'info');
     return;
   }
+
+  const prev = JSON.parse(JSON.stringify(FEATURED_COLLECTIONS));
 
   if (idx !== null && FEATURED_COLLECTIONS[idx]) {
     FEATURED_COLLECTIONS[idx].tag = tag;
@@ -12217,14 +12203,23 @@ function saveApEditorialBannerForm(idx = null) {
     });
   }
 
+  showApToast('Saving to cloud database...', 'info');
+  const res = await sbSaveFeaturedCollections(FEATURED_COLLECTIONS);
+  if (!res || !res.success) {
+    FEATURED_COLLECTIONS = prev;
+    showApToast('Failed to save to database: ' + (res?.error || 'Check admin permissions'), 'error');
+    return;
+  }
+
+  localStorage.setItem('ue_featured_collections_v1', JSON.stringify(FEATURED_COLLECTIONS));
   syncStorefrontState();
   closeApEditorialModal();
   if (apActiveTab === 'featured') switchApTab('featured');
   else switchApTab('banners');
-  showApToast(`Featured Editorial Banner saved successfully!`, 'success');
+  showApToast('Featured Editorial Banner saved & synced to all devices!', 'success');
 }
 
-function addApEditorialBanner() {
+async function addApEditorialBanner() {
   const tag = document.getElementById('apEdTag').value.trim() || 'POPULAR & TRENDING';
   const title = document.getElementById('apEdTitle').value.trim();
   const category = document.getElementById('apEdCategory').value.trim() || 'All';
@@ -12235,6 +12230,7 @@ function addApEditorialBanner() {
     return;
   }
 
+  const prev = JSON.parse(JSON.stringify(FEATURED_COLLECTIONS));
   FEATURED_COLLECTIONS.push({
     id: Date.now(),
     tag,
@@ -12244,19 +12240,39 @@ function addApEditorialBanner() {
     active: true
   });
 
+  showApToast('Saving to cloud database...', 'info');
+  const res = await sbSaveFeaturedCollections(FEATURED_COLLECTIONS);
+  if (!res || !res.success) {
+    FEATURED_COLLECTIONS = prev;
+    showApToast('Failed to save to database: ' + (res?.error || 'Check admin permissions'), 'error');
+    return;
+  }
+
+  localStorage.setItem('ue_featured_collections_v1', JSON.stringify(FEATURED_COLLECTIONS));
   syncStorefrontState();
   if (apActiveTab === 'featured') switchApTab('featured');
   else switchApTab('banners');
-  showApToast(`Banner added to Featured Collections!`, 'success');
+  showApToast('Banner added & synced to all devices!', 'success');
 }
 
-function deleteApEditorialBanner(idx) {
+async function deleteApEditorialBanner(idx) {
   if (confirm(`Delete featured collection banner "${FEATURED_COLLECTIONS[idx]?.title || idx + 1}"?`)) {
+    const prev = JSON.parse(JSON.stringify(FEATURED_COLLECTIONS));
     FEATURED_COLLECTIONS.splice(idx, 1);
+
+    showApToast('Deleting from cloud database...', 'info');
+    const res = await sbSaveFeaturedCollections(FEATURED_COLLECTIONS);
+    if (!res || !res.success) {
+      FEATURED_COLLECTIONS = prev;
+      showApToast('Failed to delete from database: ' + (res?.error || 'Check admin permissions'), 'error');
+      return;
+    }
+
+    localStorage.setItem('ue_featured_collections_v1', JSON.stringify(FEATURED_COLLECTIONS));
     syncStorefrontState();
     if (apActiveTab === 'featured') switchApTab('featured');
     else switchApTab('banners');
-    showApToast(`Featured banner deleted!`, 'error');
+    showApToast('Featured banner deleted from cloud database!', 'success');
   }
 }
 
@@ -15044,16 +15060,22 @@ async function saveApProductForm(editId = null) {
   }
 
   try {
-    let cloudOk = false;
+    let cloudResult = null;
     if (existing && typeof sbAdminUpdateProduct === 'function') {
-      const sbResult = await sbAdminUpdateProduct(savedProduct);
-      if (sbResult) cloudOk = true;
+      cloudResult = await sbAdminUpdateProduct(savedProduct);
     } else if (typeof sbAdminInsertProduct === 'function') {
-      const sbResult = await sbAdminInsertProduct(savedProduct);
-      if (sbResult?.id != null) {
-        savedProduct.id = sbResult.id;
-        cloudOk = true;
+      cloudResult = await sbAdminInsertProduct(savedProduct);
+      if (cloudResult && cloudResult.id != null) {
+        savedProduct.id = String(cloudResult.id);
       }
+    }
+
+    if (!cloudResult || !cloudResult.success) {
+      // Revert in-memory mutation
+      if (!existing) {
+        ALL_PRODUCTS = ALL_PRODUCTS.filter(p => p !== savedProduct);
+      }
+      throw new Error(cloudResult?.error || 'Database operation was rejected. Check admin session/permissions.');
     }
 
     localStorage.setItem('ue_products_v12', JSON.stringify(ALL_PRODUCTS));
@@ -15062,13 +15084,10 @@ async function saveApProductForm(editId = null) {
     closeApProductModal();
 
     if (apActiveTab === 'products') switchApTab('products');
-    showApToast(
-      cloudOk ? 'Product saved and synced to database!' : 'Product saved locally.',
-      cloudOk ? 'success' : 'info'
-    );
+    showApToast('Product saved and synced to database across all devices!', 'success');
   } catch (err) {
     console.error('[UE] saveApProductForm failed:', err);
-    showApToast('Save failed: ' + (err.message || 'storage error. Try a smaller image URL.'), 'error');
+    showApToast('Database save failed: ' + (err.message || 'Check database permissions.'), 'error');
   } finally {
     if (saveBtn) {
       saveBtn.dataset.saving = '0';

@@ -1,4 +1,4 @@
-﻿-- ================================================================
+-- ================================================================
 -- ADMIN ACCESS FIX — Run this in Supabase SQL Editor
 -- Allows the admin account to read ALL data while
 -- keeping customer data private from other users
@@ -45,10 +45,12 @@ create policy "Users read own tickets" on support_tickets for select
     OR (auth.jwt() ->> 'email') = 'uestore.online@gmail.com'
   );
 
--- ── PRODUCTS: admin can insert/update/delete ───────────────────
+-- ── PRODUCTS: public read, admin insert/update/delete ───────────
+drop policy if exists "Public read products" on products;
 drop policy if exists "Admin insert products" on products;
 drop policy if exists "Admin update products" on products;
 drop policy if exists "Admin delete products" on products;
+create policy "Public read products" on products for select using (true);
 create policy "Admin insert products" on products for insert
   with check ((auth.jwt() ->> 'email') = 'uestore.online@gmail.com');
 create policy "Admin update products" on products for update
@@ -56,10 +58,12 @@ create policy "Admin update products" on products for update
 create policy "Admin delete products" on products for delete
   using ((auth.jwt() ->> 'email') = 'uestore.online@gmail.com');
 
--- ── CATEGORIES: admin can insert/update/delete ─────────────────
+-- ── CATEGORIES: public read, admin insert/update/delete ─────────
+drop policy if exists "Public read categories" on categories;
 drop policy if exists "Admin insert categories" on categories;
 drop policy if exists "Admin update categories" on categories;
 drop policy if exists "Admin delete categories" on categories;
+create policy "Public read categories" on categories for select using (true);
 create policy "Admin insert categories" on categories for insert
   with check ((auth.jwt() ->> 'email') = 'uestore.online@gmail.com');
 create policy "Admin update categories" on categories for update
@@ -70,5 +74,5 @@ create policy "Admin delete categories" on categories for delete
 -- ── DONE ───────────────────────────────────────────────────────
 -- Admin (uestore.online@gmail.com) can now read all customers,
 -- orders, tickets, returns and manage products/categories.
--- Regular customers can only see their own data.
+-- Regular customers have public read for catalog and can only see their own data.
 -- ================================================================
