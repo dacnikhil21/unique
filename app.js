@@ -58,16 +58,12 @@ let STORE_REVIEWS = (() => {
   return [];
 })();
 
-// ── Ensure LocalStorage Sync is Always Up to Date ────────────────────────
+// ── Ensure LocalStorage Sync is Always Up to Date & Purge Corrupt Duplicates ──
 try {
-  const cachedProds = JSON.parse(localStorage.getItem('ue_products_v9'));
-  if (!Array.isArray(cachedProds) || cachedProds.length === 0 || !cachedProds[0].title) {
-    localStorage.removeItem('ue_products_v9');
-    localStorage.removeItem('ue_products_v8');
-  }
-} catch(e) {
-  localStorage.removeItem('ue_products_v9');
-}
+  ['ue_products_v12', 'ue_products_v10', 'ue_products_v9', 'ue_products_v8'].forEach(k => {
+    try { localStorage.removeItem(k); } catch (_) {}
+  });
+} catch(e) {}
 
 function safeParseStorage(key, fallback = null) {
   try {
@@ -1090,7 +1086,7 @@ function generateSeedProducts() {
 
 let ALL_PRODUCTS = (() => {
   try {
-    const stored = JSON.parse(localStorage.getItem('ue_products_v12'));
+    const stored = JSON.parse(localStorage.getItem('ue_products_v14'));
     if (Array.isArray(stored) && stored.length > 0) return stored;
   } catch (e) {}
   return null;
@@ -6123,9 +6119,7 @@ let ALL_PRODUCTS = (() => {
 
 function syncStorefrontState() {
   syncReviewsForAdmin();
-  localStorage.setItem('ue_products_v12', JSON.stringify(ALL_PRODUCTS));
-  localStorage.setItem('ue_products_v10', JSON.stringify(ALL_PRODUCTS));
-  localStorage.setItem('ue_products_v8', JSON.stringify(ALL_PRODUCTS));
+  localStorage.setItem('ue_products_v14', JSON.stringify(ALL_PRODUCTS));
   localStorage.setItem('ue_categories_data_v5', JSON.stringify(CATEGORIES_DATA));
   localStorage.setItem('ue_categories_v5', JSON.stringify(CATEGORIES));
   localStorage.setItem('ue_hero_slides_v7', JSON.stringify(HERO_SLIDES));
@@ -6368,7 +6362,7 @@ function mergeProductsFromSupabase(sbProds) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    const cached = JSON.parse(localStorage.getItem('ue_products_v12') || localStorage.getItem('ue_products_v9') || '[]');
+    const cached = JSON.parse(localStorage.getItem('ue_products_v14') || '[]');
     if (Array.isArray(cached) && cached.length > 0) {
       ALL_PRODUCTS = cached;
     }
@@ -6419,13 +6413,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Bootstrap from Supabase in background
   try {
-    // 1. Load products from Supabase — merge, never wipe local catalog
+    // 1. Load products from Supabase — Single Source of Truth
     const sbProds = await sbGetProducts();
     if (sbProds && sbProds.length > 0) {
       ALL_PRODUCTS = mergeProductsFromSupabase(sbProds);
-      localStorage.setItem('ue_products_v12', JSON.stringify(ALL_PRODUCTS));
-      localStorage.setItem('ue_products_v9', JSON.stringify(ALL_PRODUCTS));
-      localStorage.setItem('ue_products_v8', JSON.stringify(ALL_PRODUCTS));
+      localStorage.setItem('ue_products_v14', JSON.stringify(ALL_PRODUCTS));
       renderAllSections();
     }
 
@@ -11075,8 +11067,7 @@ async function deleteApProduct(id) {
       return;
     }
     ALL_PRODUCTS = ALL_PRODUCTS.filter(item => String(item.id) !== String(id));
-    localStorage.setItem('ue_products_v12', JSON.stringify(ALL_PRODUCTS));
-    localStorage.setItem('ue_products_v9', JSON.stringify(ALL_PRODUCTS));
+    localStorage.setItem('ue_products_v14', JSON.stringify(ALL_PRODUCTS));
     syncStorefrontState();
     switchApTab('products');
     showApToast(`Product "${p.title}" deleted from database and catalog!`, 'success');
@@ -15103,8 +15094,7 @@ async function saveApProductForm(editId = null) {
       throw new Error(cloudResult?.error || 'Database operation was rejected. Check admin session/permissions.');
     }
 
-    localStorage.setItem('ue_products_v12', JSON.stringify(ALL_PRODUCTS));
-    localStorage.setItem('ue_products_v9', JSON.stringify(ALL_PRODUCTS));
+    localStorage.setItem('ue_products_v14', JSON.stringify(ALL_PRODUCTS));
     syncStorefrontState();
     closeApProductModal();
 
