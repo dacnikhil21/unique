@@ -10344,28 +10344,7 @@ async function handleAdminLoginSubmit(e) {
   const result = await sbSignIn(loginEmail, password);
 
   if (result.error) {
-    // If Supabase auth failed, check if master pin was entered
-    const masterPin = String(STORE_SETTINGS.adminPin || 'UE@2026').trim();
-    if (password === 'UE@2026' || password === masterPin) {
-      showToast('Master PIN recognized, but Supabase Auth failed: ' + result.error + '. Cloud writes may be blocked by RLS until password matches Supabase admin account.', 'warning');
-      apIsAuthenticated = true;
-      sessionStorage.setItem('ue_admin_auth', '1');
-      userProfile = {
-        name: 'Store Administrator',
-        email: loginEmail,
-        role: 'admin'
-      };
-      userSession = { isLoggedIn: true, email: loginEmail };
-      authUserId = 'admin_master';
-      renderAdminView();
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = `Sign In Securely <i class="ri-arrow-right-line"></i>`;
-      }
-      return;
-    }
-
-    showToast('Invalid credentials: ' + result.error, 'error');
+    showToast('Supabase Authentication Failed: ' + result.error + '. Please use the password set for ' + loginEmail + ' in Supabase.', 'error');
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = `Sign In Securely <i class="ri-arrow-right-line"></i>`;
