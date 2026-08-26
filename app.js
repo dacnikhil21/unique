@@ -8782,6 +8782,88 @@ function selectDeliveryAddressCard(el, addressKey) {
   selectedDeliveryAddress = addressKey;
 }
 
+/* ==========================================================================
+   SHIPROCKET LOGISTICS & COURIER DISPATCH HELPERS
+   ========================================================================== */
+async function pushOrderToShiprocket(orderRecord) {
+  try {
+    const res = await fetch('/api/shiprocket?action=create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId: orderRecord.orderId,
+        customerName: orderRecord.customerName || orderRecord.name,
+        phone: orderRecord.phone,
+        email: userProfile?.email || 'customer@uniqueexpressions.in',
+        address: orderRecord.address,
+        totalAmount: orderRecord.totalAmount,
+        discountAmount: orderRecord.discountAmount || 0,
+        shippingFee: orderRecord.shippingFee || 0,
+        paymentMethod: orderRecord.paymentMethod,
+        items: orderRecord.items
+      })
+    });
+
+    const data = await res.json();
+    if (data && data.success) {
+      orderRecord.shiprocketOrderId = data.shiprocket_order_id;
+      orderRecord.shipmentId = data.shipment_id;
+      orderRecord.awb = data.awb || null;
+      orderRecord.courierName = data.courier_name || null;
+
+      const idx = userOrders.findIndex(o => o.orderId === orderRecord.orderId);
+      if (idx !== -1) {
+        userOrders[idx] = { ...userOrders[idx], ...orderRecord };
+        localStorage.setItem('ue_orders', JSON.stringify(userOrders));
+      }
+
+      if (typeof sbInsertOrder === 'function') {
+        sbInsertOrder(orderRecord).catch(() => {});
+      }
+
+      if (currentView === 'orderDetails') {
+        renderOrderDetailsView(orderRecord.orderId);
+      }
+      return data;
+    }
+  } catch (err) {
+    console.warn('[Shiprocket Order Push Error]', err.message);
+  }
+  return null;
+}
+
+async function printShiprocketLabel(shipmentId) {
+  if (!shipmentId) {
+    showApToast('No shipment ID available to generate label.', 'info');
+    return;
+  }
+  try {
+    showApToast('⏳ Fetching official Shiprocket shipping label...', 'info');
+    const res = await fetch(`/api/shiprocket?action=label&shipment_id=${shipmentId}`);
+    const data = await res.json();
+    if (data && data.success && data.label?.label_url) {
+      window.open(data.label.label_url, '_blank');
+    } else {
+      showApToast('Label not ready yet or courier assignment pending.', 'info');
+    }
+  } catch (e) {
+    showApToast('Error opening label: ' + e.message, 'error');
+  }
+}
+
+async function dispatchOrderShiprocket(orderId) {
+  const o = userOrders.find(item => item.orderId === orderId);
+  if (!o) return;
+  showApToast(`⏳ Dispatching Order #${orderId} to Shiprocket...`, 'info');
+  const res = await pushOrderToShiprocket(o);
+  if (res && res.success) {
+    showApToast(`✅ Pushed to Shiprocket! AWB: ${res.awb || 'Assigned'} (${res.courier_name || 'Courier'})`, 'success');
+  } else {
+    showApToast('⚠️ Order created in store. Check Shiprocket dashboard or retry.', 'info');
+  }
+  if (typeof switchApTab === 'function') switchApTab('orders');
+}
+
 function finalizeOrderSuccess(orderMeta) {
   const {
     paymentMethod = 'Online',
@@ -8823,7 +8905,8 @@ function finalizeOrderSuccess(orderMeta) {
   deductStockForOrder(orderRecord.items);
   syncStorefrontState();
 
-  // Sync to Supabase (non-blocking)
+  // Non-blocking sync to Shiprocket & Supabase
+  pushOrderToShiprocket(orderRecord).catch(err => console.warn('[UE] Shiprocket auto-push note:', err));
   sbInsertOrder(orderRecord).catch(err => console.warn('[UE] Order sync failed:', err));
 
   if (appliedCouponCode) {
@@ -9927,6 +10010,33 @@ function renderOrderDetailsView(orderId) {
         </div>
       </div>
 
+      <!-- Shiprocket Courier & Live Tracking Card -->
+      <div class="checkout-card" style="border: 1.5px solid #dbeafe; background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:36px; height:36px; border-radius:10px; background:#3b82f6; color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:18px;">
+              🚚
+            </div>
+            <div>
+              <div style="font-size:12px; font-weight:800; color:#0f172a;">Courier: ${order.courierName || 'Shiprocket Partner'}</div>
+              <div style="font-size:11px; color:#475569; font-weight:600;">
+                AWB / Tracking: ${order.awb ? `<code style="background:#e2e8f0; color:#0f172a; padding:2px 6px; border-radius:4px; font-weight:800;">${order.awb}</code>` : `<span style="color:#64748b;">Processing pickup & AWB</span>`}
+              </div>
+            </div>
+          </div>
+          ${order.awb ? `
+            <a href="https://shiprocket.co/tracking/${order.awb}" target="_blank" rel="noopener noreferrer" class="m-hero-cta-button" style="height:32px; padding:0 14px; font-size:11px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 8px rgba(59,130,246,0.25); background:#2563eb;">
+              Live Tracking ↗
+            </a>
+          ` : `
+            <button class="m-back-btn" style="padding:4px 10px; font-size:11px;" onclick="dispatchOrderShiprocket('${order.orderId}')">Sync Shiprocket 🔄</button>
+          `}
+        </div>
+        <div style="font-size:10.5px; color:#64748b; margin-top:8px; border-top:1px solid #e2e8f0; padding-top:6px;">
+          📍 Pickup: <strong>Madhurawada, Visakhapatnam (530041)</strong> ➔ Destination: <strong>${order.address || 'Customer Doorstep'}</strong>
+        </div>
+      </div>
+
       <!-- Real-Time Interactive Tracking Timeline -->
       <div class="tracking-timeline-box">
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -10665,6 +10775,7 @@ function renderApOrders() {
               <th>Phone</th>
               <th>Amount</th>
               <th>Payment</th>
+              <th>Shiprocket Logistics</th>
               <th>Status</th>
               <th>Invoice</th>
               <th>Actions</th>
@@ -10672,7 +10783,7 @@ function renderApOrders() {
           </thead>
           <tbody>
             ${filtered.length === 0 ? `
-              <tr><td colspan="8" style="text-align:center; padding:40px; color:#64748b;">No orders found matching search criteria.</td></tr>
+              <tr><td colspan="9" style="text-align:center; padding:40px; color:#64748b;">No orders found matching search criteria.</td></tr>
             ` : filtered.map(o => `
               <tr>
                 <td><strong>${o.orderId}</strong></td>
@@ -10680,6 +10791,20 @@ function renderApOrders() {
                 <td>${apEscHtml(o.phone || '—')}</td>
                 <td><strong>₹${(o.grandTotal || o.totalAmount || 0).toLocaleString('en-IN')}</strong></td>
                 <td><span class="ap-badge ap-badge-info">${o.paymentMethod || 'UPI'}</span></td>
+                <td>
+                  ${o.awb ? `
+                    <div style="font-size:11px; margin-bottom:4px;">
+                      <strong>${o.courierName || 'Shiprocket'}</strong><br>
+                      <code style="font-size:10px; background:#f1f5f9; padding:2px 4px; border-radius:4px; font-weight:700;">${o.awb}</code>
+                    </div>
+                    <div style="display:flex; gap:4px;">
+                      <button class="ap-btn ap-btn-secondary" style="height:22px; padding:0 6px; font-size:10px;" onclick="printShiprocketLabel('${o.shipmentId}')">📄 Label</button>
+                      <a href="https://shiprocket.co/tracking/${o.awb}" target="_blank" rel="noopener" class="ap-btn ap-btn-secondary" style="height:22px; padding:0 6px; font-size:10px; text-decoration:none; display:inline-flex; align-items:center;">Track ↗</a>
+                    </div>
+                  ` : `
+                    <button class="ap-btn ap-btn-primary" style="height:24px; padding:0 8px; font-size:10.5px;" onclick="dispatchOrderShiprocket('${o.orderId}')">🚀 Dispatch</button>
+                  `}
+                </td>
                 <td>
                   <select style="padding:4px 6px; border-radius:6px; border:1px solid #cbd5e1; font-size:11px; font-weight:700;" onchange="updateApOrderStatus('${o.orderId}', this.value)">
                     <option value="Order Confirmed" ${o.status === 'Order Confirmed' ? 'selected' : ''}>Order Confirmed</option>

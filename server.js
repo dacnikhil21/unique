@@ -243,6 +243,12 @@ const server = http.createServer((req, res) => {
     return productsApi(req, res);
   }
 
+  // ── Endpoint: Shiprocket Logistics API Handler ─────────────────────────
+  if (req.url.startsWith('/api/shiprocket')) {
+    const shiprocketApi = require('./api/shiprocket.js');
+    return shiprocketApi(req, res);
+  }
+
   // ── Endpoint: Cloudinary Image Upload ──────────────────────────────────
   if (req.method === 'POST' && req.url === '/api/upload') {
     let body = '';

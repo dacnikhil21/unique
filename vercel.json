@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/api/shiprocket/:path*", "destination": "/api/shiprocket" },
+    { "source": "/api/shiprocket", "destination": "/api/shiprocket" },
     { "source": "/api/razorpay/:path*", "destination": "/api/razorpay" },
     { "source": "/api/razorpay", "destination": "/api/razorpay" },
     { "source": "/api/upload", "destination": "/api/upload" },
