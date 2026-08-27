@@ -24,8 +24,7 @@ let STORE_SETTINGS = (() => {
     shippingFee: 50,
     giftWrapFee: 30,
     instagram: "uniqueexpressions.in",
-    youtube: "@UNIQUEEXPRESSIONS-25",
-    adminPin: "UE@2026"  // ⚠️ Change this immediately via Admin → Settings → Security
+    youtube: "@UNIQUEEXPRESSIONS-25"
   };
 })();
 
@@ -12762,10 +12761,6 @@ function renderApSettings() {
           <label style="font-size:11px; font-weight:700; color:#475569;">Store Email</label>
           <input type="email" id="apStEmail" class="ap-search-input" value="${STORE_SETTINGS.email}">
         </div>
-        <div>
-          <label style="font-size:11px; font-weight:700; color:#475569;">Admin Panel PIN (min 6 chars) ⚠️ Change from default!</label>
-          <input type="password" maxlength="20" id="apStAdminPin" class="ap-search-input" value="${STORE_SETTINGS.adminPin || 'UE@2026'}" placeholder="Enter secure PIN">
-        </div>
       </div>
 
       <div style="margin-bottom:16px;">
@@ -12812,11 +12807,6 @@ async function saveApStoreSettings() {
   STORE_SETTINGS.freeShippingMin = (minFreeVal !== '' && !isNaN(parseInt(minFreeVal, 10))) ? parseInt(minFreeVal, 10) : 499;
   STORE_SETTINGS.shippingFee = (shipFeeVal !== '' && !isNaN(parseInt(shipFeeVal, 10))) ? parseInt(shipFeeVal, 10) : 50;
   STORE_SETTINGS.giftWrapFee = (wrapFeeVal !== '' && !isNaN(parseInt(wrapFeeVal, 10))) ? parseInt(wrapFeeVal, 10) : 30;
-
-  const newPin = (document.getElementById('apStAdminPin')?.value || '').trim();
-  if (newPin.length >= 4) {
-    STORE_SETTINGS.adminPin = newPin;
-  }
 
   showApToast('Saving Store Settings to cloud database...', 'info');
   const res = await sbSaveStoreSettings(STORE_SETTINGS);
@@ -13720,47 +13710,12 @@ document.addEventListener('click', (e) => {
   }
 });
 
-function openAdminPinModal() {
-  if (apIsAuthenticated) {
-    switchView('admin');
-    return;
-  }
-  const backdrop = document.getElementById('adminPinBackdrop');
-  if (!backdrop) {
-    showToast('Admin login could not load. Please hard-refresh the page (Ctrl+Shift+R).', 'info');
-    return;
-  }
-  backdrop.classList.add('active');
-  const input = document.getElementById('adminPinInput');
-  if (input) { input.value = ''; setTimeout(() => input.focus(), 200); }
-}
-
-function closeAdminPinModal() {
-  document.getElementById('adminPinBackdrop')?.classList.remove('active');
-}
-
-function verifyAdminPin() {
-  const pin = (document.getElementById('adminPinInput')?.value || '').trim();
-  const expected = String(STORE_SETTINGS.adminPin || 'UE@2026');
-  if (pin === expected) {
-    apIsAuthenticated = true;
-    sessionStorage.setItem('ue_admin_auth', '1');
-    closeAdminPinModal();
-    switchView('admin');
-  } else {
-    showToast('Incorrect PIN. Please try again.', 'info');
-    const input = document.getElementById('adminPinInput');
-    if (input) { input.value = ''; input.focus(); }
-  }
-}
-
 function switchAdminTab(tabId) {
   switchApTab(tabId);
 }
 
 function closeAllModals() {
   document.getElementById('modalBackdrop')?.classList.remove('active');
-  document.getElementById('adminPinBackdrop')?.classList.remove('active');
   document.getElementById('adminProductModalBackdrop')?.classList.remove('active');
   document.getElementById('addressModalBackdrop')?.classList.remove('active');
   document.getElementById('editProfileModalBackdrop')?.classList.remove('active');

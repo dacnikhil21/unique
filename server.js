@@ -625,9 +625,9 @@ const server = http.createServer((req, res) => {
         const authHeader = req.headers['authorization'] || '';
         const token = authHeader.replace(/^Bearer\s+/i, '').trim();
 
-        // Validate admin token/pin
-        const validPin = process.env.ADMIN_PIN || 'UE@2026';
-        if (token !== validPin && payload.adminPin !== validPin) {
+        // Validate admin token
+        const adminSecret = process.env.ADMIN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+        if (adminSecret && token !== adminSecret && payload.adminSecret !== adminSecret) {
           res.writeHead(401, { 'Content-Type': 'application/json' });
           return res.end(JSON.stringify({ error: 'Unauthorized admin access.' }));
         }

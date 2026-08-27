@@ -170,6 +170,57 @@ function verifyPaymentSignature(orderId, paymentId, signature) {
   }
 }
 
+async function syncOrderToSupabase(orderRecord) {
+  const sbUrl = process.env.SUPABASE_URL || 'https://sfcxpvvqxldhdkvfyhgj.supabase.co';
+  const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmY3hwdnZxeGxkaGRrdmZ5aGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NzU4MTQsImV4cCI6MjEwMTE1MTgxNH0.ZNWPL7xNiapsnOrvJ45uT6KpaFqcvzz4vv7R7WGx39c';
+  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) return;
+
+  try {
+    const row = {
+      order_id: orderRecord.orderId || ('UE-' + Date.now().toString().slice(-6)),
+      customer_name: orderRecord.customerName || 'Customer',
+      phone: orderRecord.phone || '',
+      address: orderRecord.address || 'Visakhapatnam',
+      items: orderRecord.items || [],
+      total_amount: orderRecord.totalAmount || orderRecord.amount || 0,
+      subtotal: orderRecord.subtotal || orderRecord.totalAmount || 0,
+      discount_amount: orderRecord.discountAmount || 0,
+      shipping_fee: orderRecord.shippingFee || 0,
+      status: orderRecord.status || 'Paid & Confirmed',
+      payment_method: orderRecord.paymentMethod || 'Razorpay Online',
+      gstin: '37BVTPG7761F1Z1'
+    };
+    if (orderRecord.userId) row.user_id = orderRecord.userId;
+
+    const postData = JSON.stringify(row);
+    const urlObj = new URL(`${sbUrl}/rest/v1/orders`);
+    const options = {
+      hostname: urlObj.hostname,
+      path: urlObj.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': sbKey,
+        'Authorization': `Bearer ${sbKey}`,
+        'Prefer': 'resolution=merge-duplicates',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+
+    return new Promise((resolve) => {
+      const sbReq = https.request(options, () => resolve(true));
+      sbReq.on('error', (err) => {
+        console.warn('[Supabase Sync Warning]', err.message);
+        resolve(false);
+      });
+      sbReq.write(postData);
+      sbReq.end();
+    });
+  } catch (e) {
+    console.warn('[Supabase Sync Warning]', e.message);
+  }
+}
+
 module.exports = async (req, res) => {
   const origin = req.headers.origin || '';
   if (!origin || ALLOWED_ORIGINS.includes(origin) || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
@@ -206,12 +257,14 @@ module.exports = async (req, res) => {
 
   if (req.method === 'POST') {
     let payload = req.body;
+    let rawBodyStr = '';
     if (!payload && typeof req.on === 'function') {
       try {
         payload = await new Promise((resolve) => {
           let data = '';
           req.on('data', chunk => { data += chunk; });
           req.on('end', () => {
+            rawBodyStr = data;
             try { resolve(JSON.parse(data)); } catch (e) { resolve({}); }
           });
           req.on('error', () => resolve({}));
@@ -220,9 +273,57 @@ module.exports = async (req, res) => {
         payload = {};
       }
     } else if (typeof payload === 'string') {
+      rawBodyStr = payload;
       try { payload = JSON.parse(payload); } catch (e) { payload = {}; }
+    } else if (typeof payload === 'object') {
+      rawBodyStr = JSON.stringify(payload);
     }
     payload = payload || {};
+
+    if (action === 'webhook' || payload.action === 'webhook') {
+      const webhookSignature = req.headers['x-razorpay-signature'];
+      const secret = RAZORPAY_CONFIG.webhook_secret;
+
+      if (secret && webhookSignature) {
+        const expectedSig = crypto.createHmac('sha256', secret).update(rawBodyStr).digest('hex');
+        let isValid = false;
+        try {
+          isValid = crypto.timingSafeEqual(Buffer.from(expectedSig, 'utf8'), Buffer.from(webhookSignature, 'utf8'));
+        } catch (e) {
+          isValid = false;
+        }
+        if (!isValid) {
+          return res.status(400).json({ error: 'Invalid webhook signature' });
+        }
+      }
+
+      const eventType = payload.event;
+      const paymentEntity = payload.payload?.payment?.entity;
+      const orderId = paymentEntity?.order_id;
+      const notes = paymentEntity?.notes || {};
+
+      if (eventType === 'payment.captured' || eventType === 'order.paid') {
+        const orderRecord = {
+          orderId: notes.orderId || ('UE-' + (paymentEntity?.id ? paymentEntity.id.slice(-6) : Math.floor(100000 + Math.random() * 900000))),
+          razorpayOrderId: orderId,
+          paymentId: paymentEntity?.id,
+          customerName: notes.customerName || notes.name || 'Customer',
+          phone: notes.phone || paymentEntity?.contact || '',
+          address: notes.address || 'Visakhapatnam',
+          items: notes.items ? (typeof notes.items === 'string' ? JSON.parse(notes.items) : notes.items) : [],
+          totalAmount: (paymentEntity?.amount ? paymentEntity.amount / 100 : 0),
+          status: 'Paid & Confirmed',
+          paymentMethod: 'Razorpay Online (' + (paymentEntity?.method || 'UPI') + ')',
+          userId: notes.userId || null
+        };
+        await syncOrderToSupabase(orderRecord);
+        console.log(`[Razorpay Webhook] Order confirmed and saved to Supabase: ${orderRecord.orderId}`);
+      } else if (eventType === 'payment.failed') {
+        console.log(`[Razorpay Webhook] Payment failed for order: ${orderId}`);
+      }
+
+      return res.status(200).json({ status: 'ok', received: true });
+    }
 
     if (action === 'create-order' || payload.action === 'create-order') {
       let calcResult;

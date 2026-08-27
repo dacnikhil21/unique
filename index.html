@@ -948,15 +948,6 @@
     </div>
   </div>
 
-  <!-- Shared Admin Auth Modal -->
-  <div class="drawer-backdrop" id="adminPinBackdrop" onclick="closeAdminPinModal()">
-    <div class="modal-window" style="max-width:340px; text-align:center;" onclick="event.stopPropagation()">
-      <h3 style="font-family:var(--font-serif); font-size:22px; margin-bottom:6px;">Admin Security Check</h3>
-      <p style="font-size:11px; color:#64748b; margin-bottom:14px;">Enter your admin PIN. Change it anytime in Store Settings.</p>
-      <input type="password" maxlength="20" id="adminPinInput" style="width:180px; margin:0 auto 14px auto; text-align:center; font-size:18px; letter-spacing:4px; padding:8px; border-radius:10px; border:1px solid #cbd5e1;" placeholder="Enter PIN" onkeyup="if(event.key==='Enter') verifyAdminPin()">
-      <button type="button" class="m-hero-cta-button" style="width:100%; justify-content:center;" onclick="verifyAdminPin()">Verify PIN</button>
-    </div>
-  </div>
 
   <!-- Write Customer Review Modal -->
   <div class="drawer-backdrop" id="writeReviewModalBackdrop" onclick="closeWriteReviewModal()">
