@@ -10320,7 +10320,29 @@ function showApToast(message, type = 'success') {
   setTimeout(() => toast.remove(), 3500);
 }
 
+function toggleApMobileSidebar() {
+  const sidebar = document.querySelector('.ap-sidebar');
+  const backdrop = document.getElementById('apSidebarBackdrop');
+  if (!sidebar) return;
+  const isOpen = sidebar.classList.contains('mobile-open');
+  if (isOpen) {
+    sidebar.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('active');
+  } else {
+    sidebar.classList.add('mobile-open');
+    if (backdrop) backdrop.classList.add('active');
+  }
+}
+
+function closeApMobileSidebar() {
+  const sidebar = document.querySelector('.ap-sidebar');
+  const backdrop = document.getElementById('apSidebarBackdrop');
+  if (sidebar) sidebar.classList.remove('mobile-open');
+  if (backdrop) backdrop.classList.remove('active');
+}
+
 function switchApTab(tabId) {
+  closeApMobileSidebar();
   if (AP_HIDDEN_TABS.includes(tabId)) {
     showApToast('This section is coming soon.', 'info');
     return;
@@ -10508,7 +10530,32 @@ function renderAdminView() {
 
   container.innerHTML = `
     <div class="ap-layout-wrapper">
-      <!-- Collapsible Left Sidebar (280px) -->
+      <!-- Backdrop for mobile drawer -->
+      <div class="ap-sidebar-backdrop" id="apSidebarBackdrop" onclick="closeApMobileSidebar()"></div>
+
+      <!-- Mobile Top Bar (< 1024px) -->
+      <div class="ap-mobile-header">
+        <button class="ap-hamburger-btn" onclick="toggleApMobileSidebar()" title="Open Menu">
+          <i class="ri-menu-2-line"></i>
+        </button>
+        <div class="ap-mobile-brand">
+          <div class="ap-brand-icon" style="width:26px; height:26px; font-size:11px; border-radius:6px;">UE</div>
+          <span>ADMIN CMS</span>
+        </div>
+        <div class="ap-mobile-actions">
+          <div class="ap-notif-wrapper">
+            <button class="ap-notif-btn" style="width:36px; height:36px;" onclick="toggleApNotifDropdown(event)" title="Alerts">
+              <i class="ri-notification-3-line" style="font-size:16px;"></i>
+              <span class="ap-notif-badge">${notifCount}</span>
+            </button>
+          </div>
+          <button class="ap-btn ap-btn-primary" style="height:34px; padding:0 10px; font-size:11.5px;" onclick="openApProductModal()">
+            <i class="ri-add-line"></i> Add
+          </button>
+        </div>
+      </div>
+
+      <!-- Left Sidebar (Desktop Fixed / Mobile Slide-out Drawer) -->
       <aside class="ap-sidebar">
         <div class="ap-sidebar-header">
           <div class="ap-brand-logo">
@@ -10518,6 +10565,7 @@ function renderAdminView() {
               <div class="ap-brand-sub">STORE CONTROL CENTER</div>
             </div>
           </div>
+          <button class="ap-close-sidebar-btn" onclick="closeApMobileSidebar()" title="Close Menu">&times;</button>
         </div>
 
         <nav class="ap-sidebar-nav">
@@ -15489,8 +15537,10 @@ function handleVerifyOtpCode() {
   handleSendOtpCode();
 }
 
-// 3. Native Lightbox / Fullscreen Viewer
+// 3. High-Performance Interactive Zoomable & Swipeable Lightbox / Fullscreen Viewer
 function openPDPModalLightbox(images, startIndex = 0) {
+  if (!Array.isArray(images) || images.length === 0) return;
+
   let lightbox = document.getElementById('pdpLightboxOverlay');
   if (!lightbox) {
     lightbox = document.createElement('div');
@@ -15500,22 +15550,181 @@ function openPDPModalLightbox(images, startIndex = 0) {
   }
 
   let currentIndex = startIndex;
+  let isZoomed = false;
+  let zoomScale = 2.4;
+  let panX = 0;
+  let panY = 0;
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
 
   function renderLightbox() {
+    isZoomed = false;
+    panX = 0;
+    panY = 0;
+
+    const hasMulti = images.length > 1;
+
+    const thumbsHtml = hasMulti ? `
+      <div class="pdp-lightbox-thumbs">
+        ${images.map((src, i) => `
+          <div class="pdp-lightbox-thumb ${i === currentIndex ? 'active' : ''}" onclick="event.stopPropagation(); jumpLightboxTo(${i})">
+            <img src="${src}" alt="Thumb ${i + 1}" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=200'">
+          </div>
+        `).join('')}
+      </div>
+    ` : '';
+
     lightbox.innerHTML = `
-      <div class="pdp-lightbox-content">
-        <button class="pdp-lightbox-close" onclick="closePDPModalLightbox()">&times;</button>
-        <button class="pdp-lightbox-prev" onclick="event.stopPropagation(); changeLightboxImg(-1)">&lsaquo;</button>
-        <img src="${images[currentIndex]}" class="pdp-lightbox-img" alt="Enlarged View">
-        <button class="pdp-lightbox-next" onclick="event.stopPropagation(); changeLightboxImg(1)">&rsaquo;</button>
-        <div class="pdp-lightbox-counter">${currentIndex + 1} / ${images.length}</div>
+      <div class="pdp-lightbox-content" onclick="closePDPModalLightboxOnBackdrop(event)">
+        <button class="pdp-lightbox-close" onclick="closePDPModalLightbox()" title="Close (Esc)">&times;</button>
+        
+        ${hasMulti ? `
+          <button class="pdp-lightbox-prev" onclick="event.stopPropagation(); changeLightboxImg(-1)" title="Previous Picture (←)">&lsaquo;</button>
+          <button class="pdp-lightbox-next" onclick="event.stopPropagation(); changeLightboxImg(1)" title="Next Picture (→)">&rsaquo;</button>
+          <div class="pdp-lightbox-counter">${currentIndex + 1} / ${images.length}</div>
+        ` : ''}
+
+        <div class="pdp-lightbox-img-wrapper" id="pdpLbImgWrapper">
+          <img src="${images[currentIndex]}" id="pdpLbImg" class="pdp-lightbox-img" alt="Enlarged Product Photo" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=800'">
+        </div>
+
+        <div class="pdp-lightbox-zoom-hint" id="pdpLbZoomHint">
+          <i class="ri-zoom-in-line"></i> Tap / Click to Zoom • Swipe left/right for more photos
+        </div>
+
+        ${thumbsHtml}
       </div>
     `;
+
+    bindLightboxGestures();
   }
+
+  function bindLightboxGestures() {
+    const wrapper = document.getElementById('pdpLbImgWrapper');
+    const img = document.getElementById('pdpLbImg');
+    const hint = document.getElementById('pdpLbZoomHint');
+    if (!wrapper || !img) return;
+
+    // Toggle zoom on click / tap
+    wrapper.addEventListener('click', (e) => {
+      // If user was dragging while zoomed, don't toggle
+      if (wrapper.dataset.dragged === '1') {
+        wrapper.dataset.dragged = '0';
+        return;
+      }
+      toggleLightboxZoom(e);
+    });
+
+    // Touch and mouse drag for pan when zoomed, or swipe when not zoomed
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+
+    wrapper.addEventListener('touchstart', (e) => {
+      if (!e.touches || !e.touches[0]) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchStartTime = Date.now();
+      isDragging = isZoomed;
+      startX = touchStartX - panX;
+      startY = touchStartY - panY;
+    }, { passive: true });
+
+    wrapper.addEventListener('touchmove', (e) => {
+      if (!e.touches || !e.touches[0]) return;
+      const curX = e.touches[0].clientX;
+      const curY = e.touches[0].clientY;
+
+      if (isZoomed && isDragging) {
+        panX = curX - startX;
+        panY = curY - startY;
+        applyZoomTransform();
+        wrapper.dataset.dragged = '1';
+      }
+    }, { passive: true });
+
+    wrapper.addEventListener('touchend', (e) => {
+      if (!e.changedTouches || !e.changedTouches[0]) return;
+      const endX = e.changedTouches[0].clientX;
+      const endY = e.changedTouches[0].clientY;
+      const diffX = endX - touchStartX;
+      const diffY = endY - touchStartY;
+
+      // If not zoomed, handle swipe navigation
+      if (!isZoomed && Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX < 0) changeLightboxImg(1);
+        else changeLightboxImg(-1);
+      }
+      isDragging = false;
+    }, { passive: true });
+
+    // Pointer events for desktop drag pan
+    wrapper.addEventListener('pointerdown', (e) => {
+      if (!isZoomed) return;
+      isDragging = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+      wrapper.dataset.dragged = '0';
+      wrapper.setPointerCapture(e.pointerId);
+    });
+
+    wrapper.addEventListener('pointermove', (e) => {
+      if (!isZoomed || !isDragging) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      applyZoomTransform();
+      wrapper.dataset.dragged = '1';
+    });
+
+    wrapper.addEventListener('pointerup', (e) => {
+      isDragging = false;
+    });
+  }
+
+  function toggleLightboxZoom(e) {
+    const wrapper = document.getElementById('pdpLbImgWrapper');
+    const img = document.getElementById('pdpLbImg');
+    const hint = document.getElementById('pdpLbZoomHint');
+    if (!wrapper || !img) return;
+
+    isZoomed = !isZoomed;
+    if (isZoomed) {
+      wrapper.classList.add('is-zoomed');
+      panX = 0;
+      panY = 0;
+      img.style.transform = `scale(${zoomScale}) translate(0px, 0px)`;
+      if (hint) hint.innerHTML = '<i class="ri-zoom-out-line"></i> Drag to inspect details • Click to zoom out';
+    } else {
+      wrapper.classList.remove('is-zoomed');
+      panX = 0;
+      panY = 0;
+      img.style.transform = 'scale(1) translate(0px, 0px)';
+      if (hint) hint.innerHTML = '<i class="ri-zoom-in-line"></i> Tap / Click to Zoom • Swipe left/right for more photos';
+    }
+  }
+
+  function applyZoomTransform() {
+    const img = document.getElementById('pdpLbImg');
+    if (img && isZoomed) {
+      img.style.transform = `scale(${zoomScale}) translate(${panX / zoomScale}px, ${panY / zoomScale}px)`;
+    }
+  }
+
+  window.jumpLightboxTo = function(idx) {
+    currentIndex = idx;
+    renderLightbox();
+  };
 
   window.changeLightboxImg = function(dir) {
     currentIndex = (currentIndex + dir + images.length) % images.length;
     renderLightbox();
+  };
+
+  window.closePDPModalLightboxOnBackdrop = function(e) {
+    if (e.target.classList.contains('pdp-lightbox-content')) {
+      closePDPModalLightbox();
+    }
   };
 
   lightbox.classList.add('active');
@@ -15568,8 +15777,7 @@ function initTouchSwipeGallery(containerId, onSwipeLeft, onSwipeRight) {
 
   // Pointer / Mouse Drag Events (Desktops, Laptops & Emulators)
   el.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0) return; // primary button only
-    // Don't trigger drag on interactive buttons
+    if (e.button !== 0) return;
     if (e.target.closest('button') || e.target.closest('.pdp-slider-arrow')) return;
     isPointerDown = true;
     hasMoved = false;
