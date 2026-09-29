@@ -233,10 +233,10 @@ async function createShiprocketOrder(orderData) {
     transaction_charges: 0,
     total_discount: parseFloat(orderData.discountAmount) || 0,
     sub_total: parseFloat(orderData.totalAmount || orderData.grandTotal) || 499,
-    length: 15,
-    breadth: 15,
-    height: 10,
-    weight: 0.5 // Default 500g
+    length: parseFloat(orderData.length) || (items.reduce((max, it) => Math.max(max, parseFloat(it.length) || 15), 15)),
+    breadth: parseFloat(orderData.breadth) || (items.reduce((max, it) => Math.max(max, parseFloat(it.breadth) || 15), 15)),
+    height: parseFloat(orderData.height) || (items.reduce((sum, it) => sum + ((parseFloat(it.height) || 10) * (parseInt(it.qty || it.quantity, 10) || 1)), 0) || 10),
+    weight: parseFloat(orderData.weight) || (parseFloat(items.reduce((sum, it) => sum + ((parseFloat(it.weight) || 0.5) * (parseInt(it.qty || it.quantity, 10) || 1)), 0).toFixed(2)) || 0.5)
   };
 
   try {

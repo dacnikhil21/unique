@@ -32,7 +32,11 @@ async function sbGetProducts() {
       reviewsCount: p.reviews_count,
       description: p.description,
       inStock: p.in_stock,
-      stockQty: p.stock_qty != null ? p.stock_qty : 0
+      stockQty: p.stock_qty != null ? p.stock_qty : 0,
+      length: parseFloat(p.length) || 15,
+      breadth: parseFloat(p.breadth) || 15,
+      height: parseFloat(p.height) || 10,
+      weight: parseFloat(p.weight) || 0.5
     }));
   } catch (err) {
     console.warn('[Supabase] getProducts failed:', err.message);
@@ -55,7 +59,11 @@ async function sbSeedProducts(products) {
       reviews_count: p.reviewsCount,
       description: p.description,
       in_stock: p.inStock !== false,
-      stock_qty: Math.max(0, parseInt(p.stockQty, 10) || 0)
+      stock_qty: Math.max(0, parseInt(p.stockQty, 10) || 0),
+      length: parseFloat(p.length) || 15,
+      breadth: parseFloat(p.breadth) || 15,
+      height: parseFloat(p.height) || 10,
+      weight: parseFloat(p.weight) || 0.5
     }));
     const { error } = await _supabase.from('products').upsert(rows, { onConflict: 'id' });
     if (error) throw error;
@@ -84,7 +92,11 @@ async function sbAdminInsertProduct(product) {
         reviews_count: parseInt(product.reviewsCount, 10) || 12,
         description: product.description || '',
         in_stock: product.inStock !== false,
-        stock_qty: Math.max(0, parseInt(product.stockQty, 10) || 10)
+        stock_qty: Math.max(0, parseInt(product.stockQty, 10) || 10),
+        length: parseFloat(product.length) || 15,
+        breadth: parseFloat(product.breadth) || 15,
+        height: parseFloat(product.height) || 10,
+        weight: parseFloat(product.weight) || 0.5
       })
       .select()
       .single();
@@ -112,7 +124,11 @@ async function sbAdminUpdateProduct(product) {
       reviews_count: parseInt(product.reviewsCount, 10) || 12,
       description: product.description || '',
       in_stock: product.inStock !== false,
-      stock_qty: Math.max(0, parseInt(product.stockQty, 10) || 0)
+      stock_qty: Math.max(0, parseInt(product.stockQty, 10) || 0),
+      length: parseFloat(product.length) || 15,
+      breadth: parseFloat(product.breadth) || 15,
+      height: parseFloat(product.height) || 10,
+      weight: parseFloat(product.weight) || 0.5
     };
 
     const { data, error } = await _supabase

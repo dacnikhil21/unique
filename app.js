@@ -8786,6 +8786,17 @@ function selectDeliveryAddressCard(el, addressKey) {
    ========================================================================== */
 async function pushOrderToShiprocket(orderRecord) {
   try {
+    const enrichedItems = (orderRecord.items || []).map(it => {
+      const prod = (typeof ALL_PRODUCTS !== 'undefined') ? ALL_PRODUCTS.find(p => String(p.id) === String(it.id)) : null;
+      return {
+        ...it,
+        length: parseFloat(it.length || prod?.length || 15),
+        breadth: parseFloat(it.breadth || prod?.breadth || 15),
+        height: parseFloat(it.height || prod?.height || 10),
+        weight: parseFloat(it.weight || prod?.weight || 0.5)
+      };
+    });
+
     const res = await fetch('/api/shiprocket?action=create-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -8799,7 +8810,7 @@ async function pushOrderToShiprocket(orderRecord) {
         discountAmount: orderRecord.discountAmount || 0,
         shippingFee: orderRecord.shippingFee || 0,
         paymentMethod: orderRecord.paymentMethod,
-        items: orderRecord.items
+        items: enrichedItems
       })
     });
 
@@ -11085,6 +11096,10 @@ function renderApProducts() {
                   <td>
                     <strong>${p.title}</strong>
                     ${p.isFeatured ? `<span style="font-size:10px; color:#f59e0b; margin-left:4px;">★ Featured</span>` : ''}
+                    <div style="font-size:10.5px; color:#64748b; margin-top:3px; display:flex; align-items:center; gap:4px;">
+                      <i class="ri-box-3-line" style="color:#2563eb;"></i>
+                      <span>${p.length || 15}×${p.breadth || 15}×${p.height || 10} cm • ${p.weight || 0.5} kg</span>
+                    </div>
                   </td>
                   <td><span class="ap-badge ap-badge-info">${p.category}</span></td>
                   <td><strong>₹${p.price}</strong> <span style="text-decoration:line-through; font-size:11px; color:#94a3b8;">₹${p.originalPrice || Math.round(p.price * 1.2)}</span></td>
@@ -14797,6 +14812,41 @@ function openApProductModal(editId = null) {
               <textarea id="apFormDesc" class="ap-form-control" style="min-height:75px;" placeholder="Add product details, specifications, etc. (optional)...">${p ? (p.description || '') : ''}</textarea>
             </div>
 
+            <!-- SHIPPING & PACKAGE DIMENSIONS (LBH & WEIGHT) -->
+            <div class="ap-form-card" style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:12px; padding:16px;">
+              <div style="margin-bottom:12px;">
+                <label class="ap-form-label" style="font-size:13px; margin-bottom:2px; display:flex; align-items:center; gap:6px;">
+                  <i class="ri-box-3-line" style="color:#2563eb; font-size:16px;"></i> Shipping & Package Dimensions (LBH)
+                </label>
+                <span class="ap-form-hint" style="margin-top:0;">Used by Shiprocket to calculate volumetric weight and prevent courier discrepancy charges.</span>
+              </div>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px;">
+                <div>
+                  <label class="ap-form-label" style="font-size:11.5px; margin-bottom:4px;">Length (cm) <span style="color:#ef4444;">*</span></label>
+                  <input type="number" id="apFormLength" class="ap-form-control" step="0.1" min="0.1" required value="${p ? (p.length || 15) : 15}" placeholder="15" oninput="updateApVolumetricWeightPreview()">
+                </div>
+                <div>
+                  <label class="ap-form-label" style="font-size:11.5px; margin-bottom:4px;">Breadth (cm) <span style="color:#ef4444;">*</span></label>
+                  <input type="number" id="apFormBreadth" class="ap-form-control" step="0.1" min="0.1" required value="${p ? (p.breadth || 15) : 15}" placeholder="15" oninput="updateApVolumetricWeightPreview()">
+                </div>
+                <div>
+                  <label class="ap-form-label" style="font-size:11.5px; margin-bottom:4px;">Height (cm) <span style="color:#ef4444;">*</span></label>
+                  <input type="number" id="apFormHeight" class="ap-form-control" step="0.1" min="0.1" required value="${p ? (p.height || 10) : 10}" placeholder="10" oninput="updateApVolumetricWeightPreview()">
+                </div>
+                <div>
+                  <label class="ap-form-label" style="font-size:11.5px; margin-bottom:4px;">Weight (kg) <span style="color:#ef4444;">*</span></label>
+                  <input type="number" id="apFormWeight" class="ap-form-control" step="0.01" min="0.01" required value="${p ? (p.weight || 0.5) : 0.5}" placeholder="0.5" oninput="updateApVolumetricWeightPreview()">
+                </div>
+              </div>
+
+              <!-- Real-time dynamic shipping calculation summary banner -->
+              <div id="apVolumetricSummary" style="margin-top:12px; padding:8px 12px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; font-size:11.5px; color:#1e40af; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <span><strong>Volumetric Wt:</strong> <span id="apVolumetricVal">0.45 kg</span> <em style="font-size:10.5px; color:#64748b;">((L×B×H)/5000)</em></span>
+                <span><strong>Billable Wt:</strong> <span id="apBillableVal" style="font-weight:700; color:#1d4ed8;">0.50 kg</span></span>
+              </div>
+            </div>
+
             <!-- MULTI-IMAGE GALLERY & ORDER MANAGER -->
             <div class="ap-form-card" style="background:#ffffff; border:1.5px solid #cbd5e1; border-radius:12px; padding:16px;">
               <div class="ap-gallery-header">
@@ -14868,6 +14918,26 @@ function openApProductModal(editId = null) {
 
   modalBackdrop.classList.add('active');
   renderApProductImagesGallery();
+  updateApVolumetricWeightPreview();
+}
+
+function updateApVolumetricWeightPreview() {
+  const l = parseFloat(document.getElementById('apFormLength')?.value) || 0;
+  const b = parseFloat(document.getElementById('apFormBreadth')?.value) || 0;
+  const h = parseFloat(document.getElementById('apFormHeight')?.value) || 0;
+  const w = parseFloat(document.getElementById('apFormWeight')?.value) || 0;
+
+  const volWt = (l * b * h) / 5000;
+  const billableWt = Math.max(w, volWt);
+
+  const volEl = document.getElementById('apVolumetricVal');
+  const billableEl = document.getElementById('apBillableVal');
+
+  if (volEl) volEl.textContent = `${volWt.toFixed(2)} kg`;
+  if (billableEl) {
+    billableEl.textContent = `${billableWt.toFixed(2)} kg`;
+    billableEl.style.color = volWt > w ? '#ea580c' : '#1d4ed8'; // Highlight orange if dimensional weight exceeds actual
+  }
 }
 
 function renderApProductImagesGallery() {
@@ -15094,6 +15164,11 @@ async function saveApProductForm(editId = null) {
     : [];
   const image = images.length > 0 ? images[0] : (document.getElementById('apFormImg')?.value.trim() || '');
 
+  const length = parseFloat(document.getElementById('apFormLength')?.value) || 15;
+  const breadth = parseFloat(document.getElementById('apFormBreadth')?.value) || 15;
+  const height = parseFloat(document.getElementById('apFormHeight')?.value) || 10;
+  const weight = parseFloat(document.getElementById('apFormWeight')?.value) || 0.5;
+
   const rawFbt = (document.getElementById('apFormFbt')?.value || '').trim().split(',').map(s => s.trim()).filter(Boolean);
   const boughtTogether = rawFbt;
 
@@ -15124,6 +15199,10 @@ async function saveApProductForm(editId = null) {
     existing.videoUrl = videoUrl;
     existing.images = images.length > 0 ? images : [image];
     existing.boughtTogether = boughtTogether;
+    existing.length = length;
+    existing.breadth = breadth;
+    existing.height = height;
+    existing.weight = weight;
     existing.discount = Math.round(((originalPrice - price) / originalPrice) * 100) || 0;
     savedProduct = existing;
   } else {
@@ -15144,7 +15223,11 @@ async function saveApProductForm(editId = null) {
       isFeatured,
       videoUrl,
       images: images.length > 0 ? images : [image],
-      boughtTogether
+      boughtTogether,
+      length,
+      breadth,
+      height,
+      weight
     };
     ALL_PRODUCTS.unshift(savedProduct);
   }

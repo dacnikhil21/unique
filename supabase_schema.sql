@@ -18,8 +18,16 @@ create table if not exists products (
   description text,
   in_stock boolean default true,
   stock_qty integer default 12,
+  length numeric default 15,
+  breadth numeric default 15,
+  height numeric default 10,
+  weight numeric default 0.5,
   created_at timestamptz default now()
 );
+alter table products add column if not exists length numeric default 15;
+alter table products add column if not exists breadth numeric default 15;
+alter table products add column if not exists height numeric default 10;
+alter table products add column if not exists weight numeric default 0.5;
 
 -- 2. ORDERS TABLE
 create table if not exists orders (
