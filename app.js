@@ -6354,7 +6354,11 @@ function mergeProductsFromSupabase(sbProds) {
       rating: String(sb.rating || '4.8'),
       reviewsCount: sb.reviewsCount || sb.reviews_count || 12,
       isFeatured: sb.isFeatured || sb.is_featured || false,
-      description: sb.description || ''
+      description: sb.description || '',
+      length: parseFloat(sb.length) || 15,
+      breadth: parseFloat(sb.breadth) || 15,
+      height: parseFloat(sb.height) || 10,
+      weight: parseFloat(sb.weight) || 0.5
     };
   });
 }
@@ -14872,26 +14876,26 @@ function openApProductModal(editId = null) {
               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px;">
                 <div>
                   <label class="ap-form-label" style="font-size:11.5px; margin-bottom:4px;">Length (cm) <span style="color:#ef4444;">*</span></label>
-                  <input type="number" id="apFormLength" class="ap-form-control" step="0.1" min="0.1" required value="${p ? (p.length || 15) : 15}" placeholder="15" oninput="updateApVolumetricWeightPreview()">
+                  <input type="number" id="apFormLength" class="ap-form-control" step="0.1" min="0.1" required value="${p ? (p.length || 15) : 15}" placeholder="15" oninput="updateApVolumetricWeightPreview()" onchange="updateApVolumetricWeightPreview()">
                 </div>
                 <div>
                   <label class="ap-form-label" style="font-size:11.5px; margin-bottom:4px;">Breadth (cm) <span style="color:#ef4444;">*</span></label>
-                  <input type="number" id="apFormBreadth" class="ap-form-control" step="0.1" min="0.1" required value="${p ? (p.breadth || 15) : 15}" placeholder="15" oninput="updateApVolumetricWeightPreview()">
+                  <input type="number" id="apFormBreadth" class="ap-form-control" step="0.1" min="0.1" required value="${p ? (p.breadth || 15) : 15}" placeholder="15" oninput="updateApVolumetricWeightPreview()" onchange="updateApVolumetricWeightPreview()">
                 </div>
                 <div>
                   <label class="ap-form-label" style="font-size:11.5px; margin-bottom:4px;">Height (cm) <span style="color:#ef4444;">*</span></label>
-                  <input type="number" id="apFormHeight" class="ap-form-control" step="0.1" min="0.1" required value="${p ? (p.height || 10) : 10}" placeholder="10" oninput="updateApVolumetricWeightPreview()">
+                  <input type="number" id="apFormHeight" class="ap-form-control" step="0.1" min="0.1" required value="${p ? (p.height || 10) : 10}" placeholder="10" oninput="updateApVolumetricWeightPreview()" onchange="updateApVolumetricWeightPreview()">
                 </div>
                 <div>
                   <label class="ap-form-label" style="font-size:11.5px; margin-bottom:4px;">Weight (kg) <span style="color:#ef4444;">*</span></label>
-                  <input type="number" id="apFormWeight" class="ap-form-control" step="0.01" min="0.01" required value="${p ? (p.weight || 0.5) : 0.5}" placeholder="0.5" oninput="updateApVolumetricWeightPreview()">
+                  <input type="number" id="apFormWeight" class="ap-form-control" step="0.01" min="0.01" required value="${p ? (p.weight || 0.5) : 0.5}" placeholder="0.5" oninput="updateApVolumetricWeightPreview()" onchange="updateApVolumetricWeightPreview()">
                 </div>
               </div>
 
               <!-- Real-time dynamic shipping calculation summary banner -->
               <div id="apVolumetricSummary" style="margin-top:12px; padding:8px 12px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; font-size:11.5px; color:#1e40af; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                <span><strong>Volumetric Wt:</strong> <span id="apVolumetricVal">0.45 kg</span> <em style="font-size:10.5px; color:#64748b;">((L×B×H)/5000)</em></span>
-                <span><strong>Billable Wt:</strong> <span id="apBillableVal" style="font-weight:700; color:#1d4ed8;">0.50 kg</span></span>
+                <span><strong>Volumetric Wt:</strong> <span id="apVolumetricVal">${(((p ? (p.length || 15) : 15) * (p ? (p.breadth || 15) : 15) * (p ? (p.height || 10) : 10)) / 5000).toFixed(2)} kg</span> <em style="font-size:10.5px; color:#64748b;">((L×B×H)/5000)</em></span>
+                <span><strong>Billable Wt:</strong> <span id="apBillableVal" style="font-weight:700; color:#1d4ed8;">${Math.max(p ? (p.weight || 0.5) : 0.5, (((p ? (p.length || 15) : 15) * (p ? (p.breadth || 15) : 15) * (p ? (p.height || 10) : 10)) / 5000)).toFixed(2)} kg</span></span>
               </div>
             </div>
 
@@ -14987,6 +14991,7 @@ function updateApVolumetricWeightPreview() {
     billableEl.style.color = volWt > w ? '#ea580c' : '#1d4ed8'; // Highlight orange if dimensional weight exceeds actual
   }
 }
+window.updateApVolumetricWeightPreview = updateApVolumetricWeightPreview;
 
 function renderApProductImagesGallery() {
   const container = document.getElementById('apGalleryGridContainer');
