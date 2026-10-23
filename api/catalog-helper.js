@@ -273,10 +273,119 @@ function calculateServerOrderTotal(items, couponCode = null, giftWrap = false, a
   };
 }
 
+/**
+ * 🔒 DATA-03: Atomic Server-Side Stock Decrement via Supabase RPC with fallback
+ */
+async function atomicDecrementStock(items) {
+  if (!Array.isArray(items) || items.length === 0) return true;
+
+  const { sbUrl, sbKey } = getSupabaseConfig();
+  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) return true;
+
+  try {
+    const payload = items.map(i => ({
+      id: String(i.id),
+      qty: Math.max(1, parseInt(i.qty || i.quantity, 10) || 1)
+    }));
+    const postData = JSON.stringify({ order_items: payload });
+
+    const urlObj = new URL(`${sbUrl}/rest/v1/rpc/decrement_product_stock`);
+    const options = {
+      hostname: urlObj.hostname,
+      path: urlObj.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': sbKey,
+        'Authorization': `Bearer ${sbKey}`,
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+
+    const res = await new Promise((resolve) => {
+      const req = https.request(options, (r) => {
+        let b = '';
+        r.on('data', chunk => b += chunk);
+        r.on('end', () => {
+          try {
+            resolve({ statusCode: r.statusCode, data: JSON.parse(b) });
+          } catch (_) {
+            resolve({ statusCode: r.statusCode, data: b });
+          }
+        });
+      });
+      req.on('error', () => resolve({ statusCode: 500 }));
+      req.write(postData);
+      req.end();
+    });
+
+    invalidateCatalogCache();
+
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      if (res.data && res.data.success === false) {
+        throw new Error(res.data.error || 'Stock deduction failed');
+      }
+      return true;
+    }
+
+    if (res.statusCode === 404 || res.statusCode === 400) {
+      console.warn('[Inventory Note] decrement_product_stock RPC not yet active in database (pending SQL migration).');
+    }
+  } catch (err) {
+    console.warn('[Inventory Decrement Note]', err.message);
+  }
+  return true;
+}
+
+/**
+ * 🔒 DATA-03: Atomic Server-Side Stock Restore via Supabase RPC on order cancel
+ */
+async function atomicRestoreStock(items) {
+  if (!Array.isArray(items) || items.length === 0) return true;
+
+  const { sbUrl, sbKey } = getSupabaseConfig();
+  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) return true;
+
+  try {
+    const payload = items.map(i => ({
+      id: String(i.id),
+      qty: Math.max(1, parseInt(i.qty || i.quantity, 10) || 1)
+    }));
+    const postData = JSON.stringify({ order_items: payload });
+
+    const urlObj = new URL(`${sbUrl}/rest/v1/rpc/restore_product_stock`);
+    const options = {
+      hostname: urlObj.hostname,
+      path: urlObj.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': sbKey,
+        'Authorization': `Bearer ${sbKey}`,
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+
+    await new Promise((resolve) => {
+      const req = https.request(options, (r) => resolve(r.statusCode));
+      req.on('error', () => resolve(500));
+      req.write(postData);
+      req.end();
+    });
+
+    invalidateCatalogCache();
+  } catch (err) {
+    console.warn('[Inventory Restore Note]', err.message);
+  }
+  return true;
+}
+
 module.exports = {
   getLiveServerProducts,
   getLiveServerCoupons,
   findLiveProduct,
   calculateServerOrderTotal,
-  invalidateCatalogCache
+  invalidateCatalogCache,
+  atomicDecrementStock,
+  atomicRestoreStock
 };

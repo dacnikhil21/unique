@@ -11178,6 +11178,7 @@ function cancelApOrder(orderId) {
       restoreStockForOrder(o.items);
       localStorage.setItem('ue_orders', JSON.stringify(userOrders));
       if (typeof sbUpdateOrderStatus === 'function') sbUpdateOrderStatus(orderId, 'Cancelled', o.stepIndex || 0);
+      if (typeof sbRestoreStock === 'function') sbRestoreStock(o.items);
       syncStorefrontState();
     }
     switchApTab('orders');

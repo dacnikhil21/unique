@@ -20,7 +20,8 @@ const ALLOWED_ORIGINS = [
 const {
   getLiveServerProducts,
   getLiveServerCoupons,
-  calculateServerOrderTotal
+  calculateServerOrderTotal,
+  atomicDecrementStock
 } = require('./catalog-helper.js');
 
 function createRazorpayOrder(amountInPaise, receipt, notes = {}) {
@@ -229,6 +230,7 @@ module.exports = async (req, res) => {
           userId: notes.userId || null
         };
         await syncOrderToSupabase(orderRecord);
+        await atomicDecrementStock(orderRecord.items);
         console.log(`[Razorpay Webhook] Order confirmed and saved to Supabase: ${orderRecord.orderId}`);
       } else if (eventType === 'payment.failed') {
         console.log(`[Razorpay Webhook] Payment failed for order: ${orderId}`);
@@ -274,6 +276,9 @@ module.exports = async (req, res) => {
 
       const isValid = verifyPaymentSignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
       if (isValid) {
+        if (Array.isArray(payload.items) && payload.items.length > 0) {
+          await atomicDecrementStock(payload.items);
+        }
         return res.status(200).json({
           success: true,
           verified: true,

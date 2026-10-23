@@ -14,7 +14,8 @@ const ALLOWED_ORIGINS = [
 const {
   getLiveServerProducts,
   getLiveServerCoupons,
-  calculateServerOrderTotal
+  calculateServerOrderTotal,
+  atomicDecrementStock
 } = require('./catalog-helper.js');
 
 /**
@@ -154,6 +155,9 @@ module.exports = async (req, res) => {
         userId: payload.userId || null,
         createdAt: new Date().toISOString()
       };
+
+      // 🔒 DATA-03: Atomic server-side stock decrement
+      await atomicDecrementStock(calcResult.verifiedItems);
 
       // Non-blocking sync to Supabase
       syncOrderToSupabase(orderRecord).catch(() => {});

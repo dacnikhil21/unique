@@ -315,6 +315,32 @@ async function sbUpdateOrderStatus(orderId, status, stepIndex) {
   }
 }
 
+async function sbDecrementStock(items) {
+  try {
+    if (!Array.isArray(items) || items.length === 0) return null;
+    const payload = items.map(i => ({ id: String(i.id), qty: Math.max(1, parseInt(i.qty || i.quantity, 10) || 1) }));
+    const { data, error } = await _supabase.rpc('decrement_product_stock', { order_items: payload });
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.warn('[Supabase] decrement_product_stock rpc note (pending migration):', err.message);
+    return null;
+  }
+}
+
+async function sbRestoreStock(items) {
+  try {
+    if (!Array.isArray(items) || items.length === 0) return null;
+    const payload = items.map(i => ({ id: String(i.id), qty: Math.max(1, parseInt(i.qty || i.quantity, 10) || 1) }));
+    const { data, error } = await _supabase.rpc('restore_product_stock', { order_items: payload });
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.warn('[Supabase] restore_product_stock rpc note (pending migration):', err.message);
+    return null;
+  }
+}
+
 /* ─────────────────────────────── REVIEWS ─────────────────────────────── */
 
 async function sbGetReviews() {

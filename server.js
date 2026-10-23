@@ -67,7 +67,9 @@ const {
   getLiveServerProducts,
   getLiveServerCoupons,
   calculateServerOrderTotal,
-  invalidateCatalogCache
+  invalidateCatalogCache,
+  atomicDecrementStock,
+  atomicRestoreStock
 } = require('./api/catalog-helper.js');
 
 // In-Memory Orders Store for Idempotency & Webhook Tracking
@@ -437,6 +439,7 @@ const server = http.createServer((req, res) => {
 
           SERVER_ORDERS.set(razorpay_order_id, { ...finalRecord, status: 'Paid & Confirmed' });
           syncOrderToSupabase(finalRecord);
+          atomicDecrementStock(finalRecord.items);
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
