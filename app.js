@@ -6249,6 +6249,7 @@ async function applyAuthSession(session) {
     return;
   }
   authUserId = session.user.id;
+  userSession = session;
   const meta = session.user.user_metadata || {};
   const prof = typeof sbGetProfile === 'function' ? await sbGetProfile(session.user.id) : null;
   userProfile = {
@@ -10490,29 +10491,82 @@ function closeInvoiceModal() {
 }
 
 
-// ─── Cloudinary Upload Helper ────────────────────────────────────────────────
-async function getAdminAuthHeaders() {
+// ─── Cloudinary Upload & Admin Auth Token Helper ─────────────────────────────
+async function getAdminAuth() {
   const headers = { 'Content-Type': 'application/json' };
+  let token = '';
+
   try {
-    let token = '';
-    if (typeof sbGetAuthSession === 'function') {
-      const session = await sbGetAuthSession();
-      token = session?.access_token || '';
-    } else if (window._supabase?.auth?.getSession) {
-      const { data } = await window._supabase.auth.getSession();
-      token = data?.session?.access_token || '';
+    // 1. Try global userSession from applyAuthSession
+    if (typeof userSession !== 'undefined' && userSession?.access_token) {
+      token = userSession.access_token;
     }
+
+    // 2. Try Supabase Client session
+    if (!token && typeof sbGetAuthSession === 'function') {
+      const session = await sbGetAuthSession();
+      if (session?.access_token) token = session.access_token;
+    }
+
+    // 3. Try window._supabase
+    if (!token && window._supabase?.auth?.getSession) {
+      const { data } = await window._supabase.auth.getSession();
+      if (data?.session?.access_token) token = data.session.access_token;
+    }
+
+    // 4. Fallback: inspect localStorage for Supabase token
+    if (!token) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) {
+          try {
+            const parsed = JSON.parse(localStorage.getItem(k));
+            if (parsed?.access_token) {
+              token = parsed.access_token;
+              break;
+            }
+          } catch (_) {}
+        }
+      }
+    }
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
   } catch (err) {
-    console.warn('[Admin Auth] Failed to retrieve session access token:', err);
+    console.warn('[Admin Auth] Error retrieving access token:', err);
   }
-  return headers;
+
+  return { headers, token };
+}
+
+async function getAdminAuthHeaders() {
+  const auth = await getAdminAuth();
+  return auth.headers;
+}
+
+function promptAdminReLogin() {
+  apIsAuthenticated = false;
+  sessionStorage.removeItem('ue_admin_auth');
+  if (typeof closeApCategoryModal === 'function') closeApCategoryModal();
+  if (typeof closeApProductModal === 'function') closeApProductModal();
+  if (typeof closeApBannerModal === 'function') closeApBannerModal();
+  if (typeof closeApEdModal === 'function') closeApEdModal();
+  const viewAdmin = document.getElementById('viewAdmin');
+  if (viewAdmin && typeof renderAdminLoginView === 'function') {
+    renderAdminLoginView(viewAdmin);
+  }
 }
 
 async function uploadToCloudinary(file) {
-  const authHeaders = await getAdminAuthHeaders();
+  const auth = await getAdminAuth();
+  if (!auth.token) {
+    const msg = 'Admin session expired or missing. Please log in again to upload media.';
+    showToast(msg, 'error');
+    promptAdminReLogin();
+    throw new Error(msg);
+  }
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async () => {
@@ -10520,10 +10574,16 @@ async function uploadToCloudinary(file) {
         const base64Data = reader.result;
         const res = await fetch('/api/upload', {
           method: 'POST',
-          headers: authHeaders,
+          headers: auth.headers,
           body: JSON.stringify({ file: base64Data })
         });
         const data = await res.json();
+        if (res.status === 401) {
+          const msg = data.error || 'Your admin session has expired. Please log in again.';
+          showToast(msg, 'error');
+          promptAdminReLogin();
+          return reject(msg);
+        }
         if (data.success && data.url) {
           resolve(data.url);
         } else {
@@ -15440,6 +15500,14 @@ async function uploadMultipleImagesToCloudinary(fileInput) {
   const files = Array.from(fileInput.files || []);
   if (files.length === 0) return;
 
+  const auth = await getAdminAuth();
+  if (!auth.token) {
+    showApToast('Admin session expired or missing. Please log in again to upload photos.', 'error');
+    if (fileInput) fileInput.value = '';
+    promptAdminReLogin();
+    return;
+  }
+
   if (!window.apModalProductImages) window.apModalProductImages = [];
 
   showApToast(`Uploading ${files.length} photo(s)...`, 'info');
@@ -15452,13 +15520,18 @@ async function uploadMultipleImagesToCloudinary(fileInput) {
       // Auto-compress large phone photos to crisp web resolution (under 600KB)
       const base64Data = await compressImageForUpload(file, 1600, 0.88);
 
-      const authHeaders = await getAdminAuthHeaders();
       const res = await fetch('/api/upload', {
         method: 'POST',
-        headers: authHeaders,
+        headers: auth.headers,
         body: JSON.stringify({ file: base64Data })
       });
       const data = await res.json();
+
+      if (res.status === 401) {
+        showApToast(data.error || 'Admin session expired. Please log in again.', 'error');
+        promptAdminReLogin();
+        break;
+      }
 
       if (data.success && data.url) {
         window.apModalProductImages.push(data.url);
@@ -15640,32 +15713,43 @@ async function uploadImageToCloudinary(fileInput, targetInputId, targetPrevId) {
   const file = fileInput.files[0];
   if (!file) return;
 
+  const auth = await getAdminAuth();
+  if (!auth.token) {
+    showApToast('Admin session expired or missing. Please log in again to upload images.', 'error');
+    if (fileInput) fileInput.value = '';
+    promptAdminReLogin();
+    return;
+  }
+
   showApToast('Optimizing & uploading image...', 'info');
 
   try {
     const base64Data = await compressImageForUpload(file, 1600, 0.88);
 
-    const authHeaders = await getAdminAuthHeaders();
-    fetch('/api/upload', {
+    const res = await fetch('/api/upload', {
       method: 'POST',
-      headers: authHeaders,
+      headers: auth.headers,
       body: JSON.stringify({ file: base64Data })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success && data.url) {
-        document.getElementById(targetInputId).value = data.url;
-        document.getElementById(targetPrevId).src = data.url;
-        showApToast('Image uploaded successfully!', 'success');
-      } else {
-        showApToast(data.error || 'Upload failed. Paste an image URL instead.', 'error');
-      }
-    })
-    .catch(() => {
-      showApToast('Upload failed on this server. Paste an image URL instead.', 'error');
     });
+    const data = await res.json();
+
+    if (res.status === 401) {
+      showApToast(data.error || 'Admin session expired. Please log in again to upload images.', 'error');
+      promptAdminReLogin();
+      return;
+    }
+
+    if (data.success && data.url) {
+      const targetInput = document.getElementById(targetInputId);
+      const targetPrev = document.getElementById(targetPrevId);
+      if (targetInput) targetInput.value = data.url;
+      if (targetPrev) targetPrev.src = data.url;
+      showApToast('Image uploaded successfully!', 'success');
+    } else {
+      showApToast(data.error || 'Upload failed. Paste an image URL instead.', 'error');
+    }
   } catch (err) {
-    showApToast('Could not process image file.', 'error');
+    showApToast('Could not process image file: ' + (err.message || 'Network error'), 'error');
   }
 }
 

@@ -7,6 +7,7 @@ const SUPABASE_URL = 'https://sfcxpvvqxldhdkvfyhgj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmY3hwdnZxeGxkaGRrdmZ5aGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NzU4MTQsImV4cCI6MjEwMTE1MTgxNH0.ZNWPL7xNiapsnOrvJ45uT6KpaFqcvzz4vv7R7WGx39c';
 
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+window._supabase = _supabase;
 
 /* ─────────────────────────────── PRODUCTS ─────────────────────────────── */
 
@@ -618,7 +619,18 @@ async function sbGetAuthSession() {
   try {
     const { data, error } = await _supabase.auth.getSession();
     if (error) throw error;
-    return data.session;
+    let session = data?.session;
+    if (session?.expires_at) {
+      const nowSec = Math.floor(Date.now() / 1000);
+      if (session.expires_at <= nowSec + 60) {
+        // Token is expired or expiring within 60s: refresh it automatically
+        try {
+          const { data: refData } = await _supabase.auth.refreshSession();
+          if (refData?.session) session = refData.session;
+        } catch (_) {}
+      }
+    }
+    return session || null;
   } catch (err) {
     return null;
   }

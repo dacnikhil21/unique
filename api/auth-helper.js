@@ -55,15 +55,14 @@ async function verifyAdminRequest(req, payload = {}) {
               const adminEmails = getAdminEmails();
 
               const isAdminEmail = adminEmails.includes(userEmail);
-              const isAdminRole = user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin';
 
-              if (isAdminEmail || isAdminRole) {
+              if (isAdminEmail) {
                 return resolve({ authorized: true, user });
               }
 
               return resolve({
                 authorized: false,
-                error: `Forbidden: User "${userEmail || 'unknown'}" does not have administrative privileges.`
+                error: `Forbidden: Email "${userEmail || 'unknown'}" is not an authorized administrator email.`
               });
             }
 
