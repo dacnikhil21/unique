@@ -76,7 +76,7 @@ try {
 
 let SERVER_COUPONS = [
   { code: "WELCOME100", type: "fixed", value: 100, minSpend: 499, status: "Active" },
-  { code: "VIZAGFREE", type: "shipping", value: 0, minSpend: 299, status: "Active" },
+  { code: "FREESHIP", type: "shipping", value: 0, minSpend: 299, status: "Active" },
   { code: "FESTIVE20", type: "percent", value: 20, minSpend: 999, status: "Active" },
   { code: "UNIQUE10", type: "percent", value: 10, minSpend: 399, status: "Active" }
 ];
@@ -403,7 +403,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST' && (req.url.startsWith('/api/razorpay/create-order') || req.url === '/api/razorpay?action=create-order')) {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
-    req.on('end', () => {
+    req.on('end', async () => {
       try {
         const payload = JSON.parse(body || '{}');
 
@@ -446,7 +446,7 @@ const server = http.createServer((req, res) => {
           notes: {
             customerName: payload.notes?.customerName || payload.customerName || 'Customer',
             phone: payload.notes?.phone || payload.phone || '',
-            address: payload.notes?.address || payload.address || 'Visakhapatnam'
+            address: payload.notes?.address || payload.address || ''
           }
         });
 
@@ -474,7 +474,7 @@ const server = http.createServer((req, res) => {
                   razorpayOrderId: parsed.id,
                   customerName: payload.customerName || payload.notes?.customerName || 'Customer',
                   phone: payload.phone || payload.notes?.phone || '',
-                  address: payload.address || payload.notes?.address || 'Visakhapatnam',
+                  address: payload.address || payload.notes?.address || '',
                   items: calcResult.verifiedItems,
                   totalAmount: grandTotal,
                   subtotal: calcResult.subtotal,
@@ -565,7 +565,7 @@ const server = http.createServer((req, res) => {
             status: 'Paid & Confirmed',
             customerName: payload.name || existingOrder?.customerName || 'Customer',
             phone: payload.phone || existingOrder?.phone || '',
-            address: payload.address || existingOrder?.address || 'Visakhapatnam',
+            address: payload.address || existingOrder?.address || '',
             items: existingOrder?.items || [],
             totalAmount: existingOrder?.totalAmount || payload.totals?.grandTotal || 0,
             subtotal: existingOrder?.subtotal || payload.totals?.subtotal || 0,

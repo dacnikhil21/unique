@@ -19,7 +19,7 @@ let STORE_SETTINGS = (() => {
     whatsapp: "7799747575",
     gstin: "37BVTPG7761F1Z1",
     email: "uniqueexpressions.in@gmail.com",
-    address: "2nd floor LIG 347, 2-115/9/1, near Shivalayam, Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041",
+    address: " - 560001",
     freeShippingMin: 499,
     shippingFee: 50,
     giftWrapFee: 30,
@@ -43,7 +43,7 @@ let STORE_COUPONS = (() => {
   } catch (e) {}
   return [
     { code: "WELCOME100", type: "fixed", value: 100, discount: "₹100 OFF", minSpend: 499, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
-    { code: "VIZAGFREE", type: "shipping", value: 0, discount: "FREE Shipping", minSpend: 299, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
+    { code: "FREESHIP", type: "shipping", value: 0, discount: "FREE Shipping", minSpend: 299, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
     { code: "FESTIVE20", type: "percent", value: 20, discount: "20% OFF", minSpend: 999, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
     { code: "UNIQUE10", type: "percent", value: 10, discount: "10% OFF", minSpend: 399, usedCount: 0, expiry: "31 Dec 2026", status: "Active" }
   ];
@@ -96,14 +96,14 @@ function enhanceProductSchema(products) {
       : [p.image].filter(Boolean);
 
     const reviews = Array.isArray(p.reviews) ? p.reviews : [
-      { id: 'rev-1-' + p.id, name: "Sowmya Rao", rating: 5, comment: "Exceptional quality and prompt same-day delivery in Madhurawada!", date: "28 Jul 2026", verified: true },
+      { id: 'rev-1-' + p.id, name: "Sowmya Rao", rating: 5, comment: "Exceptional quality and prompt same-day delivery in Boutique!", date: "28 Jul 2026", verified: true },
       { id: 'rev-2-' + p.id, name: "Rajesh Varma", rating: 5, comment: "Top notch product. Kids loved it!", date: "24 Jul 2026", verified: true },
       { id: 'rev-3-' + p.id, name: "Ananya P.", rating: 4, comment: "Great build quality, highly recommended boutique item.", date: "18 Jul 2026", verified: true }
     ];
 
     const features = Array.isArray(p.features) && p.features.length > 0 ? p.features : [
       "Authentic store item verified by UNIQUE EXPRESSIONS",
-      "Same-day express local dispatch in Visakhapatnam",
+      "Same-day express local dispatch in India",
       "Child-safe & non-toxic premium grade materials",
       "Full 3-Day Store Return & Exchange Guarantee"
     ];
@@ -112,7 +112,7 @@ function enhanceProductSchema(products) {
       "SKU Code": p.sku || ('UE-PROD-' + p.id),
       "Category": p.category || 'General',
       "Material": p.material || 'Premium Eco-ABS / Wood / Brass',
-      "Dispatch": "Same-day in Vizag (530041)",
+      "Dispatch": "Same-day Express Dispatch",
       "GST Invoice": "37BVTPG7761F1Z1",
       "Return Guarantee": "3 Days Easy Return"
     };
@@ -142,7 +142,7 @@ let HERO_SLIDES = safeParseStorage('ue_hero_slides_v7') || [
   {
     id: 1,
     img: "https://d1h96izmtdkx5o.cloudfront.net/-OPHhEadGd1W2rTwlBbq.jpg?v=5",
-    badge: "✨ UNIQUE EXPRESSIONS VIZAG",
+    badge: "✨ UNIQUE EXPRESSIONS",
     title: "Curated Collection of Toys, Gifts & Stationery",
     sub: "Discover High-Quality RC Cars, Flying Drones, Educational STEM Toys, Traditional Handicrafts & Bespoke Return Gifts.",
     ctaText: "Explore Store Catalog",
@@ -549,7 +549,7 @@ function renderDynamicNavCategories() {
     `).join('') + `
       <div class="dt-mega-col dt-mega-banner-col">
         <div class="dt-mega-promo-box">
-          <span class="dt-mega-tag">VISAKHAPATNAM STORE</span>
+          <span class="dt-mega-tag">India STORE</span>
           <h4>UNIQUE EXPRESSIONS</h4>
           <p>Curated toys, gifts &amp; return hampers.</p>
           <button onclick="switchView('categories')">View All Categories →</button>
@@ -671,7 +671,7 @@ function syncCustomersFromOrders() {
         name: o.customerName || o.name || 'Customer',
         phone: o.phone || '',
         email: o.email || '',
-        city: 'Visakhapatnam',
+        city: "",
         ordersCount: 0,
         totalSpend: 0,
         status: 'Active'
@@ -703,7 +703,7 @@ async function loadCustomersAndRefresh() {
           name: p.name || 'Customer',
           phone: p.phone || '',
           email: p.email || '',
-          city: p.city || 'Visakhapatnam',
+          city: p.city || 'India',
           ordersCount: 0,
           totalSpend: 0,
           status: 'Active'
@@ -723,7 +723,7 @@ async function loadCustomersAndRefresh() {
           name: o.customerName || o.name || 'Customer',
           phone: o.phone || '',
           email: o.email || '',
-          city: 'Visakhapatnam',
+          city: "",
           ordersCount: 0,
           totalSpend: 0,
           status: 'Active'
@@ -1076,7 +1076,7 @@ function generateSeedProducts() {
     discount: item.discount,
     rating: (4.5 + (idx % 5) * 0.1).toFixed(1),
     reviewsCount: 20 + idx * 3,
-    description: `Authentic ${item.category} product offered by UNIQUE EXPRESSIONS, Visakhapatnam. Quality tested and available for retail & wholesale GST orders.`,
+    description: `Authentic ${item.category} product offered by UNIQUE EXPRESSIONS. Quality tested and available for retail & wholesale GST orders.`,
     stockQty: item.stockQty,
     inStock: true,
     isFeatured: item.isFeatured
@@ -1104,7 +1104,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "360 Stunt Car offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "360 Stunt Car offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -1124,7 +1124,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "RC F1 Car offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "RC F1 Car offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -1167,7 +1167,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "RC Defending Climbing offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "RC Defending Climbing offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -1187,7 +1187,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "RC Racing Stunt car offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "RC Racing Stunt car offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -1207,7 +1207,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "RC Cross country off road R/C car offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "RC Cross country off road R/C car offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -1267,7 +1267,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "RC F1 Racing Car offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "RC F1 Racing Car offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -1327,7 +1327,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "RC Police NEED FOR SPPED Racing offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "RC Police NEED FOR SPPED Racing offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -1387,7 +1387,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "RC Flying Bike offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "RC Flying Bike offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -1429,7 +1429,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Fighter Plane Interstellar offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Fighter Plane Interstellar offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -1450,7 +1450,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Y-Series Plane offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Y-Series Plane offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -2166,7 +2166,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Mini Helecopter Velocity offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Mini Helecopter Velocity offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -2208,7 +2208,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Bubble Gun Refill offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Bubble Gun Refill offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -2229,7 +2229,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Walkie Talkie offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Walkie Talkie offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -2434,7 +2434,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Minecraft MyWorld lego blocks offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Minecraft MyWorld lego blocks offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -2714,7 +2714,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Die Cast Model Frame(Premium) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Die Cast Model Frame(Premium) offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -2734,7 +2734,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Lakshmi devi offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Lakshmi devi offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -2754,7 +2754,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "BALA RAMUDU offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "BALA RAMUDU offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 7,
     "inStock": true,
@@ -2776,7 +2776,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "SEEMANTHAM SET offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "SEEMANTHAM SET offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 23,
     "inStock": true,
@@ -2796,7 +2796,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "BALJI FAMILY SET offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "BALJI FAMILY SET offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 15,
     "inStock": true,
@@ -2816,7 +2816,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "STUDY GANESHA offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "STUDY GANESHA offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -2836,7 +2836,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Balaji Idol offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Balaji Idol offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -2856,7 +2856,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Venkateshwara Swami (BALAJI) Idol LARGE GREEN offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Venkateshwara Swami (BALAJI) Idol LARGE GREEN offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -2876,7 +2876,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "5 in one chain’s doll offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "5 in one chain’s doll offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 5,
     "inStock": true,
@@ -2896,7 +2896,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "5 in 1 Woman Doll offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "5 in 1 Woman Doll offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -2916,7 +2916,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Buddha offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Buddha offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -2936,7 +2936,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Balaji Idol Medium offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Balaji Idol Medium offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -2956,7 +2956,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "ROLLING Ganesha Idol offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "ROLLING Ganesha Idol offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -2976,7 +2976,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Hanuman Idol offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Hanuman Idol offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -2996,7 +2996,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Krishna Idol with Flute offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Krishna Idol with Flute offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -3016,7 +3016,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Mother & Child offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Mother & Child offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -3036,7 +3036,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Radha Krishna Set offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Radha Krishna Set offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -3056,7 +3056,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Sarasvathi Devi offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Sarasvathi Devi offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -3076,7 +3076,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Shivalingam offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Shivalingam offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -3096,7 +3096,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Venna Krishna offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Venna Krishna offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -3116,7 +3116,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Shiva Parvathi Set offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Shiva Parvathi Set offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -3136,7 +3136,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Tamboolam set offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Tamboolam set offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -3156,7 +3156,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Ganesha offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Ganesha offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -3176,7 +3176,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Ganesha offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Ganesha offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -3218,7 +3218,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Veena offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Veena offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -3239,7 +3239,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Rickshaw offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Rickshaw offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -3270,7 +3270,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Dasavatharam set offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Dasavatharam set offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -3291,7 +3291,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Post box money saver box offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Post box money saver box offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -3312,7 +3312,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "House light set offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "House light set offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -3333,7 +3333,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Joker pulling game offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Joker pulling game offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -3354,7 +3354,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "MAGIC DRAWING DOODLE BOOK offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "MAGIC DRAWING DOODLE BOOK offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -3374,7 +3374,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "MECHANICAL PENCIL BOX offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "MECHANICAL PENCIL BOX offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 5,
     "inStock": true,
@@ -3394,7 +3394,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "CUTE PENCIL POUCHES offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "CUTE PENCIL POUCHES offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 4,
     "inStock": true,
@@ -3416,7 +3416,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Cute Erasers offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Cute Erasers offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 15,
     "inStock": true,
@@ -3438,7 +3438,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Foldable scale(slap band)random design offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Foldable scale(slap band)random design offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 34,
     "inStock": true,
@@ -3459,7 +3459,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Transparent Pouch for Return Gifts (A4 size random design) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Transparent Pouch for Return Gifts (A4 size random design) offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 33,
     "inStock": true,
@@ -3481,7 +3481,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Brick Pencil offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Brick Pencil offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 6,
     "inStock": true,
@@ -3503,7 +3503,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Eraser with Cap( glow in the dark) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Eraser with Cap( glow in the dark) offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 15,
     "inStock": true,
@@ -3524,7 +3524,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Glow in the dark Pencil offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Glow in the dark Pencil offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 30,
     "inStock": true,
@@ -3544,7 +3544,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Pencil with Sharpner end offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Pencil with Sharpner end offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 19,
     "inStock": true,
@@ -3567,7 +3567,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Pen Shape pencil everlasting inkless pencil offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Pen Shape pencil everlasting inkless pencil offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 240,
     "inStock": true,
@@ -3591,7 +3591,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Cartoon astronaut Zipper Bag Pouches For Return Gifts offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Cartoon astronaut Zipper Bag Pouches For Return Gifts offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -3612,7 +3612,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Crystal Ruler offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Crystal Ruler offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 5,
     "inStock": true,
@@ -3632,7 +3632,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Pvc pouch(mix design pvc pouch for birthday gift packig) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Pvc pouch(mix design pvc pouch for birthday gift packig) offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -3652,7 +3652,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Colour endless pencil offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Colour endless pencil offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 6,
     "inStock": true,
@@ -3672,7 +3672,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Mix design pencil offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Mix design pencil offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 144,
     "inStock": true,
@@ -3693,7 +3693,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Doramen ,Micket Themed Cute Pens(Random Design) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Doramen ,Micket Themed Cute Pens(Random Design) offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 10,
     "inStock": true,
@@ -3736,7 +3736,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Invisible Pen offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Invisible Pen offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 117,
     "inStock": true,
@@ -3757,7 +3757,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Big Pouch for return Gifts(A5 Size)Random Design offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Big Pouch for return Gifts(A5 Size)Random Design offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -3777,7 +3777,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Moti Gel pen offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Moti Gel pen offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 34,
     "inStock": true,
@@ -3797,7 +3797,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Thank you Bag (Mix Designs) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Thank you Bag (Mix Designs) offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 138,
     "inStock": true,
@@ -3817,7 +3817,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Mix design noodles eraser offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Mix design noodles eraser offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 58,
     "inStock": true,
@@ -3837,7 +3837,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Labubu 2 hole dustbin shape sharpener offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Labubu 2 hole dustbin shape sharpener offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -3859,7 +3859,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Lipstick Shape Blue Ink Pen offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Lipstick Shape Blue Ink Pen offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 99,
     "inStock": true,
@@ -3881,7 +3881,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Cartoon pencil Sharpner(double Hole) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Cartoon pencil Sharpner(double Hole) offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -3903,7 +3903,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Fire brigade sharpner offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Fire brigade sharpner offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 52,
     "inStock": true,
@@ -3923,7 +3923,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Sharpener panda and unicorn mix design offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Sharpener panda and unicorn mix design offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 6,
     "inStock": true,
@@ -3943,7 +3943,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Diamond Swan pen offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Diamond Swan pen offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 17,
     "inStock": true,
@@ -3965,7 +3965,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Double Hole fast Camera Sharpner offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Double Hole fast Camera Sharpner offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -3986,7 +3986,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "New 350 combo offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "New 350 combo offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4126,7 +4126,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4146,7 +4146,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4166,7 +4166,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4186,7 +4186,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4206,7 +4206,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4226,7 +4226,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4246,7 +4246,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4266,7 +4266,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4286,7 +4286,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4306,7 +4306,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4326,7 +4326,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4346,7 +4346,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4366,7 +4366,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4386,7 +4386,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4406,7 +4406,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4426,7 +4426,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4446,7 +4446,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4466,7 +4466,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4486,7 +4486,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4506,7 +4506,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4526,7 +4526,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4546,7 +4546,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4566,7 +4566,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4586,7 +4586,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4606,7 +4606,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4626,7 +4626,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4646,7 +4646,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4666,7 +4666,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4686,7 +4686,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4706,7 +4706,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Kids Clogs offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4730,7 +4730,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Electronic Measuring Spoon Scale offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Electronic Measuring Spoon Scale offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4754,7 +4754,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "X20 Magnetic Tape Bluetooth Speaker+Fragrance offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "X20 Magnetic Tape Bluetooth Speaker+Fragrance offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -4778,7 +4778,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Aura Premium Bluetooth Speaker offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Aura Premium Bluetooth Speaker offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -4800,7 +4800,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Retro Bluetooth Speaker offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Retro Bluetooth Speaker offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -4820,7 +4820,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Transparent Umbrella offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Transparent Umbrella offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -4842,7 +4842,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Automatic Inflatable Air Bed offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Automatic Inflatable Air Bed offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -4862,7 +4862,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Reversible Umbrella offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Reversible Umbrella offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -4884,7 +4884,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Sensor Alarm Clock offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Sensor Alarm Clock offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -4906,7 +4906,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Instant Popcorn Maker offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Instant Popcorn Maker offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 3,
     "inStock": true,
@@ -4928,7 +4928,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Carrot Umbrella offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Carrot Umbrella offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -4951,7 +4951,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Multi function Silicon Pumpkin Night Lamp offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Multi function Silicon Pumpkin Night Lamp offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 5,
     "inStock": true,
@@ -4973,7 +4973,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Premium Metal 3 mode Night Lamp offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Premium Metal 3 mode Night Lamp offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -4996,7 +4996,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Premium Metal Night Lamp offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Premium Metal Night Lamp offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -5019,7 +5019,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Cute Silicon Pear Multi colour Lamp offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Cute Silicon Pear Multi colour Lamp offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 3,
     "inStock": true,
@@ -5041,7 +5041,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Cute Duck Silicon Lamp offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Cute Duck Silicon Lamp offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 3,
     "inStock": true,
@@ -5065,7 +5065,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Magic Umbrella offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Magic Umbrella offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -5088,7 +5088,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Oil Spray Glass Bottle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Oil Spray Glass Bottle offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -5111,7 +5111,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Premium Insulated Bottle 1000ml offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Premium Insulated Bottle 1000ml offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5132,7 +5132,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Premium Watch & Sunglasses Organizer offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Premium Watch & Sunglasses Organizer offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -5152,7 +5152,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Laptop or Bed Study Table offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Laptop or Bed Study Table offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -5174,7 +5174,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Buggati Car Bluetooth Speaker offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Buggati Car Bluetooth Speaker offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -5197,7 +5197,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Cyber Truck Bluetooth Speaker offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Cyber Truck Bluetooth Speaker offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5220,7 +5220,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Electric Cloth Dryer Heater offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Electric Cloth Dryer Heater offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -5241,7 +5241,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Velvet Heating Pad offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Velvet Heating Pad offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -5266,7 +5266,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Ultra HD Metallic Cylinder Projector offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Ultra HD Metallic Cylinder Projector offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -5288,7 +5288,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Rechargeable Water Dispenser offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Rechargeable Water Dispenser offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5309,7 +5309,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Inflatable Sofa Chair(with pump) offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Inflatable Sofa Chair(with pump) offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -5333,7 +5333,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Alien Mobile Stand offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Alien Mobile Stand offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5356,7 +5356,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "L T21 USB Headlight offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "L T21 USB Headlight offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -5378,7 +5378,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Study Lamp with Pen Stand & Sharpener offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Study Lamp with Pen Stand & Sharpener offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5400,7 +5400,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Radha Krishna brass square 6”in tray offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Radha Krishna brass square 6”in tray offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5423,7 +5423,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Rudraksh Bell GSI offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Rudraksh Bell GSI offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5445,7 +5445,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Bowl & spoon GSI offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Bowl & spoon GSI offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5467,7 +5467,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Pichwai Jars 4”in offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Pichwai Jars 4”in offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5489,7 +5489,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Pichwai Jars 4”in offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Pichwai Jars 4”in offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5511,7 +5511,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "GSI  4”in basket offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "GSI  4”in basket offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -5533,7 +5533,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Pichwai Design 6”in tray with handle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Pichwai Design 6”in tray with handle offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 40,
     "inStock": true,
@@ -5555,7 +5555,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Pichwai Design Brass 6”in tray offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Pichwai Design Brass 6”in tray offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 40,
     "inStock": true,
@@ -5576,7 +5576,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Diya Peacock Design offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Diya Peacock Design offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 40,
     "inStock": true,
@@ -5597,7 +5597,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Balaji GSI 8’in Tray offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Balaji GSI 8’in Tray offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 29,
     "inStock": true,
@@ -5617,7 +5617,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Pasupu Kumkuma Set 1 offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Pasupu Kumkuma Set 1 offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -5637,7 +5637,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "RAJA RANI Pasupu Kumkuma Set Couple Edt offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "RAJA RANI Pasupu Kumkuma Set Couple Edt offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -5657,7 +5657,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Thambolam Pasupu Kumkuma Set Parrot Edt offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Thambolam Pasupu Kumkuma Set Parrot Edt offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -5677,7 +5677,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Pasupu Kumkuma Set Parrot Edt2 offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Pasupu Kumkuma Set Parrot Edt2 offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -5698,7 +5698,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "JCB Engineering Vehicle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "JCB Engineering Vehicle offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5718,7 +5718,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "scratch book mini offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "scratch book mini offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5738,7 +5738,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Linear pens offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Linear pens offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5759,7 +5759,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Lucky Shot Game offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Lucky Shot Game offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -5781,7 +5781,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Roulette Game offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Roulette Game offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -5801,7 +5801,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Thermal bottle 300ml offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Thermal bottle 300ml offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -5821,7 +5821,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Spinner Band offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Spinner Band offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -5841,7 +5841,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Cute Mini Stamps offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Cute Mini Stamps offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 5,
     "inStock": true,
@@ -5862,7 +5862,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Doctors Kit offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Doctors Kit offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5883,7 +5883,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Spinner Puzzle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Spinner Puzzle offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 20,
     "inStock": true,
@@ -5904,7 +5904,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Diary offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Diary offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 4,
     "inStock": true,
@@ -5924,7 +5924,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Cactus Glass Bottle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Cactus Glass Bottle offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -5944,7 +5944,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Enjoy Life Glass Bottle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Enjoy Life Glass Bottle offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -5964,7 +5964,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Glass bottle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Glass bottle offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -5984,7 +5984,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "The Lil Rabbit Bottle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "The Lil Rabbit Bottle offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -6004,7 +6004,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Glass Bottle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Glass Bottle offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -6024,7 +6024,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Lucky Glass Bottle offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Lucky Glass Bottle offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -6045,7 +6045,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Wooden multi puzzle n white board offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Wooden multi puzzle n white board offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -6066,7 +6066,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Alphabetic Magnetic Maze offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Alphabetic Magnetic Maze offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 2,
     "inStock": true,
@@ -6087,7 +6087,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Standing Table Tennis offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Standing Table Tennis offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 3,
     "inStock": true,
@@ -6108,7 +6108,7 @@ let ALL_PRODUCTS = (() => {
     ],
     "rating": "4.9",
     "reviewsCount": 18,
-    "description": "Hanging Table Tennis offered by UNIQUE EXPRESSIONS, Visakhapatnam.",
+    "description": "Hanging Table Tennis offered by UNIQUE EXPRESSIONS.",
     "videoUrl": "",
     "stockQty": 1,
     "inStock": true,
@@ -6246,7 +6246,7 @@ async function applyAuthSession(session) {
     name: prof?.name || meta.name || 'Customer',
     email: prof?.email || meta.email || session.user.email || '',
     phone: prof?.phone || meta.phone || '',
-    city: prof?.city || meta.city || 'Visakhapatnam',
+    city: prof?.city || meta.city || '',
     address: prof?.address || '',
     pincode: prof?.pincode || ''
   };
@@ -7294,10 +7294,10 @@ function openProductPage(productId) {
 /* ── Video URL Helpers ─────────────────────────────────────────── */
 
 function cleanProductDescriptionText(desc) {
-  if (!desc) return 'Authentic boutique item from UNIQUE EXPRESSIONS, Visakhapatnam.';
+  if (!desc) return 'Authentic boutique item from UNIQUE EXPRESSIONS.';
   // Clean raw http/https links leftover from old site imports so overview text is clean
   const cleaned = String(desc).replace(/(https?:\/\/[^\s]+|www\.[^\s]+)/gi, '').trim();
-  return cleaned || 'Authentic boutique item from UNIQUE EXPRESSIONS, Visakhapatnam.';
+  return cleaned || 'Authentic boutique item from UNIQUE EXPRESSIONS.';
 }
 
 function buildVideoSectionHTML(product) {
@@ -7343,7 +7343,7 @@ function injectProductJsonLd(product) {
       "@type": "Product",
       "name": product.title,
       "image": [product.image],
-      "description": product.description || `${product.title} offered by UNIQUE EXPRESSIONS, Visakhapatnam.`,
+      "description": product.description || `${product.title} offered by UNIQUE EXPRESSIONS.`,
       "sku": product.sku || `UE-SKU-${product.id}`,
       "brand": { "@type": "Brand", "name": "UNIQUE EXPRESSIONS" },
       "offers": {
@@ -7518,7 +7518,7 @@ function renderPDPDesktop(product) {
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; margin-bottom: 18px;">
             <span style="font-size: 12px; font-weight: 800; color: #0f172a; display: block; margin-bottom: 6px;">📍 Delivery Availability Check:</span>
             <div style="display: flex; gap: 8px;">
-              <input type="text" id="pdpPincodeInput" maxlength="6" placeholder="Enter 6-digit Pincode (e.g. 530041)" class="form-input" style="flex: 1; height: 38px; font-size: 12.5px;">
+              <input type="text" id="pdpPincodeInput" maxlength="6" placeholder="Enter 6-digit Pincode (e.g. 560001)" class="form-input" style="flex: 1; height: 38px; font-size: 12.5px;">
               <button class="m-hero-cta-button" style="height: 38px; padding: 0 16px; font-size: 12px;" onclick="checkPdpPincode()">Check ETA</button>
             </div>
             <div id="pdpPincodeResult" style="font-size: 11.5px; color: #64748b; margin-top: 6px;">Enter pincode to verify same-day delivery availability.</div>
@@ -7562,7 +7562,7 @@ function renderPDPDesktop(product) {
                 <span style="width: 60%; font-weight: 600; color: #0f172a;">${v}</span>
               </div>
             `).join('') : `
-              <div style="padding: 12px 14px; font-size: 12.5px; color: #64748b;">Certified Safe Quality Toy • Direct from Vizag Store</div>
+              <div style="padding: 12px 14px; font-size: 12.5px; color: #64748b;">Certified Safe Quality Toy • Direct from Boutique Store</div>
             `}
           </div>
         </div>
@@ -7585,7 +7585,7 @@ function renderPDPDesktop(product) {
                 <p style="font-size: 12.5px; color: #475569; margin: 0; line-height: 1.45;">${r.comment}</p>
               </div>
             `).join('') : `
-              <p style="font-size: 13px; color: #64748b; margin: 0;">Be the first in Visakhapatnam to review this product!</p>
+              <p style="font-size: 13px; color: #64748b; margin: 0;">Be the first to review this product!</p>
             `}
           </div>
         </div>
@@ -7745,7 +7745,7 @@ function renderPDPMobile(product) {
       <div class="pdp-section-card">
         <div style="font-size: 11px; font-weight: 800; color: #0f172a; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">📍 Delivery Availability:</div>
         <div style="display: flex; gap: 8px;">
-          <input type="text" id="pdpPincodeInput" maxlength="6" placeholder="Enter 6-digit Pincode (e.g. 530041)" class="form-input" style="flex: 1; height: 40px; font-size: 13px;">
+          <input type="text" id="pdpPincodeInput" maxlength="6" placeholder="Enter 6-digit Pincode (e.g. 560001)" class="form-input" style="flex: 1; height: 40px; font-size: 13px;">
           <button class="m-hero-cta-button" style="height: 40px; padding: 0 16px; font-size: 12px;" onclick="checkPdpPincode()">Check</button>
         </div>
         <div id="pdpPincodeResult" style="font-size: 11.5px; color: #64748b; margin-top: 8px;">Enter pincode to verify same-day delivery availability.</div>
@@ -7967,7 +7967,7 @@ function checkPdpPincode() {
   }
 
   if (pin.startsWith('530')) {
-    resEl.innerHTML = `🟢 Express Same-Day Delivery available for Visakhapatnam (${pin})!`;
+    resEl.innerHTML = `🟢 Express Delivery available for pincode ${pin}!`;
     resEl.style.color = '#16a34a';
   } else {
     resEl.innerHTML = `🚚 Standard Express Courier available for Pincode ${pin} (2-4 Days).`;
@@ -8087,7 +8087,7 @@ function openQuickView(productId) {
   if (catEl) catEl.innerText = p.category || 'General';
   if (priceEl) priceEl.innerText = `₹${p.price}`;
   if (origEl) origEl.innerText = p.originalPrice ? `₹${p.originalPrice}` : '';
-  if (descEl) descEl.innerText = p.description || 'High quality boutique product from UNIQUE EXPRESSIONS, Visakhapatnam.';
+  if (descEl) descEl.innerText = p.description || 'High quality boutique product from UNIQUE EXPRESSIONS.';
 
   document.getElementById('modalBackdrop')?.classList.add('active');
 }
@@ -8307,7 +8307,7 @@ function renderCategoriesView() {
                     <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;">${displayName}</h2>
                     <span style="background:#f1f5f9; color:#0f172a; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:99px; border:1px solid #cbd5e1;">${prods.length} Products</span>
                   </div>
-                  <p style="font-size:12.5px; color:#64748b; margin:0;">Curated ${displayName} collection — same-day dispatch in Visakhapatnam.</p>
+                  <p style="font-size:12.5px; color:#64748b; margin:0;">Curated ${displayName} collection — same-day dispatch in India.</p>
                 </div>
                 <button class="m-hero-cta-button" style="padding:10px 18px; font-size:13px; min-height:42px; justify-content:center; background:#0f172a; color:#fff; border-radius:12px; width:${isDesktop ? 'auto' : '100%'};" onclick="filterCategory('${cat}')">
                   Explore Category &rarr;
@@ -8693,7 +8693,7 @@ function renderCheckoutView() {
   const chkPhoneVal = userProfile?.phone || '';
   const defaultAddr = userAddresses.find(a => a.isDefault) || userAddresses[0];
   const chkAddressVal = defaultAddr ? `${defaultAddr.street || ''}, ${defaultAddr.area || ''}`.replace(/^,\s*/, '') : (userProfile?.address || '');
-  const chkLocalityVal = defaultAddr?.city || userProfile?.city || 'Visakhapatnam';
+  const chkLocalityVal = defaultAddr?.city || userProfile?.city || '';
   const chkPincodeVal = defaultAddr?.pincode || userProfile?.pincode || '';
 
   const savedAddrHtml = userAddresses.length > 0
@@ -8746,7 +8746,7 @@ function renderCheckoutView() {
         <div class="form-group" style="margin-top:12px;">
           <label class="form-label">Have a Discount Coupon?</label>
           <div class="coupon-input-wrap">
-            <input type="text" id="checkoutCouponInput" class="form-input" placeholder="Try WELCOME100, FESTIVE20, VIZAGFREE..." value="${appliedCouponCode || ''}">
+            <input type="text" id="checkoutCouponInput" class="form-input" placeholder="Try WELCOME100, FESTIVE20, FREESHIP..." value="${appliedCouponCode || ''}">
             <button class="btn-apply-coupon" onclick="applyCheckoutCoupon()">Apply</button>
           </div>
           ${appliedCouponCode && couponResult.valid ? `<span style="font-size:10px; font-weight:700; color:var(--func-green); margin-top:4px; display:block;">✓ ${appliedCouponCode} applied! (${couponResult.label})</span>` : ''}
@@ -8787,7 +8787,7 @@ function renderCheckoutView() {
           </div>
           <div class="form-group" style="flex:1;">
             <label class="form-label" style="font-size:12px; font-weight:800; color:#1e293b;">6-Digit Pincode <span style="color:#ef4444;">*</span></label>
-            <input type="text" id="chkPincode" maxlength="6" class="form-input" placeholder="e.g. 530041 / 560001" value="${apEscHtml(chkPincodeVal)}" required>
+            <input type="text" id="chkPincode" maxlength="6" class="form-input" placeholder="e.g. 560001" value="${apEscHtml(chkPincodeVal)}" required>
           </div>
         </div>
         <div class="form-group">
@@ -8874,7 +8874,7 @@ function selectSavedAddress(addrId) {
   if (nameEl) nameEl.value = addr.name || '';
   if (phoneEl) phoneEl.value = addr.phone || '';
   if (addressEl) addressEl.value = addr.street || '';
-  if (localityEl) localityEl.value = addr.area ? `${addr.area}, ${addr.city || 'Visakhapatnam'}` : (addr.city || 'Visakhapatnam');
+  if (localityEl) localityEl.value = addr.area ? `${addr.area}, ${addr.city || ''}` : (addr.city || '');
   if (pincodeEl) pincodeEl.value = addr.pincode || '';
   renderCheckoutView();
 }
@@ -9001,7 +9001,7 @@ function finalizeOrderSuccess(orderMeta) {
     status: paymentId ? 'Paid & Confirmed' : 'Order Confirmed',
     customerName: name,
     phone: phone,
-    address: address || 'Visakhapatnam',
+    address: address || '',
     paymentMethod: paymentMethod,
     paymentId: paymentId || null,
     razorpayOrderId: razorpayOrderId || null,
@@ -9056,7 +9056,7 @@ function finalizeOrderSuccess(orderMeta) {
         <p style="font-size:12.5px; color:#64748b; margin-bottom:18px; line-height:1.5;">
           Your order has been placed successfully for <strong>₹${paidTotal}</strong>.<br>
           Payment Mode: <strong style="color:#0f172a;">${paymentMethod}</strong>${paymentId ? `<br><small style="color:#64748b; font-size:10.5px;">(Ref: ${paymentId})</small>` : ''}<br>
-          Express delivery to <strong>${address || 'Visakhapatnam'}</strong> is scheduled.
+          Express delivery to <strong>${address || ''}</strong> is scheduled.
         </p>
 
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px; text-align:left; margin-bottom:20px;">
@@ -9813,7 +9813,7 @@ function renderProfileView() {
                 <h3 style="font-size:16px; font-weight:800; color:#0f172a;">${userProfile.name}</h3>
                 <span class="profile-vip-pill">✨ VIP</span>
               </div>
-              <p style="font-size:11px; color:#64748b; margin-top:2px;">📞 ${userProfile.phone || '+91 7799747575'} • ${userProfile.city || 'Visakhapatnam'}</p>
+              <p style="font-size:11px; color:#64748b; margin-top:2px;">📞 ${userProfile.phone || '+91 7799747575'} • ${userProfile.city || 'India'}</p>
               <p style="font-size:10px; color:#94a3b8;">✉️ ${userProfile.email || 'customer@uniqueexpressions.in'}</p>
             </div>
           </div>
@@ -10070,12 +10070,12 @@ function saveAddressFromModal() {
   if (editId) {
     const idx = userAddresses.findIndex(a => String(a.id) === String(editId));
     if (idx > -1) {
-      userAddresses[idx] = { id: Number(editId), name, phone, street, area, city: "Visakhapatnam", pincode, type, isDefault: !!isDefault };
+      userAddresses[idx] = { id: Number(editId), name, phone, street, area, city: "", pincode, type, isDefault: !!isDefault };
       savedId = Number(editId);
     }
   } else {
     savedId = userAddresses.length > 0 ? Math.max(...userAddresses.map(a => Number(a.id) || 0)) + 1 : 1;
-    userAddresses.push({ id: savedId, name, phone, street, area, city: "Visakhapatnam", pincode, type, isDefault: isDefault || userAddresses.length === 0 });
+    userAddresses.push({ id: savedId, name, phone, street, area, city: "", pincode, type, isDefault: isDefault || userAddresses.length === 0 });
   }
 
   selectedDeliveryAddress = String(savedId);
@@ -10135,8 +10135,8 @@ function renderOrderDetailsView(orderId) {
 
   const steps = [
     { title: "Order Placed", desc: `Received on ${order.date}` },
-    { title: "Packed & Quality Checked", desc: "Inspection completed at Madhurawada Store" },
-    { title: "Out for Delivery", desc: "Assigned to Vizag Express Delivery Agent" },
+    { title: "Packed & Quality Checked", desc: "Inspection completed at Boutique Fulfillment Center" },
+    { title: "Out for Delivery", desc: "Assigned to Express Delivery Agent" },
     { title: "Delivered", desc: "Package handed over to recipient" }
   ];
 
@@ -10185,7 +10185,7 @@ function renderOrderDetailsView(orderId) {
           `}
         </div>
         <div style="font-size:10.5px; color:#64748b; margin-top:8px; border-top:1px solid #e2e8f0; padding-top:6px;">
-          📍 Pickup: <strong>Madhurawada, Visakhapatnam (530041)</strong> ➔ Destination: <strong>${order.address || 'Customer Doorstep'}</strong>
+          📍 Pickup: <strong>Fulfillment Center</strong> ➔ Destination: <strong>${order.address || 'Customer Doorstep'}</strong>
         </div>
       </div>
 
@@ -10240,7 +10240,7 @@ function renderOrderDetailsView(orderId) {
             <span>Discount Applied:</span> <span>-₹${order.discountAmount || 0}</span>
           </div>
           <div style="display:flex; justify-content:space-between; color:#64748b;">
-            <span>Vizag Express Delivery:</span> <span>FREE</span>
+            <span>Express Delivery:</span> <span>FREE</span>
           </div>
           <div style="display:flex; justify-content:space-between; font-weight:800; font-size:13px; color:#0f172a; margin-top:4px;">
             <span>Total Paid:</span> <span>₹${order.totalAmount}</span>
@@ -10336,7 +10336,7 @@ function openInvoiceModal(orderId) {
           <div>
             <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0;">UNIQUE EXPRESSIONS</h3>
             <div style="font-size:10px; color:#64748b;">GSTIN: <strong>37BVTPG7761F1Z1</strong></div>
-            <div style="font-size:9.5px; color:#64748b;">Owner: G MOUNIKA DURGA | Madhurawada, Visakhapatnam</div>
+            <div style="font-size:9.5px; color:#64748b;">Owner: G MOUNIKA DURGA</div>
           </div>
           <div style="text-align:right;">
             <div style="font-weight:800; font-size:12px; color:#0f172a;">TAX INVOICE</div>
@@ -10894,7 +10894,7 @@ function renderApDashboard() {
       <div class="ap-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
           <h3 style="font-size:15px; font-weight:800; margin:0;">📈 Sales Trends (7 Days)</h3>
-          <span style="font-size:12px; color:#64748b; font-weight:600;">Visakhapatnam Store</span>
+          <span style="font-size:12px; color:#64748b; font-weight:600;">Store Locator</span>
         </div>
         <div style="height:180px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; display:flex; align-items:flex-end; justify-content:space-between; padding:16px; box-sizing:border-box;">
           ${getLast7DaysSales().map((d, i) => `
@@ -12422,7 +12422,7 @@ async function saveApBannerForm(idx = null) {
 async function addApBannerSlide() {
   const badge = document.getElementById('apBannerBadge').value.trim() || '✨ SPECIAL OFFER';
   const title = document.getElementById('apBannerTitle').value.trim() || 'New Store Collection';
-  const sub = document.getElementById('apBannerSub').value.trim() || 'Unique Expressions Visakhapatnam';
+  const sub = document.getElementById('apBannerSub').value.trim() || 'Unique Expressions';
   const img = document.getElementById('apBannerImg').value.trim() || 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=800&auto=format&fit=crop';
 
   const prev = JSON.parse(JSON.stringify(HERO_SLIDES));
@@ -13343,7 +13343,7 @@ function adminAddNewCategory() {
 function adminAddNewBanner() {
   const badge = document.getElementById('admBannerBadge')?.value.trim() || '✨ NEW COLLECTION';
   const title = document.getElementById('admBannerTitle')?.value.trim();
-  const sub = document.getElementById('admBannerSub')?.value.trim() || 'Curated items in Visakhapatnam';
+  const sub = document.getElementById('admBannerSub')?.value.trim() || 'Curated boutique items';
   const imgUrl = document.getElementById('admBannerImgUrl')?.value || 'hero_lifestyle.png';
 
   if (!title) { showToast('Please enter slide title!', 'info'); return; }
@@ -13429,10 +13429,10 @@ function renderDrawerCartItems() {
   const progressPercent = Math.min(100, Math.round((itemsSubtotal / 499) * 100));
 
   let html = `
-    <!-- 1. Free Vizag Express Delivery Tracker Bar -->
+    <!-- 1. Free Express Delivery Tracker Bar -->
     <div class="m-free-shipping-wrap" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:12px 14px; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
       <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; font-weight:800; color:#0f172a; margin-bottom:6px;">
-        <span>${neededForFree === 0 ? '🎉 <span style="color:#16a34a;">FREE Vizag Express Delivery Unlocked!</span>' : '🚚 Add <strong style="color:#0f172a;">₹' + neededForFree + '</strong> more for FREE Delivery'}</span>
+        <span>${neededForFree === 0 ? '🎉 <span style="color:#16a34a;">FREE Express Delivery Unlocked!</span>' : '🚚 Add <strong style="color:#0f172a;">₹' + neededForFree + '</strong> more for FREE Delivery'}</span>
         <span style="background:#0f172a; color:#fff; font-size:9.5px; padding:2px 7px; border-radius:99px; font-weight:800;">${progressPercent}%</span>
       </div>
       <div class="m-shipping-progress-track" style="height:8px; background:#e2e8f0; border-radius:99px; overflow:hidden;">
@@ -14028,7 +14028,7 @@ function renderB2BView() {
           <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:16px; padding:20px; margin-top:20px;">
             <div style="font-size:12px; color:#64748b; font-weight:700;">Estimated Wholesale Total:</div>
             <div style="font-size:32px; font-weight:900; color:#0f172a; margin:4px 0;" id="b2bTotalPrice">₹12,500</div>
-            <div style="font-size:12px; color:#10b981; font-weight:700;" id="b2bGstCredit">Includes 18% GST Credit Invoice & Free Vizag Delivery</div>
+            <div style="font-size:12px; color:#10b981; font-weight:700;" id="b2bGstCredit">Includes 18% GST Credit Invoice & Free Express Delivery</div>
           </div>
         </div>
 
@@ -14038,7 +14038,7 @@ function renderB2BView() {
           
           <div class="form-group">
             <label class="form-label">Business / School Name</label>
-            <input type="text" id="b2bBizName" class="form-input" placeholder="e.g. Swaroop Collections / Vizag School">
+            <input type="text" id="b2bBizName" class="form-input" placeholder="e.g. Swaroop Collections / Boutique Partner">
           </div>
 
           <div class="form-group">
@@ -14117,7 +14117,7 @@ function renderAboutView() {
           <span class="profile-vip-pill" style="margin-bottom:8px;">LUXURY E-COMMERCE BOUTIQUE</span>
           <h1 class="info-hero-title" style="font-size:28px; color:#0f172a; margin:8px 0 12px 0;">${apEscHtml(store.storeName || 'UNIQUE EXPRESSIONS')}</h1>
           <p class="info-text-p" style="font-size:13px; line-height:1.7;">
-            Owned and founded by <strong>${apEscHtml(store.ownerName || 'G MOUNIKA DURGA')}</strong>, UNIQUE EXPRESSIONS is Visakhapatnam's premier boutique storefront for curated Kids Toys, Smart Gadgets, Traditional Handicrafts, Fancy Imported Stationery, and Customized Return Gift Hampers.
+            Owned and founded by <strong>${apEscHtml(store.ownerName || 'G MOUNIKA DURGA')}</strong>, UNIQUE EXPRESSIONS is India's premier boutique storefront for curated Kids Toys, Smart Gadgets, Traditional Handicrafts, Fancy Imported Stationery, and Customized Return Gift Hampers.
           </p>
           <p class="info-text-p" style="font-size:13px; line-height:1.7;">
             We bring together high-grade educational toys for toddlers, innovative RC vehicles for hobbyists, traditional Indian handicrafts crafted by master artisans, aesthetic school stationery, and custom birthday party return gifts under one roof.
@@ -14129,8 +14129,8 @@ function renderAboutView() {
           <div style="font-size:13px; color:#334155; line-height:1.7; background:#f8fafc; padding:18px; border-radius:16px; border:1px solid #e2e8f0; margin-bottom:20px;">
             <strong>Store Owner:</strong> ${apEscHtml(store.ownerName || 'G MOUNIKA DURGA')}<br>
             <strong>Official GSTIN:</strong> <code>${store.gstin || '37BVTPG7761F1Z1'}</code><br>
-            <strong>Address:</strong> ${apEscHtml(store.address || '2nd floor LIG 347, 2-115/9/1, near Shivalayam, Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041')}<br>
-            <strong>Landmark:</strong> Near Shivalayam, Midhilapuri VUDA Colony, Madhurawada<br>
+            <strong>Address:</strong> ${apEscHtml(store.address || ' - 560001')}<br>
+            <strong>Landmark:</strong> <br>
             <strong>Contact / WhatsApp:</strong> +91 ${store.whatsapp || '7799747575'}<br>
             <strong>Support Email:</strong> ${store.email || 'uniqueexpressions.in@gmail.com'}
           </div>
@@ -14149,8 +14149,8 @@ function renderFAQView() {
   const container = document.getElementById('viewFAQ');
   const faqs = [
     {
-      q: "How fast is delivery in Visakhapatnam?",
-      a: "We provide Same-Day Express Delivery for local orders placed in Madhurawada, Siripuram, Gajuwaka, MVP Colony, and surrounding Vizag areas! All orders above ₹499 unlock FREE delivery."
+      q: "How fast is delivery?",
+      a: "We provide express delivery across eligible service areas, MVP Colony, and surrounding delivery zones! All orders above ₹499 unlock FREE delivery."
     },
     {
       q: "Do you provide official GST Tax Invoices for business credit?",
@@ -14199,7 +14199,7 @@ function renderFAQView() {
 
       <div class="info-content-card" style="text-align:center;">
         <h4 style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:4px;">Have more questions?</h4>
-        <p style="font-size:11px; color:#64748b; margin-bottom:12px;">Our boutique team in Madhurawada is available 24/7 on WhatsApp.</p>
+        <p style="font-size:11px; color:#64748b; margin-bottom:12px;">Our boutique team is available 24/7 on WhatsApp.</p>
         <button class="m-hero-cta-button" style="width:100%; justify-content:center; background:#25D366; min-height:46px; font-size:13.5px;" onclick="openWhatsAppChat()">
           <i class="ri-whatsapp-line" style="font-size:18px;"></i> Ask Us on WhatsApp →
         </button>
@@ -14231,7 +14231,7 @@ function renderTermsView() {
       <div class="info-content-card">
         <h3 class="info-section-heading">1. Ownership & Legal Entity</h3>
         <p class="info-text-p">
-          UNIQUE EXPRESSIONS is a registered commercial entity operating in Visakhapatnam, Andhra Pradesh under GSTIN <strong>37BVTPG7761F1Z1</strong>, managed by G MOUNIKA DURGA.
+          UNIQUE EXPRESSIONS is a registered commercial entity operating in India under GSTIN <strong>37BVTPG7761F1Z1</strong>, managed by G MOUNIKA DURGA.
         </p>
 
         <h3 class="info-section-heading">2. Product Descriptions & Pricing</h3>
@@ -14246,7 +14246,7 @@ function renderTermsView() {
 
         <h3 class="info-section-heading">4. Governing Jurisdiction</h3>
         <p class="info-text-p">
-          All legal transactions and disputes are subject to the exclusive jurisdiction of the courts in Visakhapatnam, Andhra Pradesh, India.
+          All legal transactions and disputes are subject to the exclusive jurisdiction of the competent courts, Andhra Pradesh, India.
         </p>
       </div>
     </div>
@@ -14272,7 +14272,7 @@ function renderPrivacyView() {
       <div class="info-content-card">
         <h3 class="info-section-heading">1. Information Collection</h3>
         <p class="info-text-p">
-          We collect essential customer information (Name, Phone Number, Delivery Address, Pincode) strictly to fulfill your order and facilitate express local delivery in Visakhapatnam.
+          We collect essential customer information (Name, Phone Number, Delivery Address, Pincode) strictly to fulfill your order and facilitate express local delivery in India.
         </p>
 
         <h3 class="info-section-heading">2. Data Usage & Protection</h3>
@@ -14302,13 +14302,13 @@ function renderShippingView() {
     <div class="checkout-container">
       <div class="info-hero-card">
         <h1 class="info-hero-title">Refund & Shipping Policy</h1>
-        <p class="info-hero-sub">Fast local Visakhapatnam delivery & 7-day hassle-free replacement guarantee.</p>
+        <p class="info-hero-sub">Fast express delivery & 7-day hassle-free replacement guarantee.</p>
       </div>
 
       <div class="info-content-card">
         <h3 class="info-section-heading">🚚 Local Express Delivery Timelines</h3>
         <p class="info-text-p">
-          • <strong>Madhurawada & Local Vizag:</strong> Same-day delivery for orders placed before 3:00 PM.<br>
+          
           • <strong>Rest of India Shipping:</strong> Dispatched via reliable courier partners within 2-4 business days.<br>
           • <strong>Free Delivery Threshold:</strong> Orders above ₹499 qualify for FREE shipping.
         </p>
@@ -14390,7 +14390,7 @@ function renderReviewsView(filterCat = 'All') {
         <div>
           <span style="font-size:32px; font-weight:800; color:#fff; line-height:1;">4.8</span>
           <span style="font-size:14px; color:var(--func-gold);">★★★★★</span>
-          <p style="font-size:11px; color:#cbd5e1; margin-top:4px;">Based on 450+ Verified Vizag Orders</p>
+          <p style="font-size:11px; color:#cbd5e1; margin-top:4px;">Based on 450+ Verified Orders</p>
         </div>
         <button class="m-hero-cta-button" style="padding:8px 14px; font-size:11px;" onclick="openWriteReviewModal()">Write a Review</button>
       </div>
@@ -14486,7 +14486,7 @@ async function submitCustomerReview() {
     productTitle: selectedOpt.text.split('(')[0].trim(),
     category: "General",
     userName: name,
-    city: "Visakhapatnam",
+    city: "",
     rating: rating,
     title: title,
     comment: comment,
@@ -14552,7 +14552,7 @@ function renderReturnsView() {
     <div class="checkout-container">
       <div class="info-hero-card">
         <h1 class="info-hero-title">7-Day Easy Returns & Exchange</h1>
-        <p class="info-hero-sub">Direct door pickup across Visakhapatnam or free drop-off at Madhurawada store.</p>
+        <p class="info-hero-sub">Direct doorstep pickup or free drop-off.</p>
       </div>
 
       ${userReturns.length > 0 ? `
@@ -14600,8 +14600,8 @@ function renderReturnsView() {
         <div class="form-group">
           <label class="form-label">Pickup & Drop Options</label>
           <select id="retPickupType" class="form-input">
-            <option value="Doorstep Courier Pickup (Visakhapatnam)">Doorstep Courier Pickup (Visakhapatnam)</option>
-            <option value="In-Store Drop-off at Madhurawada Boutique">In-Store Drop-off at Madhurawada Boutique</option>
+            <option value="Doorstep Courier Pickup">Doorstep Courier Pickup</option>
+            <option value="In-Store Drop-off">In-Store Drop-off</option>
           </select>
         </div>
 
@@ -14665,11 +14665,11 @@ function renderHelpCenterView() {
   if (!container) return;
 
   const faqs = [
-    { q: "What are the store hours for UNIQUE EXPRESSIONS Madhurawada?", a: "Our store is open 7 days a week from 9:30 AM to 9:30 PM. Visit us at 2nd floor LIG 347, 2-115/9/1, near Shivalayam, Midhilapuri VUDA Colony, Madhurwada, Visakhapatnam." },
-    { q: "How fast is delivery within Visakhapatnam?", a: "We offer express same-day delivery across Madhurawada, PM Palem, MVP Colony, Siripuram, Gajuwaka, and all Vizag areas for orders placed before 3:00 PM." },
+    { q: "What are the store hours for UNIQUE EXPRESSIONS?", a: "Our store is open 7 days a week from 9:30 AM to 9:30 PM. Visit us at 2nd floor LIG 347, 2-115/9/1, near Shivalayam, Central VUDA Colony, Madhurwada, India." },
+    { q: "How fast is delivery?", a: "We offer express same-day delivery across prime delivery hubs and surrounding gajuwaka, and all Express areas for orders placed before 3:00 PM." },
     { q: "Do you offer GST Invoicing for Wholesale & Corporate buyers?", a: "Yes! We issue official B2B GST Invoices with our GSTIN 37BVTPG7761F1Z1 for input tax credit. Enter your GST number during checkout or in our Wholesale B2B portal." },
     { q: "Can I customize return gift hampers for birthday parties?", a: "Absolutely! We specialize in custom return gift boxes for kids birthdays, weddings, baby showers, and school events. Contact us at +91 7799747575 for personalized hampers." },
-    { q: "What is the return and replacement policy?", a: "We offer a 7-day hassle-free replacement guarantee. If any product is damaged or defective, we provide doorstep pickup or instant exchange at our Madhurawada store." }
+    { q: "What is the return and replacement policy?", a: "We offer a 7-day hassle-free replacement guarantee. If any product is damaged or defective, we provide doorstep pickup or instant exchange at our Boutique store." }
   ];
 
   let faqItemsHtml = faqs.map((item, idx) => `
@@ -14705,7 +14705,7 @@ function renderHelpCenterView() {
     <div class="checkout-container">
       <div class="info-hero-card">
         <h1 class="info-hero-title">How can we help you today?</h1>
-        <p class="info-hero-sub">Direct support from UNIQUE EXPRESSIONS boutique store, Visakhapatnam.</p>
+        <p class="info-hero-sub">Direct support from UNIQUE EXPRESSIONS boutique store.</p>
         <div style="margin-top:12px; position:relative;">
           <input type="text" placeholder="Search FAQs, shipping, GST billing..." class="form-input" style="border-radius:99px; padding-left:36px; background:#fff; color:#0f172a;" oninput="filterFaqSearch(this.value)">
           <i class="ri-search-line" style="position:absolute; left:12px; top:10px; color:#64748b;"></i>
@@ -14799,7 +14799,7 @@ async function submitSupportTicket() {
 }
 
 
-/* 4. STORE LOCATOR & VIZAG BOUTIQUE VIEW */
+/* 4. STORE LOCATOR */
 function renderStoreLocatorView() {
   const container = document.getElementById('viewStoreLocator');
   if (!container) return;
@@ -14808,7 +14808,7 @@ function renderStoreLocatorView() {
   const isDesktop = window.innerWidth >= 1024;
   const storeName = store.storeName || 'UNIQUE EXPRESSIONS';
   const ownerName = store.ownerName || 'G MOUNIKA DURGA';
-  const address = store.address || '2nd floor LIG 347, 2-115/9/1, near Shivalayam, Midhilapuri VUDA Colony, Madhurawada, Visakhapatnam - 530041';
+  const address = store.address || ' - 560001';
   const phone = store.phone || '7799747575';
   const whatsapp = store.whatsapp || '7799747575';
   const email = store.email || 'uniqueexpressions.in@gmail.com';
@@ -14828,7 +14828,7 @@ function renderStoreLocatorView() {
         <div class="dt-breadcrumb-strip">
           <a href="#" onclick="switchView('home'); return false;">Home</a>
           <i class="ri-arrow-right-s-line"></i>
-          <span>Visakhapatnam Store Locator</span>
+          <span>Store Locator</span>
         </div>
       ` : ''}
 
@@ -14836,7 +14836,7 @@ function renderStoreLocatorView() {
         <!-- Left: Interactive Map Card -->
         <div class="store-map-card" style="height:100%; min-height:480px; margin:0; border-radius:24px; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end;">
           <iframe 
-            src="https://maps.google.com/maps?q=${encodeURIComponent('UNIQUE EXPRESSIONS Midhilapuri VUDA Colony Madhurawada Visakhapatnam 530041')}&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+            src="https://maps.google.com/maps?q=${encodeURIComponent('UNIQUE EXPRESSIONS Central VUDA Colony Boutique India 560001')}&t=&z=15&ie=UTF8&iwloc=&output=embed" 
             width="100%" 
             height="100%" 
             style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" 
@@ -14870,7 +14870,7 @@ function renderStoreLocatorView() {
           <h3 class="info-section-heading" style="font-size:18px; margin-top:20px;">🕒 Operating Hours</h3>
           <p class="info-text-p" style="font-size:13px; line-height:1.7;">
             • <strong>Monday to Sunday:</strong> 9:30 AM – 9:30 PM (Open 7 Days a Week)<br>
-            • <strong>Express Dispatch:</strong> Orders placed before 3:00 PM dispatched same-day in Visakhapatnam.
+            • <strong>Express Dispatch:</strong> Orders placed before 3:00 PM dispatched promptly.
           </p>
 
           <h3 class="info-section-heading" style="font-size:18px; margin-top:20px;">🛍️ In-Store Facilities & Services</h3>
@@ -14903,7 +14903,7 @@ function renderOffersView() {
 
   const coupons = [
     { code: "UNIQUE10", title: "Flat 10% Off Everything", desc: "Applicable on all retail purchases above ₹499", badge: "POPULAR" },
-    { code: "VIZAGFREE", title: "Free Same-Day Delivery", desc: "Valid for all orders delivered in Visakhapatnam", badge: "LOCAL VIZAG" },
+    { code: "FREESHIP", title: "Free Same-Day Delivery", desc: "Valid on all eligible orders", badge: "EXPRESS" },
     { code: "WHOLESALE25", title: "Flat 25% Off Bulk Orders", desc: "For Wholesale & Return Gift orders above ₹10,000", badge: "WHOLESALE" },
     { code: "WELCOME50", title: "Flat ₹50 Off First Purchase", desc: "Exclusive welcome gift for new app users", badge: "NEW USER" }
   ];
@@ -15453,7 +15453,7 @@ async function saveApProductForm(editId = null) {
       image,
       rating: '5.0',
       reviewsCount: 1,
-      description: description || `${title} offered by UNIQUE EXPRESSIONS, Visakhapatnam.`,
+      description: description || `${title} offered by UNIQUE EXPRESSIONS.`,
       stockQty,
       inStock: inStock && stockQty > 0,
       isFeatured,

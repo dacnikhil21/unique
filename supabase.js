@@ -352,7 +352,7 @@ async function sbInsertReview(review) {
       product_title: review.productTitle,
       category: review.category || 'General',
       user_name: review.userName,
-      city: review.city || 'Visakhapatnam',
+      city: review.city || '',
       rating: review.rating,
       title: review.title,
       comment: review.comment,
@@ -376,7 +376,7 @@ async function sbSeedReviews(reviews) {
       product_title: r.productTitle,
       category: r.category || 'General',
       user_name: r.userName,
-      city: r.city || 'Visakhapatnam',
+      city: r.city || '',
       rating: r.rating,
       title: r.title,
       comment: r.comment,
@@ -549,12 +549,12 @@ async function sbSignUp({ email, password, name, phone, city }) {
       email: authEmail,
       password,
       options: {
-        data: { name, phone: sbNormalizePhone(phone), email: email.toLowerCase(), city: city || 'Visakhapatnam' }
+        data: { name, phone: sbNormalizePhone(phone), email: email.toLowerCase(), city: city || '' }
       }
     });
     if (error) throw error;
     if (data.user) {
-      await sbUpsertProfile(data.user.id, { name, phone: sbNormalizePhone(phone), email: email.toLowerCase(), city: city || 'Visakhapatnam' });
+      await sbUpsertProfile(data.user.id, { name, phone: sbNormalizePhone(phone), email: email.toLowerCase(), city: city || '' });
     }
     return { user: data.user, session: data.session, error: null };
   } catch (err) {
@@ -765,7 +765,7 @@ async function sbUpsertProfile(userId, profile) {
       name: profile.name || '',
       phone: profile.phone || '',
       email: profile.email || '',
-      city: profile.city || 'Visakhapatnam',
+      city: profile.city || '',
       address: profile.address || '',
       pincode: profile.pincode || '',
       addresses: profile.addresses || [],

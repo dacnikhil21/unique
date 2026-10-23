@@ -36,7 +36,7 @@ if (PRODUCT_CATALOG.length === 0) {
 
 const SERVER_COUPONS = [
   { code: "WELCOME100", type: "fixed", value: 100, minSpend: 499, status: "Active" },
-  { code: "VIZAGFREE", type: "shipping", value: 0, minSpend: 299, status: "Active" },
+  { code: "FREESHIP", type: "shipping", value: 0, minSpend: 299, status: "Active" },
   { code: "FESTIVE20", type: "percent", value: 20, minSpend: 999, status: "Active" },
   { code: "UNIQUE10", type: "percent", value: 10, minSpend: 399, status: "Active" }
 ];
@@ -231,7 +231,7 @@ async function syncOrderToSupabase(orderRecord) {
       order_id: orderRecord.orderId || ('UE-' + Date.now().toString().slice(-6)),
       customer_name: orderRecord.customerName || 'Customer',
       phone: orderRecord.phone || '',
-      address: orderRecord.address || 'Visakhapatnam',
+      address: orderRecord.address || '',
       items: orderRecord.items || [],
       total_amount: orderRecord.totalAmount || orderRecord.amount || 0,
       subtotal: orderRecord.subtotal || orderRecord.totalAmount || 0,
@@ -360,7 +360,7 @@ module.exports = async (req, res) => {
           paymentId: paymentEntity?.id,
           customerName: notes.customerName || notes.name || 'Customer',
           phone: notes.phone || paymentEntity?.contact || '',
-          address: notes.address || 'Visakhapatnam',
+          address: notes.address || '',
           items: notes.items ? (typeof notes.items === 'string' ? JSON.parse(notes.items) : notes.items) : [],
           totalAmount: (paymentEntity?.amount ? paymentEntity.amount / 100 : 0),
           status: 'Paid & Confirmed',
