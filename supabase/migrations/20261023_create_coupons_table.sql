@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS public.coupons (
 INSERT INTO public.coupons (code, discount_type, discount_value, min_order_amount, is_active)
 VALUES
   ('WELCOME100', 'fixed', 100, 499, true),
-  ('VIZAGFREE', 'shipping', 0, 299, true),
+  ('FREESHIP', 'shipping', 0, 499, true),
   ('FESTIVE20', 'percentage', 20, 999, true),
   ('UNIQUE10', 'percentage', 10, 399, true)
 ON CONFLICT (code) DO NOTHING;
