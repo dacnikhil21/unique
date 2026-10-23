@@ -7,8 +7,8 @@ const path = require('path');
 const SHIPROCKET_CONFIG = {
   email: process.env.SHIPROCKET_EMAIL || '',
   password: process.env.SHIPROCKET_PASSWORD || '',
-  pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || 'work',
-  pickup_pincode: process.env.SHIPROCKET_PICKUP_PINCODE || '530041'
+  pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || 'Primary',
+  pickup_pincode: process.env.SHIPROCKET_PICKUP_PINCODE || ''
 };
 
 const ALLOWED_ORIGINS = [
@@ -111,10 +111,10 @@ async function getAuthToken(forceRefresh = false) {
 /**
  * Parse client address components into structured fields
  */
-function parseAddress(rawAddress, defaultCity = 'Visakhapatnam', defaultState = 'Andhra Pradesh', defaultPin = '530041') {
+function parseAddress(rawAddress, defaultCity = '', defaultState = '', defaultPin = '') {
   if (!rawAddress) {
     return {
-      address: 'Madhurawada',
+      address: '',
       city: defaultCity,
       state: defaultState,
       pincode: defaultPin
@@ -158,7 +158,7 @@ function parseAddress(rawAddress, defaultCity = 'Visakhapatnam', defaultState = 
 
   return {
     address: cleanAddress.slice(0, 100) || 'Delivery Location',
-    city: city || 'Visakhapatnam',
+    city: city || defaultCity,
     state: foundState,
     pincode: pincode
   };

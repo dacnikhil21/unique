@@ -390,6 +390,12 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ── Endpoint: Server-Validated Orders Calculation & Creation (SEC-04) ────
+  if (req.url.startsWith('/api/orders')) {
+    const ordersHandler = require('./api/orders.js');
+    return ordersHandler(req, res);
+  }
+
   // ── Endpoint: Razorpay Public Config ──────────────────────────────────
   if (req.method === 'GET' && (req.url.startsWith('/api/razorpay/config') || req.url === '/api/razorpay?action=config')) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -418,10 +424,6 @@ const server = http.createServer((req, res) => {
           const liveCoupons = await getLiveServerCoupons();
           if (Array.isArray(payload.items) && payload.items.length > 0) {
             calcResult = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, liveCoupons);
-          } else if (payload.amount && !isNaN(parseFloat(payload.amount))) {
-            // Fallback for direct amount if items not passed (legacy compatibility)
-            const amt = parseFloat(payload.amount);
-            calcResult = { grandTotal: amt, subtotal: amt, discount: 0, shipping: 0, verifiedItems: [] };
           } else {
             throw new Error('Missing cart items for checkout');
           }

@@ -4,6 +4,8 @@
     { "source": "/api/shiprocket", "destination": "/api/shiprocket" },
     { "source": "/api/razorpay/:path*", "destination": "/api/razorpay" },
     { "source": "/api/razorpay", "destination": "/api/razorpay" },
+    { "source": "/api/orders/:path*", "destination": "/api/orders" },
+    { "source": "/api/orders", "destination": "/api/orders" },
     { "source": "/api/upload", "destination": "/api/upload" },
     { "source": "/((?!api/|.*\\..*).*)", "destination": "/index.html" }
   ],

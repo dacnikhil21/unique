@@ -382,11 +382,8 @@ module.exports = async (req, res) => {
         const liveCoupons = await getLiveServerCoupons();
         if (Array.isArray(payload.items) && payload.items.length > 0) {
           calcResult = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, payload.shipping, liveCoupons);
-        } else if (payload.amount && !isNaN(parseFloat(payload.amount))) {
-          const amt = parseFloat(payload.amount);
-          calcResult = { grandTotal: amt, subtotal: amt, discount: 0, shipping: 0, verifiedItems: [] };
         } else {
-          return res.status(400).json({ error: 'Missing items in order payload.' });
+          return res.status(400).json({ error: 'Cart items are required for checkout.' });
         }
       } catch (calcErr) {
         return res.status(400).json({ error: calcErr.message });

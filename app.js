@@ -9396,14 +9396,68 @@ async function simulateDevPayment(orderId, name, phone, address, totals) {
   }
 }
 
-  // Otherwise: WhatsApp Order
-  finalizeOrderSuccess({
-    paymentMethod: activeMethodText || 'WhatsApp Direct Order Confirmation',
-    name,
-    phone,
-    address: fullAddress,
-    totals
-  });
+  // Otherwise: WhatsApp Order (SEC-04: Server-Side Recalculation & Authoritative Validation)
+  const orderBtn = document.querySelector('button[onclick*="placeOrderFinal"]');
+  const originalBtnText = orderBtn ? orderBtn.innerHTML : '🔒 Complete & Place Order →';
+  if (orderBtn) {
+    orderBtn.disabled = true;
+    orderBtn.innerHTML = '⏳ Validating order with server...';
+  }
+
+  try {
+    const res = await fetch('/api/orders/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: cart.map(i => ({
+          id: i.id,
+          qty: cartItemQty(i),
+          title: i.title,
+          price: i.price,
+          variant: i.selectedVariant || 'Standard Pack'
+        })),
+        couponCode: (typeof appliedCouponCode !== 'undefined' && appliedCouponCode) ? appliedCouponCode : null,
+        giftWrap: !!document.getElementById('chkGiftWrap')?.checked,
+        customerName: name,
+        phone: phone,
+        address: fullAddress,
+        userId: typeof authUserId !== 'undefined' ? authUserId : null,
+        paymentMethod: activeMethodText || 'WhatsApp Direct Order Confirmation'
+      })
+    });
+
+    let data;
+    try {
+      const resText = await res.text();
+      data = JSON.parse(resText);
+    } catch (e) {
+      throw new Error(`Server order validation error (${res.status}).`);
+    }
+
+    if (!res.ok || !data.success || !data.order) {
+      throw new Error(data.error || 'Server rejected order pricing/stock validation.');
+    }
+
+    finalizeOrderSuccess({
+      orderId: data.order.orderId,
+      paymentMethod: data.order.paymentMethod,
+      name,
+      phone,
+      address: fullAddress,
+      totals: data.breakdown || {
+        grandTotal: data.order.totalAmount,
+        subtotal: data.order.subtotal,
+        discount: data.order.discountAmount,
+        shipping: data.order.shippingFee
+      }
+    });
+  } catch (err) {
+    if (orderBtn) {
+      orderBtn.disabled = false;
+      orderBtn.innerHTML = originalBtnText;
+    }
+    showApToast(`Order validation error: ${err.message || 'Please try again.'}`, 'error');
+  }
 }
 
 
