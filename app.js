@@ -973,30 +973,36 @@ function getCategoryEmoji(name) {
 
 function resolveCategoryImage(c, index = 0) {
   const name = typeof c === 'string' ? c : c.name;
-  const catObj = typeof c === 'object' ? c : { name };
+  const catObj = typeof c === 'object' && c !== null ? c : { name };
 
-  // Best source: real product photo from this category (safe before ALL_PRODUCTS init)
+  // 1. Highest priority: Custom cover image set on the category itself
+  // (from Admin upload, Supabase categories table, or custom URL)
+  if (catObj.image && typeof catObj.image === 'string' && catObj.image.trim() !== '') {
+    const trimmed = catObj.image.trim();
+    if (!trimmed.startsWith('data:image/svg+xml') && trimmed !== 'undefined' && trimmed !== 'null') {
+      return trimmed;
+    }
+  }
+
+  // 2. Secondary source: real product photo from this category (safe before ALL_PRODUCTS init)
   let products = [];
   try {
-    if (ALL_PRODUCTS && ALL_PRODUCTS.length) products = ALL_PRODUCTS;
+    if (typeof ALL_PRODUCTS !== 'undefined' && Array.isArray(ALL_PRODUCTS) && ALL_PRODUCTS.length) {
+      products = ALL_PRODUCTS;
+    }
   } catch (e) { /* ALL_PRODUCTS not initialized yet */ }
   if (products.length) {
-    const inCat = products.filter(p => p.category === name && p.image && !String(p.image).startsWith('data:'));
+    const inCat = products.filter(p => p.category === name && p.image && !String(p.image).startsWith('data:') && String(p.image).trim() !== '');
     if (inCat.length) {
       const pick = inCat.find(p => p.isFeatured) || inCat[0];
       return pick.image;
     }
   }
 
-  // Admin-uploaded Cloudinary image
-  if (catObj.image && String(catObj.image).includes('res.cloudinary.com')) {
-    return catObj.image;
-  }
-
-  // Named fallback map
+  // 3. Named fallback map
   if (CATEGORY_IMAGE_MAP[name]) return CATEGORY_IMAGE_MAP[name];
 
-  // Unique fallback by index so new categories never share one image
+  // 4. Unique fallback by index so new categories never share one image
   const mapUrls = [...new Set(Object.values(CATEGORY_IMAGE_MAP))];
   return mapUrls[index % mapUrls.length];
 }
@@ -1008,10 +1014,14 @@ function getCategoryDisplayImage(cat) {
 function normalizeCategoriesData() {
   let changed = false;
   CATEGORIES_DATA.forEach((c, idx) => {
-    const proper = resolveCategoryImage(c, idx);
-    if (c.image !== proper) {
-      c.image = proper;
-      changed = true;
+    // Only resolve a fallback image if category doesn't already have a valid custom image
+    const hasCustomImage = c.image && typeof c.image === 'string' && c.image.trim() !== '' && !c.image.startsWith('data:image/svg+xml') && c.image !== 'undefined' && c.image !== 'null';
+    if (!hasCustomImage) {
+      const proper = resolveCategoryImage(c, idx);
+      if (c.image !== proper) {
+        c.image = proper;
+        changed = true;
+      }
     }
   });
   CATEGORIES = CATEGORIES_DATA.map(c => c.name);
