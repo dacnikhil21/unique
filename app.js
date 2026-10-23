@@ -10438,8 +10438,19 @@ function handleApGlobalSearch(query) {
 }
 
 function isAdminAuthenticated() {
-  if (apIsAuthenticated || sessionStorage.getItem('ue_admin_auth') === '1') return true;
-  return userProfile && (String(userProfile.email || '').toLowerCase().trim() === 'uestore.online@gmail.com' || userProfile.role === 'admin');
+  const adminEmails = ['uestore.online@gmail.com', 'uniqueexpressions.in@gmail.com'];
+  const userEmail = (userProfile?.email || '').toLowerCase().trim();
+
+  // Guard against untrusted sessionStorage if customer profile is loaded
+  if (apIsAuthenticated || sessionStorage.getItem('ue_admin_auth') === '1') {
+    if (userProfile && userProfile.role === 'customer' && !adminEmails.includes(userEmail)) {
+      apIsAuthenticated = false;
+      sessionStorage.removeItem('ue_admin_auth');
+      return false;
+    }
+    return true;
+  }
+  return !!(userProfile && (adminEmails.includes(userEmail) || userProfile.role === 'admin'));
 }
 
 function renderAdminLoginView(container) {
@@ -10531,6 +10542,8 @@ async function handleAdminForgotPassword(e) {
 }
 
 async function handleAdminLogout() {
+  apIsAuthenticated = false;
+  sessionStorage.removeItem('ue_admin_auth');
   await sbSignOut();
   await applyAuthSession(null);
   showToast('Admin logged out successfully.', 'info');
