@@ -8702,14 +8702,6 @@ function renderCheckoutView() {
           </div>
         </div>
 
-        <div class="payment-option-card" onclick="selectPaymentMethod(this, 'Partial Cash on Delivery (COD)')">
-          <input type="radio" name="payMethod">
-          <div>
-            <div style="font-size:12px; font-weight:800;">Partial Cash on Delivery (COD)</div>
-            <div style="font-size:10px; color:#64748b;">Pay small advance & rest on delivery in Vizag</div>
-          </div>
-        </div>
-
         <div class="payment-option-card" onclick="selectPaymentMethod(this, 'WhatsApp Direct Order Confirmation')">
           <input type="radio" name="payMethod">
           <div>
@@ -9288,9 +9280,9 @@ async function simulateDevPayment(orderId, name, phone, address, totals) {
   }
 }
 
-  // Otherwise: COD or WhatsApp Order
+  // Otherwise: WhatsApp Order
   finalizeOrderSuccess({
-    paymentMethod: activeMethodText || 'Cash on Delivery',
+    paymentMethod: activeMethodText || 'WhatsApp Direct Order Confirmation',
     name,
     phone,
     address: fullAddress,
@@ -14054,7 +14046,7 @@ function renderFAQView() {
     },
     {
       q: "What payment methods are supported?",
-      a: "We support Cash on Delivery (COD), UPI (PhonePe, Google Pay, Paytm, BHIM), Credit/Debit Cards, and Net Banking."
+      a: "We support instant online payments via UPI (PhonePe, Google Pay, Paytm, BHIM), Credit/Debit Cards, Net Banking, and direct WhatsApp order confirmation."
     },
     {
       q: "What is your replacement policy if an item arrives damaged?",
