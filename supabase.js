@@ -652,15 +652,65 @@ async function sbInitAuthFlow() {
 
 async function sbResetPassword(identifier) {
   try {
-    const authEmail = sbResolveAuthEmail(identifier);
+    const rawId = String(identifier || '').trim();
+    if (!rawId) {
+      return { ok: false, error: 'Please enter your email or registered phone number.' };
+    }
+
+    let targetEmail = '';
+    if (rawId.includes('@')) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(rawId)) {
+        return { ok: false, error: 'Please enter a valid email address.' };
+      }
+      if (rawId.toLowerCase().endsWith(UE_CUSTOMER_EMAIL_DOMAIN)) {
+        return { ok: false, error: 'Please enter your actual personal email address to receive the reset link.' };
+      }
+      targetEmail = rawId.toLowerCase();
+    } else {
+      // User entered a phone number
+      const digits = rawId.replace(/\D/g, '');
+      if (digits.length < 10) {
+        return { ok: false, error: 'Please enter a valid 10-digit mobile number or email address.' };
+      }
+      const phone10 = digits.slice(-10);
+      const phone91 = '91' + phone10;
+
+      // Look up real email from profile record
+      const { data } = await _supabase
+        .from('profiles')
+        .select('email')
+        .or(`phone.eq.${phone10},phone.eq.${phone91},phone.ilike.%${phone10}%`)
+        .limit(1);
+
+      const foundEmail = data?.[0]?.email ? String(data[0].email).trim().toLowerCase() : '';
+      if (foundEmail && foundEmail.includes('@') && !foundEmail.endsWith(UE_CUSTOMER_EMAIL_DOMAIN)) {
+        targetEmail = foundEmail;
+      } else {
+        // Clear message if no real email on file for this phone
+        return {
+          ok: false,
+          error: 'No registered email is associated with this mobile number. Please enter your email address directly.'
+        };
+      }
+    }
+
     const origin = (window.location.origin || 'http://localhost:5000').replace(/\/+$/, '');
-    const { error } = await _supabase.auth.resetPasswordForEmail(authEmail, {
+    const { error } = await _supabase.auth.resetPasswordForEmail(targetEmail, {
       redirectTo: `${origin}/#type=recovery`
     });
-    if (error) throw error;
-    return { ok: true, error: null };
+
+    if (error && error.status === 429) {
+      return { ok: false, error: 'Too many reset requests. Please wait a few minutes before trying again.' };
+    }
+
+    // Never reveal whether an account actually exists
+    return {
+      ok: true,
+      message: 'If an account exists for this information, a password reset link has been sent to your email.'
+    };
   } catch (err) {
-    return { ok: false, error: err.message || 'Could not send reset email' };
+    return { ok: false, error: err.message || 'Unable to process reset request.' };
   }
 }
 

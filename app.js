@@ -9478,29 +9478,51 @@ function openForgotPasswordModal() {
     el.className = 'ap-modal-backdrop';
     document.body.appendChild(el);
   }
-  el.innerHTML = `<div class="ap-modal-container" style="max-width:420px;" onclick="event.stopPropagation()">
-    <div class="ap-modal-header"><h3 class="ap-modal-title">Reset Password</h3>
-    <button class="ap-btn-icon" onclick="document.getElementById('forgotPasswordOverlay').classList.remove('active')"><i class="ri-close-line"></i></button></div>
-    <div class="ap-modal-body" style="padding:20px;">
-      <p style="font-size:12px;color:#64748b;margin:0 0 12px;">Enter your registered email or mobile number. We will send a reset link to your email.</p>
-      <input type="text" id="forgotPassInput" class="ap-search-input" style="width:100%;" placeholder="Email or +91 mobile number">
-    </div>
-    <div class="ap-modal-footer">
-      <button class="ap-btn ap-btn-secondary" onclick="document.getElementById('forgotPasswordOverlay').classList.remove('active')">Cancel</button>
-      <button class="ap-btn ap-btn-primary" onclick="submitForgotPassword()">Send Reset Link</button>
-    </div></div>`;
-  el.classList.add('active');
+    el.innerHTML = `<div class="ap-modal-container" style="max-width:420px;" onclick="event.stopPropagation()">
+      <div class="ap-modal-header"><h3 class="ap-modal-title">Reset Password</h3>
+      <button class="ap-btn-icon" onclick="document.getElementById('forgotPasswordOverlay').classList.remove('active')"><i class="ri-close-line"></i></button></div>
+      <div class="ap-modal-body" style="padding:20px;">
+        <p style="font-size:12px;color:#64748b;margin:0 0 12px;">Enter your registered email address or 10-digit mobile number. We will send a secure password reset link to your email.</p>
+        <input type="text" id="forgotPassInput" class="ap-search-input" style="width:100%;" placeholder="e.g. name@domain.com or 9876543210" onkeydown="if(event.key==='Enter') submitForgotPassword()">
+      </div>
+      <div class="ap-modal-footer">
+        <button class="ap-btn ap-btn-secondary" onclick="document.getElementById('forgotPasswordOverlay').classList.remove('active')">Cancel</button>
+        <button id="submitForgotBtn" class="ap-btn ap-btn-primary" onclick="submitForgotPassword()">Send Reset Link</button>
+      </div></div>`;
+    el.classList.add('active');
+    setTimeout(() => document.getElementById('forgotPassInput')?.focus(), 250);
 }
 
 async function submitForgotPassword() {
-  const id = document.getElementById('forgotPassInput')?.value.trim();
-  if (!id) { showToast('Enter your email or mobile number.', 'info'); return; }
-  const result = await sbResetPassword(id);
-  if (result.ok) {
-    showToast('Password reset link sent! Check your email inbox.', 'success');
-    document.getElementById('forgotPasswordOverlay')?.classList.remove('active');
-  } else {
-    showToast(result.error || 'Could not send reset link.', 'info');
+  const input = document.getElementById('forgotPassInput');
+  const id = input?.value.trim();
+  const btn = document.getElementById('submitForgotBtn');
+
+  if (!id) {
+    showToast('Please enter your email or registered mobile number.', 'info');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Sending Link...';
+  }
+
+  try {
+    const result = await sbResetPassword(id);
+    if (result.ok) {
+      showToast(result.message || 'If an account matches that info, a password reset link has been sent.', 'success');
+      document.getElementById('forgotPasswordOverlay')?.classList.remove('active');
+    } else {
+      showToast(result.error || 'Could not send reset link. Please check your input.', 'error');
+    }
+  } catch (err) {
+    showToast('Failed to process password reset request.', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = 'Send Reset Link';
+    }
   }
 }
 
@@ -9536,7 +9558,7 @@ function openResetPasswordModal() {
       </div>
 
       <div style="display:flex; gap:10px;">
-        <button class="ap-btn ap-btn-primary" style="flex:1; height:46px; font-size:14px; font-weight:800; justify-content:center; border-radius:12px; background:#0f172a; color:#ffffff;" onclick="submitNewPassword()">
+        <button id="saveNewPassBtn" class="ap-btn ap-btn-primary" style="flex:1; height:46px; font-size:14px; font-weight:800; justify-content:center; border-radius:12px; background:#0f172a; color:#ffffff;" onclick="submitNewPassword()">
           Save & Log In
         </button>
       </div>
@@ -9549,21 +9571,39 @@ function openResetPasswordModal() {
 async function submitNewPassword() {
   const p1 = document.getElementById('newPassInput')?.value || '';
   const p2 = document.getElementById('newPassConfirm')?.value || '';
+  const saveBtn = document.getElementById('saveNewPassBtn');
+
   if (p1.length < 6) { showToast('Password must be at least 6 characters.', 'info'); return; }
   if (p1 !== p2) { showToast('Passwords do not match.', 'info'); return; }
-  const result = await sbUpdatePassword(p1);
-  if (result.ok) {
-    showToast('Password updated! You are logged in.', 'success');
-    document.getElementById('resetPasswordOverlay')?.classList.remove('active');
-    if (isAdminAuthenticated()) {
-      history.replaceState({}, '', '#view=admin');
-      switchView('admin');
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Saving Password...';
+  }
+
+  try {
+    const result = await sbUpdatePassword(p1);
+    if (result.ok) {
+      showToast('Password updated! You are logged in.', 'success');
+      document.getElementById('resetPasswordOverlay')?.classList.remove('active');
+      try {
+        history.replaceState({ view: 'home', params: {} }, '', window.location.pathname);
+      } catch (_) {}
+      if (isAdminAuthenticated()) {
+        history.replaceState({}, '', '#view=admin');
+        switchView('admin');
+      } else {
+        history.replaceState({}, '', '#view=profile');
+        renderProfileView();
+      }
     } else {
-      history.replaceState({}, '', '#view=profile');
-      renderProfileView();
+      showToast(result.error || 'Failed to update password.', 'error');
     }
-  } else {
-    showToast(result.error || 'Could not update password.', 'info');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = 'Save & Log In';
+    }
   }
 }
 
