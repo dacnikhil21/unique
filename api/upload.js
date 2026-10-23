@@ -4,7 +4,7 @@ const https = require('https');
 const CLOUDINARY_CONFIG = {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'oqj0unl4',
   api_key: process.env.CLOUDINARY_API_KEY || '392727691414539',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'lz4eGHf-j5Auu7__KTgNl2Ur6vg',
+  api_secret: process.env.CLOUDINARY_API_SECRET || '',
   folder: process.env.CLOUDINARY_FOLDER || 'unique_expressions'
 };
 
@@ -16,8 +16,20 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:5000'
 ];
 
+function sendResponse(res, statusCode, data) {
+  if (typeof res.status === 'function') {
+    return res.status(statusCode).json(data);
+  }
+  res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(data));
+}
+
 function uploadToCloudinary(base64File) {
   return new Promise((resolve, reject) => {
+    if (!CLOUDINARY_CONFIG.api_secret) {
+      return reject(new Error('Cloudinary credentials (CLOUDINARY_API_SECRET) are not configured on server.'));
+    }
+
     const timestamp = Math.floor(Date.now() / 1000);
     const stringToSign = `folder=${CLOUDINARY_CONFIG.folder}&timestamp=${timestamp}${CLOUDINARY_CONFIG.api_secret}`;
     const signature = crypto.createHash('sha1').update(stringToSign).digest('hex');
@@ -80,21 +92,29 @@ async function parseBody(req) {
 }
 
 module.exports = async (req, res) => {
-  const origin = req.headers.origin || '';
-  if (ALLOWED_ORIGINS.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+  const origin = req.headers?.origin || '';
+  if (ALLOWED_ORIGINS.includes(origin) || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Vary', 'Origin');
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('X-Content-Type-Options', 'nosniff');
 
   if (req.method === 'OPTIONS') {
-    return res.status(204).end();
+    if (typeof res.status === 'function') return res.status(204).end();
+    res.writeHead(204);
+    return res.end();
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return sendResponse(res, 405, { error: 'Method not allowed' });
+  }
+
+  // 🔒 SEC-03: Refuse execution if Cloudinary secret is unconfigured
+  if (!CLOUDINARY_CONFIG.api_secret) {
+    console.error('[Upload Security Alert] CLOUDINARY_API_SECRET is not configured on the server.');
+    return sendResponse(res, 503, { error: 'Upload service unavailable: Cloudinary credentials not configured.' });
   }
 
   try {
@@ -102,16 +122,16 @@ module.exports = async (req, res) => {
     const file = payload?.file;
 
     if (!file || (!file.startsWith('http') && !file.startsWith('data:'))) {
-      return res.status(400).json({ error: 'Invalid image payload' });
+      return sendResponse(res, 400, { error: 'Invalid image payload' });
     }
 
     if (file.length > 12 * 1024 * 1024) {
-      return res.status(413).json({ error: 'Payload too large. Maximum file size is 12MB.' });
+      return sendResponse(res, 413, { error: 'Payload too large. Maximum file size is 12MB.' });
     }
 
     const result = await uploadToCloudinary(file);
-    return res.status(200).json({ success: true, url: result.secure_url, public_id: result.public_id });
+    return sendResponse(res, 200, { success: true, url: result.secure_url, public_id: result.public_id });
   } catch (err) {
-    return res.status(500).json({ error: err.message || 'Upload failed' });
+    return sendResponse(res, 500, { error: err.message || 'Upload failed' });
   }
 };
