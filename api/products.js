@@ -1,7 +1,7 @@
 const https = require('https');
 
-const SUPABASE_URL = 'https://sfcxpvvqxldhdkvfyhgj.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmY3hwdnZxeGxkaGRrdmZ5aGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NzU4MTQsImV4cCI6MjEwMTE1MTgxNH0.ZNWPL7xNiapsnOrvJ45uT6KpaFqcvzz4vv7R7WGx39c';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://sfcxpvvqxldhdkvfyhgj.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmY3hwdnZxeGxkaGRrdmZ5aGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NzU4MTQsImV4cCI6MjEwMTE1MTgxNH0.ZNWPL7xNiapsnOrvJ45uT6KpaFqcvzz4vv7R7WGx39c';
 
 const ALLOWED_ORIGINS = [
   'https://shop.uniqueexpressions.in',
@@ -10,6 +10,14 @@ const ALLOWED_ORIGINS = [
   'http://localhost:5000',
   'http://127.0.0.1:5000'
 ];
+
+function sendResponse(res, statusCode, data) {
+  if (typeof res.status === 'function') {
+    return res.status(statusCode).json(data);
+  }
+  res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(data));
+}
 
 function sbFetch(path, options = {}) {
   return new Promise((resolve, reject) => {
@@ -69,26 +77,45 @@ async function parseBody(req) {
 }
 
 module.exports = async (req, res) => {
-  const origin = req.headers.origin || '';
-  if (ALLOWED_ORIGINS.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+  const origin = req.headers?.origin || '';
+  if (ALLOWED_ORIGINS.includes(origin) || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Vary', 'Origin');
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('X-Content-Type-Options', 'nosniff');
 
-  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method === 'OPTIONS') {
+    if (typeof res.status === 'function') return res.status(204).end();
+    res.writeHead(204);
+    return res.end();
+  }
 
   try {
     if (req.method === 'GET') {
       const data = await sbFetch('/rest/v1/products?select=*&order=id.desc');
-      return res.status(200).json({ success: true, data });
+      return sendResponse(res, 200, { success: true, data });
     }
 
     if (req.method === 'POST') {
       const payload = await parseBody(req);
-      const action = payload.action || req.query.action || 'create';
+      const action = payload.action || (req.query && req.query.action) || 'create';
+
+      // 🔒 SEC-02: Require Admin Authorization for Catalog Mutations
+      const authHeader = req.headers?.authorization || '';
+      const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+      const adminSecret = (process.env.ADMIN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+
+      if (!adminSecret) {
+        console.error('[Products API Security Alert] ADMIN_SECRET is not configured on the server.');
+        return sendResponse(res, 503, { error: 'Admin service unconfigured. Product mutations are disabled.' });
+      }
+
+      const providedToken = token || payload.adminSecret || '';
+      if (!providedToken || providedToken !== adminSecret) {
+        return sendResponse(res, 401, { error: 'Unauthorized: valid admin credentials required for product mutations.' });
+      }
 
       if (action === 'create') {
         const row = {
@@ -115,12 +142,12 @@ module.exports = async (req, res) => {
         });
 
         const created = Array.isArray(result) ? result[0] : result;
-        return res.status(200).json({ success: true, product: created });
+        return sendResponse(res, 200, { success: true, product: created });
       }
 
       if (action === 'update') {
         const id = payload.id;
-        if (!id) return res.status(400).json({ error: 'Missing product ID' });
+        if (!id) return sendResponse(res, 400, { error: 'Missing product ID' });
 
         const row = {
           title: payload.title,
@@ -146,24 +173,24 @@ module.exports = async (req, res) => {
         });
 
         const updated = Array.isArray(result) ? result[0] : result;
-        return res.status(200).json({ success: true, product: updated });
+        return sendResponse(res, 200, { success: true, product: updated });
       }
 
       if (action === 'delete') {
         const id = payload.id;
-        if (!id) return res.status(400).json({ error: 'Missing product ID' });
+        if (!id) return sendResponse(res, 400, { error: 'Missing product ID' });
 
         await sbFetch(`/rest/v1/products?id=eq.${encodeURIComponent(id)}`, {
           method: 'DELETE'
         });
 
-        return res.status(200).json({ success: true, message: `Product ${id} deleted` });
+        return sendResponse(res, 200, { success: true, message: `Product ${id} deleted` });
       }
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    return sendResponse(res, 405, { error: 'Method not allowed' });
   } catch (err) {
     console.error('[API /api/products error]:', err.message);
-    return res.status(500).json({ error: err.message || 'Internal Server Error' });
+    return sendResponse(res, 500, { error: err.message || 'Internal Server Error' });
   }
 };
