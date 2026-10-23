@@ -10251,7 +10251,28 @@ function closeInvoiceModal() {
 
 
 // ─── Cloudinary Upload Helper ────────────────────────────────────────────────
+async function getAdminAuthHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  try {
+    let token = '';
+    if (typeof sbGetAuthSession === 'function') {
+      const session = await sbGetAuthSession();
+      token = session?.access_token || '';
+    } else if (window._supabase?.auth?.getSession) {
+      const { data } = await window._supabase.auth.getSession();
+      token = data?.session?.access_token || '';
+    }
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  } catch (err) {
+    console.warn('[Admin Auth] Failed to retrieve session access token:', err);
+  }
+  return headers;
+}
+
 async function uploadToCloudinary(file) {
+  const authHeaders = await getAdminAuthHeaders();
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async () => {
@@ -10259,7 +10280,7 @@ async function uploadToCloudinary(file) {
         const base64Data = reader.result;
         const res = await fetch('/api/upload', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders,
           body: JSON.stringify({ file: base64Data })
         });
         const data = await res.json();
@@ -15145,9 +15166,10 @@ async function uploadMultipleImagesToCloudinary(fileInput) {
       // Auto-compress large phone photos to crisp web resolution (under 600KB)
       const base64Data = await compressImageForUpload(file, 1600, 0.88);
 
+      const authHeaders = await getAdminAuthHeaders();
       const res = await fetch('/api/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({ file: base64Data })
       });
       const data = await res.json();
@@ -15337,9 +15359,10 @@ async function uploadImageToCloudinary(fileInput, targetInputId, targetPrevId) {
   try {
     const base64Data = await compressImageForUpload(file, 1600, 0.88);
 
+    const authHeaders = await getAdminAuthHeaders();
     fetch('/api/upload', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders,
       body: JSON.stringify({ file: base64Data })
     })
     .then(res => res.json())

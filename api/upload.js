@@ -119,6 +119,14 @@ module.exports = async (req, res) => {
 
   try {
     const payload = await parseBody(req);
+
+    // 🔒 SEC-05: Authenticate admin user via Supabase JWT or machine secret
+    const { verifyAdminRequest } = require('./auth-helper.js');
+    const authCheck = await verifyAdminRequest(req, payload);
+    if (!authCheck.authorized) {
+      return sendResponse(res, 401, { error: authCheck.error || 'Unauthorized admin access: login required to upload media.' });
+    }
+
     const file = payload?.file;
 
     if (!file || (!file.startsWith('http') && !file.startsWith('data:'))) {

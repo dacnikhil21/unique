@@ -263,11 +263,20 @@ const server = http.createServer((req, res) => {
         return res.end(JSON.stringify({ error: 'Payload too large. Max size is 10MB.' }));
       }
       try {
-        const payload = JSON.parse(body);
-        if (!payload.file || (!payload.file.startsWith('http') && !payload.file.startsWith('data:'))) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify({ error: 'Invalid image payload.' }));
-        }
+        const payload = JSON.parse(body || '{}');
+
+        // 🔒 SEC-05: Authenticate admin user via Supabase JWT or machine secret
+        const { verifyAdminRequest } = require('./api/auth-helper.js');
+        verifyAdminRequest(req, payload).then(authCheck => {
+          if (!authCheck.authorized) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ error: authCheck.error || 'Unauthorized admin access: login required to upload media.' }));
+          }
+
+          if (!payload.file || (!payload.file.startsWith('http') && !payload.file.startsWith('data:'))) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ error: 'Invalid image payload.' }));
+          }
 
         const timestamp = Math.floor(Date.now() / 1000);
         const stringToSign = `folder=${CLOUDINARY_CONFIG.folder}&timestamp=${timestamp}${CLOUDINARY_CONFIG.api_secret}`;
@@ -318,6 +327,10 @@ const server = http.createServer((req, res) => {
 
         cReq.write(postData);
         cReq.end();
+        }).catch(authErr => {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: authErr.message || 'Authentication error' }));
+        });
       } catch (e) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Invalid JSON request body' }));
