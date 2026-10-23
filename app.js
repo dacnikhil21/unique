@@ -6490,6 +6490,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.warn('[UE] Cloud Store Settings bootstrap note:', setErr);
     }
 
+    // 9b. Load Coupons from Cloud Database
+    try {
+      if (typeof sbGetCoupons === 'function') {
+        const sbCoups = await sbGetCoupons();
+        if (sbCoups && Array.isArray(sbCoups) && sbCoups.length > 0) {
+          STORE_COUPONS = sbCoups;
+          normalizeStoreCoupons();
+          localStorage.setItem('ue_coupons_v5', JSON.stringify(STORE_COUPONS));
+        }
+      }
+    } catch (coupErr) {
+      console.warn('[UE] Cloud Coupons bootstrap note:', coupErr);
+    }
+
     // 10. Load returns from Supabase
     const sbRets = await sbGetReturns();
     if (sbRets !== null && sbRets.length > 0) {
@@ -12733,14 +12747,21 @@ function saveApCouponForm(editIdx = null) {
   closeApCouponModal();
   syncStorefrontState();
   switchApTab('coupons');
+  if (typeof sbAdminUpsertCoupon === 'function') {
+    sbAdminUpsertCoupon(payload).catch(e => console.warn('[Coupons Sync]', e));
+  }
 }
 
 function deleteApCoupon(idx) {
-  if (confirm(`Delete coupon code ${STORE_COUPONS[idx].code}?`)) {
+  const code = STORE_COUPONS[idx]?.code;
+  if (confirm(`Delete coupon code ${code}?`)) {
     STORE_COUPONS.splice(idx, 1);
     syncStorefrontState();
     switchApTab('coupons');
     showApToast(`Coupon deleted!`, 'error');
+    if (code && typeof sbAdminDeleteCoupon === 'function') {
+      sbAdminDeleteCoupon(code).catch(e => console.warn('[Coupons Sync]', e));
+    }
   }
 }
 
@@ -12752,6 +12773,9 @@ function toggleApCouponStatus(idx) {
   syncStorefrontState();
   switchApTab('coupons');
   showApToast(`Coupon ${c.code} ${c.status === 'Active' ? 'enabled' : 'disabled'}!`, c.status === 'Active' ? 'success' : 'info');
+  if (typeof sbAdminUpsertCoupon === 'function') {
+    sbAdminUpsertCoupon(c).catch(e => console.warn('[Coupons Sync]', e));
+  }
 }
 
 /* 9. Reviews Moderation Module Renderer */

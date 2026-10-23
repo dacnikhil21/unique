@@ -41,11 +41,61 @@ const SERVER_COUPONS = [
   { code: "UNIQUE10", type: "percent", value: 10, minSpend: 399, status: "Active" }
 ];
 
+let liveCouponsCache = [...SERVER_COUPONS];
+let lastCouponsFetch = 0;
+
+async function getLiveServerCoupons() {
+  const now = Date.now();
+  if (now - lastCouponsFetch < 60000 && liveCouponsCache.length > 0) {
+    return liveCouponsCache;
+  }
+  const SUPABASE_URL = process.env.SUPABASE_URL || 'https://sfcxpvvqxldhdkvfyhgj.supabase.co';
+  const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmY3hwdnZxeGxkaGRrdmZ5aGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NzU4MTQsImV4cCI6MjEwMTE1MTgxNH0.ZNWPL7xNiapsnOrvJ45uT6KpaFqcvzz4vv7R7WGx39c';
+  try {
+    const url = new URL(`${SUPABASE_URL}/rest/v1/coupons?select=*&is_active=eq.true`);
+    const data = await new Promise((resolve) => {
+      const req = https.request({
+        hostname: url.hostname,
+        path: url.pathname + url.search,
+        method: 'GET',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      }, (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            try { resolve(JSON.parse(body)); } catch (_) { resolve(null); }
+          } else {
+            resolve(null);
+          }
+        });
+      });
+      req.on('error', () => resolve(null));
+      req.end();
+    });
+
+    if (Array.isArray(data) && data.length > 0) {
+      liveCouponsCache = data.map(c => ({
+        code: String(c.code).trim().toUpperCase(),
+        type: c.discount_type === 'percentage' ? 'percent' : c.discount_type,
+        value: parseFloat(c.discount_value) || 0,
+        minSpend: parseFloat(c.min_order_amount) || 0,
+        status: c.is_active ? 'Active' : 'Disabled'
+      }));
+      lastCouponsFetch = now;
+    }
+  } catch (_) {}
+  return liveCouponsCache;
+}
+
 function findServerProduct(id) {
   return PRODUCT_CATALOG.find(p => String(p.id) === String(id));
 }
 
-function calculateServerOrderTotal(items, couponCode = null, giftWrap = false, clientShipping = null) {
+function calculateServerOrderTotal(items, couponCode = null, giftWrap = false, clientShipping = null, activeCoupons = null) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error('Order items cannot be empty.');
   }
@@ -80,9 +130,10 @@ function calculateServerOrderTotal(items, couponCode = null, giftWrap = false, c
   let shipping = (clientShipping === 0 || clientShipping === '0') ? 0 : (itemsTotal >= 499 ? 0 : (clientShipping != null ? parseFloat(clientShipping) : 50));
   let appliedCoupon = null;
 
+  const couponsToUse = Array.isArray(activeCoupons) && activeCoupons.length > 0 ? activeCoupons : liveCouponsCache;
   if (couponCode) {
     const codeUpper = String(couponCode).trim().toUpperCase();
-    const coupon = SERVER_COUPONS.find(c => c.code === codeUpper && c.status === 'Active');
+    const coupon = couponsToUse.find(c => c.code === codeUpper && c.status === 'Active');
     if (coupon) {
       if (itemsTotal >= (coupon.minSpend || 0)) {
         appliedCoupon = coupon.code;
@@ -328,8 +379,9 @@ module.exports = async (req, res) => {
     if (action === 'create-order' || payload.action === 'create-order') {
       let calcResult;
       try {
+        const liveCoupons = await getLiveServerCoupons();
         if (Array.isArray(payload.items) && payload.items.length > 0) {
-          calcResult = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, payload.shipping);
+          calcResult = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, payload.shipping, liveCoupons);
         } else if (payload.amount && !isNaN(parseFloat(payload.amount))) {
           const amt = parseFloat(payload.amount);
           calcResult = { grandTotal: amt, subtotal: amt, discount: 0, shipping: 0, verifiedItems: [] };

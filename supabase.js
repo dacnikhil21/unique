@@ -906,6 +906,73 @@ async function sbSaveStoreSettings(settings) {
   }
 }
 
+/* ─────────────────────────────── COUPONS CLOUD SYNC ─────────────────────────────── */
+
+async function sbGetCoupons() {
+  try {
+    const { data, error } = await _supabase
+      .from('coupons')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) throw error;
+    if (!data || data.length === 0) return null;
+
+    return data.map(c => ({
+      code: c.code,
+      type: c.discount_type === 'percentage' ? 'percent' : c.discount_type,
+      value: parseFloat(c.discount_value) || 0,
+      minSpend: parseFloat(c.min_order_amount) || 0,
+      maxDiscount: c.max_discount != null ? parseFloat(c.max_discount) : null,
+      expiry: c.expires_at || '31 Dec 2026',
+      status: c.is_active ? 'Active' : 'Disabled',
+      usedCount: c.times_used || 0
+    }));
+  } catch (err) {
+    console.warn('[Supabase] getCoupons note (falling back to local coupons):', err.message);
+    return null;
+  }
+}
+
+async function sbAdminUpsertCoupon(coupon) {
+  try {
+    const row = {
+      code: String(coupon.code || '').trim().toUpperCase(),
+      discount_type: coupon.type === 'percent' ? 'percentage' : (coupon.type || 'percentage'),
+      discount_value: parseFloat(coupon.value) || 0,
+      min_order_amount: parseFloat(coupon.minSpend) || 0,
+      is_active: coupon.status === 'Active',
+      times_used: parseInt(coupon.usedCount, 10) || 0,
+      updated_at: new Date().toISOString()
+    };
+    const { data, error } = await _supabase
+      .from('coupons')
+      .upsert(row, { onConflict: 'code' })
+      .select();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (err) {
+    console.warn('[Supabase] adminUpsertCoupon note:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+async function sbAdminDeleteCoupon(code) {
+  try {
+    const { error } = await _supabase
+      .from('coupons')
+      .delete()
+      .eq('code', String(code).trim().toUpperCase());
+
+    if (error) throw error;
+    return { success: true };
+  } catch (err) {
+    console.warn('[Supabase] adminDeleteCoupon note:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
 /* ─────────────────────────────── PING TEST ─────────────────────────────── */
 
 async function sbPing() {
