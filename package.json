@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "test:tier1": "node test/tier1.test.js",
     "db:policies": "node scripts/apply-product-policies.mjs"
   },
   "dependencies": {
