@@ -625,11 +625,18 @@ const server = http.createServer((req, res) => {
         const authHeader = req.headers['authorization'] || '';
         const token = authHeader.replace(/^Bearer\s+/i, '').trim();
 
-        // Validate admin token
-        const adminSecret = process.env.ADMIN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
-        if (adminSecret && token !== adminSecret && payload.adminSecret !== adminSecret) {
+        // 🔒 SEC-01: Strict Admin Authentication
+        const configuredSecret = (process.env.ADMIN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+        if (!configuredSecret) {
+          console.error('[Admin Security Alert] ADMIN_SECRET and SUPABASE_SERVICE_ROLE_KEY are not configured.');
+          res.writeHead(503, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ error: 'Admin endpoint unavailable: admin credentials not configured on server.' }));
+        }
+
+        const providedSecret = token || payload.adminSecret || '';
+        if (!providedSecret || providedSecret !== configuredSecret) {
           res.writeHead(401, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify({ error: 'Unauthorized admin access.' }));
+          return res.end(JSON.stringify({ error: 'Unauthorized admin access: invalid credentials.' }));
         }
 
         if (req.url === '/api/admin/toggle-coupon') {
