@@ -166,6 +166,7 @@ module.exports = async (req, res) => {
       const orderRecord = {
         orderId: 'UE-' + Math.floor(100000 + Math.random() * 900000),
         customerName: payload.customerName || 'Customer',
+        customerEmail: payload.customerEmail || payload.email || '',
         phone: payload.phone || '',
         address: payload.address || '',
         items: calcResult.verifiedItems,
@@ -186,6 +187,12 @@ module.exports = async (req, res) => {
       // Non-blocking sync to Supabase
       syncOrderToSupabase(orderRecord).catch(() => {});
 
+      // 📧 EMAIL-01: Send confirmation email to customer + admin
+      try {
+        const { sendOrderConfirmationEmail } = require('./email-helper.js');
+        sendOrderConfirmationEmail(orderRecord).catch(() => {});
+      } catch (_) {}
+
       const responsePayload = {
         success: true,
         order: orderRecord,
@@ -200,6 +207,35 @@ module.exports = async (req, res) => {
       if (idemKey) clearIdempotency(idemKey);
       res.writeHead(400, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ success: false, error: err.message }));
+    }
+  }
+
+  // 3. Order Status Update & Notification (EMAIL-01)
+  if (req.method === 'POST' && (action === 'status' || urlObj.pathname.endsWith('/status'))) {
+    try {
+      const { orderId, status, trackingInfo, customerEmail, customerName, items } = payload;
+      if (!orderId || !status) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'orderId and status are required' }));
+      }
+
+      // If status is Cancelled, atomically restore stock
+      if (status.toLowerCase() === 'cancelled' && Array.isArray(items) && items.length > 0) {
+        const { atomicRestoreStock } = require('./catalog-helper.js');
+        await atomicRestoreStock(items);
+      }
+
+      // 📧 Send status change email
+      try {
+        const { sendOrderStatusEmail } = require('./email-helper.js');
+        sendOrderStatusEmail({ orderId, customerName, customerEmail }, status, trackingInfo || {}).catch(() => {});
+      } catch (_) {}
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ success: true, message: `Status updated to ${status}` }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: err.message }));
     }
   }
 

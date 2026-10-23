@@ -8787,6 +8787,10 @@ function renderCheckoutView() {
           <input type="tel" id="chkPhone" maxlength="10" class="form-input" placeholder="e.g. 9876543210 (10 digits)" value="${apEscHtml(chkPhoneVal)}" required>
         </div>
         <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label" style="font-size:12px; font-weight:800; color:#1e293b;">Email Address <span style="color:#64748b; font-weight:600; font-size:11px;">(For order receipt & tracking updates)</span></label>
+          <input type="email" id="chkEmail" class="form-input" placeholder="e.g. customer@example.com" value="${apEscHtml(userProfile?.email || '')}">
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
           <label class="form-label" style="font-size:12px; font-weight:800; color:#1e293b;">Flat / Door No, Building & Street Address <span style="color:#ef4444;">*</span></label>
           <input type="text" id="chkAddress" class="form-input" placeholder="e.g. Flat 302, Sai Residency, 4th Main Road" value="${apEscHtml(chkAddressVal)}" required>
         </div>
@@ -8992,6 +8996,7 @@ function finalizeOrderSuccess(orderMeta) {
     paymentId = null,
     razorpayOrderId = null,
     name,
+    email = '',
     phone,
     address,
     totals
@@ -9010,6 +9015,7 @@ function finalizeOrderSuccess(orderMeta) {
     stepIndex: 0,
     status: paymentId ? 'Paid & Confirmed' : 'Order Confirmed',
     customerName: name,
+    customerEmail: email || userProfile?.email || '',
     phone: phone,
     address: address || '',
     paymentMethod: paymentMethod,
@@ -9123,6 +9129,7 @@ async function placeOrderFinal(grandTotal) {
 
   const nameInput = document.getElementById('chkName');
   const phoneInput = document.getElementById('chkPhone');
+  const emailInput = document.getElementById('chkEmail');
   const addressInput = document.getElementById('chkAddress');
   const localityInput = document.getElementById('chkLocality');
   const pincodeInput = document.getElementById('chkPincode');
@@ -9130,6 +9137,7 @@ async function placeOrderFinal(grandTotal) {
 
   const name = nameInput ? nameInput.value.trim() : '';
   const rawPhone = phoneInput ? phoneInput.value.replace(/\D/g, '').slice(-10) : '';
+  const email = (emailInput ? emailInput.value.trim() : (userProfile?.email || '')).trim();
   const address = addressInput ? addressInput.value.trim() : '';
   const locality = localityInput ? localityInput.value.trim() : '';
   const pincode = pincodeInput ? pincodeInput.value.replace(/\D/g, '').trim() : '';
@@ -9225,6 +9233,7 @@ async function placeOrderFinal(grandTotal) {
           shipping: currentTotals.shipping,
           grandTotal: currentTotals.grandTotal,
           customerName: name,
+          customerEmail: email,
           phone: phone,
           address: fullAddress,
           userId: typeof authUserId !== 'undefined' ? authUserId : null
@@ -9420,8 +9429,6 @@ async function simulateDevPayment(orderId, name, phone, address, totals) {
 }
 
   // Otherwise: WhatsApp Order (SEC-04: Server-Side Recalculation & Authoritative Validation)
-  const orderBtn = document.querySelector('button[onclick*="placeOrderFinal"]');
-  const originalBtnText = orderBtn ? orderBtn.innerHTML : '🔒 Complete & Place Order →';
   if (orderBtn) {
     orderBtn.disabled = true;
     orderBtn.innerHTML = '⏳ Validating order with server...';
@@ -9446,6 +9453,7 @@ async function simulateDevPayment(orderId, name, phone, address, totals) {
         couponCode: (typeof appliedCouponCode !== 'undefined' && appliedCouponCode) ? appliedCouponCode : null,
         giftWrap: !!document.getElementById('chkGiftWrap')?.checked,
         customerName: name,
+        customerEmail: email,
         phone: phone,
         address: fullAddress,
         userId: typeof authUserId !== 'undefined' ? authUserId : null,
@@ -11168,6 +11176,17 @@ function updateApOrderStatus(orderId, newStatus) {
         console.warn('[UE] Order status sync failed:', err)
       );
     }
+    fetch('/api/orders?action=status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId,
+        status: newStatus,
+        customerName: o.customerName || o.name,
+        customerEmail: o.customerEmail || o.email,
+        items: o.items
+      })
+    }).catch(() => {});
     showApToast(`Order ${orderId} status updated to ${newStatus}`, 'success');
     switchApTab('orders');
   }
@@ -11209,6 +11228,17 @@ function cancelApOrder(orderId) {
       localStorage.setItem('ue_orders', JSON.stringify(userOrders));
       if (typeof sbUpdateOrderStatus === 'function') sbUpdateOrderStatus(orderId, 'Cancelled', o.stepIndex || 0);
       if (typeof sbRestoreStock === 'function') sbRestoreStock(o.items);
+      fetch('/api/orders?action=status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          status: 'Cancelled',
+          customerName: o.customerName || o.name,
+          customerEmail: o.customerEmail || o.email,
+          items: o.items
+        })
+      }).catch(() => {});
       syncStorefrontState();
     }
     switchApTab('orders');

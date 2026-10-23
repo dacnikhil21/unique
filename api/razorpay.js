@@ -231,6 +231,10 @@ module.exports = async (req, res) => {
         };
         await syncOrderToSupabase(orderRecord);
         await atomicDecrementStock(orderRecord.items);
+        try {
+          const { sendOrderConfirmationEmail } = require('./email-helper.js');
+          sendOrderConfirmationEmail(orderRecord).catch(() => {});
+        } catch (_) {}
         console.log(`[Razorpay Webhook] Order confirmed and saved to Supabase: ${orderRecord.orderId}`);
       } else if (eventType === 'payment.failed') {
         console.log(`[Razorpay Webhook] Payment failed for order: ${orderId}`);

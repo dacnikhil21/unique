@@ -440,6 +440,10 @@ const server = http.createServer((req, res) => {
           SERVER_ORDERS.set(razorpay_order_id, { ...finalRecord, status: 'Paid & Confirmed' });
           syncOrderToSupabase(finalRecord);
           atomicDecrementStock(finalRecord.items);
+          try {
+            const { sendOrderConfirmationEmail } = require('./api/email-helper.js');
+            sendOrderConfirmationEmail(finalRecord).catch(() => {});
+          } catch (_) {}
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
