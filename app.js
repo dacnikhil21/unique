@@ -6116,6 +6116,48 @@ let ALL_PRODUCTS = (() => {
   }
 ];
 
+function applyStoreSettingsDOM() {
+  if (!STORE_SETTINGS) return;
+  const s = STORE_SETTINGS;
+  const rawWa = String(s.whatsapp || '7799747575').replace(/\D/g, '').slice(-10);
+  const wa10 = rawWa.length === 10 ? rawWa : '7799747575';
+  const phone = s.phone || '7799747575';
+  const storeName = s.storeName || 'UNIQUE EXPRESSIONS';
+  const gstin = s.gstin || '37BVTPG7761F1Z1';
+
+  // 1. Floating WhatsApp Button
+  const waFloat = document.getElementById('floatingWhatsappBtn') || document.querySelector('a[href*="wa.me"]');
+  if (waFloat) {
+    waFloat.href = `https://wa.me/91${wa10}?text=${encodeURIComponent(`Hi ${storeName}, I need help with my order!`)}`;
+  }
+
+  // 2. All phone links and texts
+  document.querySelectorAll('a[href^="tel:"]').forEach(el => {
+    el.href = `tel:+91${phone}`;
+    if (el.textContent.includes('+91') || el.textContent.includes('7799')) {
+      el.innerHTML = `<i class="ri-phone-line"></i> +91 ${phone}`;
+    }
+  });
+
+  // 3. Footer and header WhatsApp links
+  document.querySelectorAll('a[href*="wa.me"]').forEach(el => {
+    if (el !== waFloat) {
+      el.href = `https://wa.me/91${wa10}`;
+      if (el.textContent.toLowerCase().includes('whatsapp')) {
+        el.textContent = `WhatsApp: +91 ${wa10}`;
+      }
+    }
+  });
+
+  // 4. Official GSTIN elements
+  document.querySelectorAll('.dt-top-announce-left span, .dt-footer-col, div').forEach(el => {
+    const code = el.querySelector('code');
+    if (code && el.textContent.includes('GSTIN')) {
+      code.textContent = gstin;
+    }
+  });
+}
+
 function syncStorefrontState() {
   syncReviewsForAdmin();
   localStorage.setItem('ue_products_v14', JSON.stringify(ALL_PRODUCTS));
@@ -6133,6 +6175,7 @@ function syncStorefrontState() {
   syncCustomersFromOrders();
   localStorage.setItem('ue_customers_v5', JSON.stringify(STORE_CUSTOMERS));
 
+  if (typeof applyStoreSettingsDOM === 'function') applyStoreSettingsDOM();
   if (typeof renderDesktopGrid === 'function') renderDesktopGrid();
   if (typeof renderCategoryBar === 'function') renderCategoryBar();
   if (typeof renderDynamicNavCategories === 'function') renderDynamicNavCategories();

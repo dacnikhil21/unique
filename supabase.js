@@ -870,22 +870,51 @@ async function sbSaveHeroSlides(slides) {
 
 async function sbGetStoreSettings() {
   try {
+    // 1. Primary: dedicated store_settings table
+    const { data, error } = await _supabase
+      .from('store_settings')
+      .select('key, value');
+
+    if (!error && Array.isArray(data) && data.length > 0) {
+      const settingsObj = {};
+      data.forEach(row => {
+        settingsObj[row.key] = row.value;
+      });
+      return settingsObj;
+    }
+  } catch (_) {}
+
+  // 2. Fallback to categories __cms_store_settings__
+  try {
     const { data, error } = await _supabase
       .from('categories')
       .select('subcategories')
       .eq('id', '__cms_store_settings__')
       .single();
-    if (error || !data || !data.subcategories || typeof data.subcategories !== 'object') return null;
-    return data.subcategories;
+    if (!error && data && data.subcategories && typeof data.subcategories === 'object') {
+      return data.subcategories;
+    }
   } catch (err) {
     console.warn('[Supabase] getStoreSettings failed:', err.message);
-    return null;
   }
+  return null;
 }
 
 async function sbSaveStoreSettings(settings) {
   try {
     if (!settings || typeof settings !== 'object') return { success: false, error: 'Invalid settings object' };
+
+    // 1. Dedicated store_settings table
+    try {
+      const rows = Object.entries(settings).map(([key, value]) => ({
+        key,
+        value,
+        updated_at: new Date().toISOString()
+      }));
+      await _supabase.from('store_settings').upsert(rows, { onConflict: 'key' });
+    } catch (_) {}
+
+    // 2. Also keep legacy categories row synced for backwards compatibility
     const row = {
       id: '__cms_store_settings__',
       name: 'Store Settings Config',
