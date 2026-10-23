@@ -15946,12 +15946,28 @@ function initTouchSwipeGallery(containerId, onSwipeLeft, onSwipeRight) {
   let isPointerDown = false;
   let hasMoved = false;
 
+  let isSwiping = false;
+
   // Touch Events (Phones & Tablets)
   el.addEventListener('touchstart', (e) => {
     if (!e.touches || !e.touches[0]) return;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
+    isSwiping = false;
   }, { passive: true });
+
+  el.addEventListener('touchmove', (e) => {
+    if (!e.touches || !e.touches[0]) return;
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const diffX = currentX - startX;
+    const diffY = currentY - startY;
+
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
+      isSwiping = true;
+      if (e.cancelable) e.preventDefault();
+    }
+  }, { passive: false });
 
   el.addEventListener('touchend', (e) => {
     if (!e.changedTouches || !e.changedTouches[0]) return;
