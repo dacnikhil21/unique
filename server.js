@@ -680,9 +680,10 @@ const server = http.createServer((req, res) => {
       res.end('500 Internal Server Error');
     } else {
       const isHtml = ext === '.html' || ext === '';
-      const cacheControl = isHtml
-        ? 'no-store, no-cache, must-revalidate'
-        : 'public, max-age=31536000, immutable';
+      const isScriptOrStyle = ext === '.js' || ext === '.css';
+      const cacheControl = (isHtml || isScriptOrStyle)
+        ? 'no-cache, no-store, must-revalidate'
+        : 'public, max-age=86400, stale-while-revalidate=604800';
       res.writeHead(200, {
         'Content-Type': contentType,
         'Cache-Control': cacheControl
