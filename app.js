@@ -9116,6 +9116,11 @@ function loadRazorpaySdk() {
 }
 
 async function placeOrderFinal(grandTotal) {
+  if (window._ueCheckoutInFlight) {
+    showApToast('⏳ An order submission is already in progress. Please wait...', 'info');
+    return;
+  }
+
   const nameInput = document.getElementById('chkName');
   const phoneInput = document.getElementById('chkPhone');
   const addressInput = document.getElementById('chkAddress');
@@ -9171,6 +9176,17 @@ async function placeOrderFinal(grandTotal) {
     return;
   }
 
+  // 🔒 ORD-01: Disable submit on click + Generate unique idempotency key
+  window._ueCheckoutInFlight = true;
+  const orderBtn = document.querySelector('button[onclick*="placeOrderFinal"]');
+  const originalBtnText = orderBtn ? orderBtn.innerHTML : '🔒 Complete & Place Order →';
+  if (orderBtn) {
+    orderBtn.disabled = true;
+    orderBtn.innerHTML = '⏳ Processing Order...';
+  }
+
+  const idempotencyKey = 'ue_idem_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+
   const phone = rawPhone;
   const addressParts = [address, locality, `Pincode: ${pincode}`];
   if (notes) addressParts.push(`[Note: ${notes}]`);
@@ -9182,10 +9198,7 @@ async function placeOrderFinal(grandTotal) {
 
   // If Instant Online Razorpay / UPI selected
   if (isOnlinePay) {
-    const orderBtn = document.querySelector('button[onclick*="placeOrderFinal"]');
-    const originalBtnText = orderBtn ? orderBtn.innerHTML : '🔒 Complete & Place Order →';
     if (orderBtn) {
-      orderBtn.disabled = true;
       orderBtn.innerHTML = '⏳ Initializing Razorpay Gateway...';
     }
 
@@ -9194,8 +9207,12 @@ async function placeOrderFinal(grandTotal) {
       const currentTotals = calculateCheckoutTotals();
       const res = await fetch('/api/razorpay/create-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Idempotency-Key': idempotencyKey
+        },
         body: JSON.stringify({
+          idempotencyKey,
           items: cart.map(i => ({
             id: i.id,
             qty: cartItemQty(i),
@@ -9260,6 +9277,7 @@ async function placeOrderFinal(grandTotal) {
         },
         modal: {
           ondismiss: function() {
+            window._ueCheckoutInFlight = false;
             if (orderBtn) {
               orderBtn.disabled = false;
               orderBtn.innerHTML = originalBtnText;
@@ -9280,6 +9298,7 @@ async function placeOrderFinal(grandTotal) {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
+                items: cart.map(i => ({ id: i.id, qty: cartItemQty(i) })),
                 name,
                 phone,
                 address: fullAddress,
@@ -9292,6 +9311,7 @@ async function placeOrderFinal(grandTotal) {
               const vText = await vRes.text();
               vData = JSON.parse(vText);
             } catch (e) {}
+            window._ueCheckoutInFlight = false;
             if (vData.success && vData.verified) {
               finalizeOrderSuccess({
                 orderId: vData.orderId || ('UE-' + Math.floor(100000 + Math.random() * 900000)),
@@ -9312,6 +9332,7 @@ async function placeOrderFinal(grandTotal) {
               showApToast('❌ Payment verification failed: ' + (vData.error || 'Signature mismatch. Payment not confirmed.'), 'error');
             }
           } catch (e) {
+            window._ueCheckoutInFlight = false;
             if (orderBtn) {
               orderBtn.disabled = false;
               orderBtn.innerHTML = originalBtnText;
@@ -9323,6 +9344,7 @@ async function placeOrderFinal(grandTotal) {
 
       const rzpInstance = new window.Razorpay(rzpOptions);
       rzpInstance.on('payment.failed', function(failure) {
+        window._ueCheckoutInFlight = false;
         if (orderBtn) {
           orderBtn.disabled = false;
           orderBtn.innerHTML = originalBtnText;
@@ -9341,6 +9363,7 @@ async function placeOrderFinal(grandTotal) {
       rzpInstance.open();
 
     } catch (err) {
+      window._ueCheckoutInFlight = false;
       if (orderBtn) {
         orderBtn.disabled = false;
         orderBtn.innerHTML = originalBtnText;
@@ -9407,8 +9430,12 @@ async function simulateDevPayment(orderId, name, phone, address, totals) {
   try {
     const res = await fetch('/api/orders/create', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Idempotency-Key': idempotencyKey
+      },
       body: JSON.stringify({
+        idempotencyKey,
         items: cart.map(i => ({
           id: i.id,
           qty: cartItemQty(i),
@@ -9438,6 +9465,8 @@ async function simulateDevPayment(orderId, name, phone, address, totals) {
       throw new Error(data.error || 'Server rejected order pricing/stock validation.');
     }
 
+    window._ueCheckoutInFlight = false;
+
     finalizeOrderSuccess({
       orderId: data.order.orderId,
       paymentMethod: data.order.paymentMethod,
@@ -9452,6 +9481,7 @@ async function simulateDevPayment(orderId, name, phone, address, totals) {
       }
     });
   } catch (err) {
+    window._ueCheckoutInFlight = false;
     if (orderBtn) {
       orderBtn.disabled = false;
       orderBtn.innerHTML = originalBtnText;

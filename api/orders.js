@@ -18,6 +18,13 @@ const {
   atomicDecrementStock
 } = require('./catalog-helper.js');
 
+const {
+  checkIdempotency,
+  startIdempotency,
+  completeIdempotency,
+  clearIdempotency
+} = require('./idempotency.js');
+
 /**
  * Sync confirmed order to Supabase
  */
@@ -128,8 +135,25 @@ module.exports = async (req, res) => {
 
   // 2. Authoritative Order Creation (WhatsApp / COD / Direct)
   if (req.method === 'POST' && (action === 'create' || urlObj.pathname.endsWith('/create') || urlObj.pathname === '/api/orders')) {
+    const idemKey = req.headers['x-idempotency-key'] || payload.idempotencyKey;
+    if (idemKey) {
+      const cached = checkIdempotency(idemKey);
+      if (cached) {
+        if (cached.status === 'PENDING') {
+          res.writeHead(409, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ success: false, error: 'Order creation in progress. Please wait.' }));
+        }
+        if (cached.status === 'COMPLETED' && cached.response) {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ ...cached.response, idempotentReplay: true }));
+        }
+      }
+      startIdempotency(idemKey);
+    }
+
     try {
       if (!payload.items || !Array.isArray(payload.items) || payload.items.length === 0) {
+        if (idemKey) clearIdempotency(idemKey);
         res.writeHead(400, { 'Content-Type': 'application/json' });
         return res.end(JSON.stringify({ success: false, error: 'Order items are required' }));
       }
@@ -162,13 +186,18 @@ module.exports = async (req, res) => {
       // Non-blocking sync to Supabase
       syncOrderToSupabase(orderRecord).catch(() => {});
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({
+      const responsePayload = {
         success: true,
         order: orderRecord,
         breakdown: calcResult
-      }));
+      };
+
+      if (idemKey) completeIdempotency(idemKey, responsePayload);
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify(responsePayload));
     } catch (err) {
+      if (idemKey) clearIdempotency(idemKey);
       res.writeHead(400, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ success: false, error: err.message }));
     }
