@@ -17,150 +17,11 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:5000'
 ];
 
-let PRODUCT_CATALOG = [];
-try {
-  const prodPath = path.join(__dirname, '..', 'extracted_products.json');
-  if (fs.existsSync(prodPath)) {
-    PRODUCT_CATALOG = JSON.parse(fs.readFileSync(prodPath, 'utf8'));
-  }
-} catch (e) {}
-
-if (PRODUCT_CATALOG.length === 0) {
-  try {
-    const rootPath = path.join(process.cwd(), 'extracted_products.json');
-    if (fs.existsSync(rootPath)) {
-      PRODUCT_CATALOG = JSON.parse(fs.readFileSync(rootPath, 'utf8'));
-    }
-  } catch (e) {}
-}
-
-const SERVER_COUPONS = [
-  { code: "WELCOME100", type: "fixed", value: 100, minSpend: 499, status: "Active" },
-  { code: "FREESHIP", type: "shipping", value: 0, minSpend: 299, status: "Active" },
-  { code: "FESTIVE20", type: "percent", value: 20, minSpend: 999, status: "Active" },
-  { code: "UNIQUE10", type: "percent", value: 10, minSpend: 399, status: "Active" }
-];
-
-let liveCouponsCache = [...SERVER_COUPONS];
-let lastCouponsFetch = 0;
-
-async function getLiveServerCoupons() {
-  const now = Date.now();
-  if (now - lastCouponsFetch < 60000 && liveCouponsCache.length > 0) {
-    return liveCouponsCache;
-  }
-  const SUPABASE_URL = process.env.SUPABASE_URL || 'https://sfcxpvvqxldhdkvfyhgj.supabase.co';
-  const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmY3hwdnZxeGxkaGRrdmZ5aGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NzU4MTQsImV4cCI6MjEwMTE1MTgxNH0.ZNWPL7xNiapsnOrvJ45uT6KpaFqcvzz4vv7R7WGx39c';
-  try {
-    const url = new URL(`${SUPABASE_URL}/rest/v1/coupons?select=*&is_active=eq.true`);
-    const data = await new Promise((resolve) => {
-      const req = https.request({
-        hostname: url.hostname,
-        path: url.pathname + url.search,
-        method: 'GET',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        }
-      }, (res) => {
-        let body = '';
-        res.on('data', chunk => body += chunk);
-        res.on('end', () => {
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            try { resolve(JSON.parse(body)); } catch (_) { resolve(null); }
-          } else {
-            resolve(null);
-          }
-        });
-      });
-      req.on('error', () => resolve(null));
-      req.end();
-    });
-
-    if (Array.isArray(data) && data.length > 0) {
-      liveCouponsCache = data.map(c => ({
-        code: String(c.code).trim().toUpperCase(),
-        type: c.discount_type === 'percentage' ? 'percent' : c.discount_type,
-        value: parseFloat(c.discount_value) || 0,
-        minSpend: parseFloat(c.min_order_amount) || 0,
-        status: c.is_active ? 'Active' : 'Disabled'
-      }));
-      lastCouponsFetch = now;
-    }
-  } catch (_) {}
-  return liveCouponsCache;
-}
-
-function findServerProduct(id) {
-  return PRODUCT_CATALOG.find(p => String(p.id) === String(id));
-}
-
-function calculateServerOrderTotal(items, couponCode = null, giftWrap = false, clientShipping = null, activeCoupons = null) {
-  if (!Array.isArray(items) || items.length === 0) {
-    throw new Error('Order items cannot be empty.');
-  }
-
-  let subtotal = 0;
-  const verifiedItems = [];
-
-  for (const clientItem of items) {
-    const product = findServerProduct(clientItem.id);
-    const price = product ? product.price : (parseFloat(clientItem.price) || 0);
-    const qty = Math.max(1, parseInt(clientItem.qty, 10) || 1);
-    const title = product ? product.title : (clientItem.title || 'Product');
-
-    subtotal += price * qty;
-
-    verifiedItems.push({
-      id: clientItem.id,
-      title: title,
-      price: price,
-      originalPrice: product ? (product.originalPrice || price) : price,
-      qty: qty,
-      image: product ? (product.image || '') : (clientItem.image || ''),
-      category: product ? (product.category || 'Toys') : (clientItem.category || 'General'),
-      variant: clientItem.variant || 'Standard Pack'
-    });
-  }
-
-  const wrapFee = giftWrap ? 30 * verifiedItems.length : 0;
-  const itemsTotal = subtotal + wrapFee;
-
-  let discount = 0;
-  let shipping = (clientShipping === 0 || clientShipping === '0') ? 0 : (itemsTotal >= 499 ? 0 : (clientShipping != null ? parseFloat(clientShipping) : 50));
-  let appliedCoupon = null;
-
-  const couponsToUse = Array.isArray(activeCoupons) && activeCoupons.length > 0 ? activeCoupons : liveCouponsCache;
-  if (couponCode) {
-    const codeUpper = String(couponCode).trim().toUpperCase();
-    const coupon = couponsToUse.find(c => c.code === codeUpper && c.status === 'Active');
-    if (coupon) {
-      if (itemsTotal >= (coupon.minSpend || 0)) {
-        appliedCoupon = coupon.code;
-        if (coupon.type === 'fixed') {
-          discount = Math.min(itemsTotal, coupon.value || 0);
-        } else if (coupon.type === 'percent') {
-          discount = Math.round((itemsTotal * (coupon.value || 0)) / 100);
-        } else if (coupon.type === 'shipping') {
-          shipping = 0;
-        }
-      }
-    }
-  }
-
-  const grandTotal = Math.max(0, itemsTotal - discount + shipping);
-
-  return {
-    subtotal,
-    giftWrapFee: wrapFee,
-    itemsTotal,
-    discount,
-    shipping,
-    grandTotal,
-    appliedCoupon,
-    verifiedItems
-  };
-}
+const {
+  getLiveServerProducts,
+  getLiveServerCoupons,
+  calculateServerOrderTotal
+} = require('./catalog-helper.js');
 
 function createRazorpayOrder(amountInPaise, receipt, notes = {}) {
   return new Promise((resolve, reject) => {
@@ -379,9 +240,10 @@ module.exports = async (req, res) => {
     if (action === 'create-order' || payload.action === 'create-order') {
       let calcResult;
       try {
+        const liveProducts = await getLiveServerProducts();
         const liveCoupons = await getLiveServerCoupons();
         if (Array.isArray(payload.items) && payload.items.length > 0) {
-          calcResult = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, payload.shipping, liveCoupons);
+          calcResult = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, liveCoupons, liveProducts);
         } else {
           return res.status(400).json({ error: 'Cart items are required for checkout.' });
         }

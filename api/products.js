@@ -142,6 +142,7 @@ module.exports = async (req, res) => {
         });
 
         const created = Array.isArray(result) ? result[0] : result;
+        try { require('./catalog-helper.js').invalidateCatalogCache(); } catch (_) {}
         return sendResponse(res, 200, { success: true, product: created });
       }
 
@@ -173,6 +174,7 @@ module.exports = async (req, res) => {
         });
 
         const updated = Array.isArray(result) ? result[0] : result;
+        try { require('./catalog-helper.js').invalidateCatalogCache(); } catch (_) {}
         return sendResponse(res, 200, { success: true, product: updated });
       }
 
@@ -183,6 +185,10 @@ module.exports = async (req, res) => {
         await sbFetch(`/rest/v1/products?id=eq.${encodeURIComponent(id)}`, {
           method: 'DELETE'
         });
+
+        try {
+          require('./catalog-helper.js').invalidateCatalogCache();
+        } catch (_) {}
 
         return sendResponse(res, 200, { success: true, message: `Product ${id} deleted` });
       }
