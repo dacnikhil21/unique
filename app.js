@@ -6975,6 +6975,29 @@ function renderNewArrivals() {
 
 /* ── Dynamic Product Card Button / Stepper Helpers ────────────────────────── */
 function getCardButtonHTML(productId, isDesktop = false, isMini = false) {
+  const product = (ALL_PRODUCTS || []).find(p => String(p.id) === String(productId));
+  const available = product ? getAvailableStock(product) : 0;
+
+  if (available <= 0) {
+    if (isMini) {
+      return `
+        <span style="font-size:10px; font-weight:800; color:#ef4444;" title="Out of Stock">Out</span>
+      `;
+    }
+    if (isDesktop) {
+      return `
+        <button class="dt-card-add-btn" disabled style="background:#f1f5f9; color:#94a3b8; border:1px solid #e2e8f0; cursor:not-allowed; opacity:0.8; box-shadow:none;" onclick="event.stopPropagation()">
+          🔴 Out of Stock
+        </button>
+      `;
+    }
+    return `
+      <button class="m-tile-add-btn" disabled style="background:#f1f5f9; color:#94a3b8; border:1px solid #e2e8f0; cursor:not-allowed; opacity:0.8; box-shadow:none;" onclick="event.stopPropagation()">
+        🔴 Out of Stock
+      </button>
+    `;
+  }
+
   const inCart = cart.find(i => String(i.id) === String(productId));
   const qty = inCart ? inCart.qty : 0;
 
@@ -7072,12 +7095,17 @@ function createDesktopTileHTML(product, index = 0) {
   const isWishlisted = wishlist.includes(product.id);
   const effectivePrice = getEffectivePrice(product.price);
   const saveAmount = product.originalPrice - effectivePrice;
+  const isOutOfStock = getAvailableStock(product) <= 0;
 
   return `
     <div class="dt-product-card" onclick="openProductPage('${product.id}')">
       <div class="dt-card-img-wrapper" style="position:relative;">
         <img src="${product.image}" loading="lazy" alt="${product.title}" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop'">
-        <span class="dt-discount-badge">-${product.discount}%</span>
+        ${isOutOfStock ? `
+          <span class="dt-discount-badge" style="background:#ef4444; color:#fff;">🔴 Out of Stock</span>
+        ` : `
+          <span class="dt-discount-badge">-${product.discount}%</span>
+        `}
         <button class="dt-wishlist-btn" onclick="event.stopPropagation(); toggleWishlist('${product.id}', this)" title="Add to Wishlist">
           <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="${isWishlisted ? 'color:#0f172a;' : ''}"></i>
         </button>
@@ -7150,13 +7178,18 @@ function createMobileTileHTML(product, index = 0) {
   const isWishlisted = wishlist.includes(product.id);
   const effectivePrice = getEffectivePrice(product.price);
   const saveAmount = product.originalPrice - effectivePrice;
+  const isOutOfStock = getAvailableStock(product) <= 0;
   const delaySec = (index * 0.04).toFixed(2);
 
   return `
     <div class="m-product-tile-card" style="animation-delay: ${delaySec}s;" onclick="openProductPage('${product.id}')">
       <div class="m-tile-img-wrapper">
         <img src="${product.image}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop'">
-        <span class="m-discount-badge-orange">${product.discount}% OFF</span>
+        ${isOutOfStock ? `
+          <span class="m-discount-badge-orange" style="background:#ef4444; color:#fff;">🔴 Out of Stock</span>
+        ` : `
+          <span class="m-discount-badge-orange">${product.discount}% OFF</span>
+        `}
         <button class="m-wishlist-heart-btn" onclick="event.stopPropagation(); toggleWishlist('${product.id}', this)" title="Add to Wishlist">
           <i class="${isWishlisted ? 'ri-heart-3-fill' : 'ri-heart-3-line'}" style="${isWishlisted ? 'color:#0f172a;' : 'color:#1e293b;'}"></i>
         </button>
@@ -7413,23 +7446,29 @@ function renderPDPDesktop(product) {
           <div style="margin-bottom: 18px;">
             <label style="font-size: 11px; font-weight: 800; color: #475569; display: block; margin-bottom: 6px; text-transform: uppercase;">Quantity:</label>
             <div style="display: flex; align-items: center; gap: 14px;">
-              <div class="pdp-stepper-box" style="margin: 0;">
-                <button class="pdp-stepper-btn" onclick="updatePdpQty(-1)">-</button>
-                <span class="pdp-stepper-val" id="pdpQtyDisplay">1</span>
-                <button class="pdp-stepper-btn" onclick="updatePdpQty(1)">+</button>
+              <div class="pdp-stepper-box" style="margin: 0; ${(product.stockQty || 0) === 0 ? 'opacity:0.5; pointer-events:none;' : ''}">
+                <button class="pdp-stepper-btn" onclick="updatePdpQty(-1)" ${(product.stockQty || 0) === 0 ? 'disabled' : ''}>-</button>
+                <span class="pdp-stepper-val" id="pdpQtyDisplay">${(product.stockQty || 0) === 0 ? '0' : '1'}</span>
+                <button class="pdp-stepper-btn" onclick="updatePdpQty(1)" ${(product.stockQty || 0) === 0 ? 'disabled' : ''}>+</button>
               </div>
-              <span style="font-size: 12px; color: #10b981; font-weight: 700;">🟢 Fast Dispatch from Vizag Store</span>
+              <span style="font-size: 12px; color: #10b981; font-weight: 700;">🟢 Fast Dispatch from Store</span>
             </div>
           </div>
 
           <!-- PRIMARY ACTION BUTTONS (Immediately Visible Above the Fold) -->
           <div style="display: flex; gap: 10px; margin-bottom: 18px;">
-            <button style="flex: 1; height: 48px; font-size: 14.5px; font-weight: 800; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(15,23,42,0.15);" onclick="addPdpToCart(false)">
-              🛒 Add to Cart
-            </button>
-            <button style="flex: 1; height: 48px; font-size: 14.5px; font-weight: 900; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 6px 18px rgba(245, 158, 11, 0.3); display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="addPdpToCart(true)">
-              ⚡ BUY NOW
-            </button>
+            ${(product.stockQty || 0) === 0 || product.inStock === false ? `
+              <button disabled style="flex: 1; height: 48px; font-size: 14.5px; font-weight: 800; background: #e2e8f0; color: #94a3b8; border: 1px solid #cbd5e1; border-radius: 12px; cursor: not-allowed; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                🔴 Out of Stock
+              </button>
+            ` : `
+              <button style="flex: 1; height: 48px; font-size: 14.5px; font-weight: 800; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(15,23,42,0.15);" onclick="addPdpToCart(false)">
+                🛒 Add to Cart
+              </button>
+              <button style="flex: 1; height: 48px; font-size: 14.5px; font-weight: 900; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 6px 18px rgba(245, 158, 11, 0.3); display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="addPdpToCart(true)">
+                ⚡ BUY NOW
+              </button>
+            `}
           </div>
 
           <!-- Delivery Availability Check -->
@@ -7644,12 +7683,18 @@ function renderPDPMobile(product) {
       <!-- Mobile Inline Action Buttons (Visible immediately above the fold) -->
       <div class="pdp-section-card" style="padding: 12px 14px; background: #ffffff;">
         <div style="display: flex; gap: 8px;">
-          <button style="flex: 1; height: 44px; font-size: 13.5px; font-weight: 800; background: #0f172a; color: #ffffff; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;" onclick="addPdpToCart(false)">
-            🛒 Add to Cart
-          </button>
-          <button style="flex: 1; height: 44px; font-size: 13.5px; font-weight: 900; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25); display: flex; align-items: center; justify-content: center; gap: 4px;" onclick="addPdpToCart(true)">
-            ⚡ BUY NOW
-          </button>
+          ${(product.stockQty || 0) === 0 || product.inStock === false ? `
+            <button disabled style="flex: 1; height: 44px; font-size: 13.5px; font-weight: 800; background: #e2e8f0; color: #94a3b8; border: 1px solid #cbd5e1; border-radius: 10px; cursor: not-allowed; display: flex; align-items: center; justify-content: center; gap: 4px;">
+              🔴 Out of Stock
+            </button>
+          ` : `
+            <button style="flex: 1; height: 44px; font-size: 13.5px; font-weight: 800; background: #0f172a; color: #ffffff; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;" onclick="addPdpToCart(false)">
+              🛒 Add to Cart
+            </button>
+            <button style="flex: 1; height: 44px; font-size: 13.5px; font-weight: 900; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25); display: flex; align-items: center; justify-content: center; gap: 4px;" onclick="addPdpToCart(true)">
+              ⚡ BUY NOW
+            </button>
+          `}
         </div>
       </div>
 
@@ -7753,8 +7798,12 @@ function renderPDPMobile(product) {
 
       <!-- Always-Visible Mobile Sticky Bottom Bar -->
       <div class="pdp-mb-sticky-bar">
-        <button class="pdp-cta-add-cart" style="flex: 1; height: 46px; font-size: 14px; font-weight: 800; background: linear-gradient(135deg, #0f172a 0%, #0f172a 100%); color: #fff; border: none; border-radius: 12px; cursor: pointer;" onclick="addPdpToCart(false)">🛒 Add to Cart</button>
-        <button class="pdp-cta-buy-now" style="flex: 1; height: 46px; font-size: 14px; font-weight: 900; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; border: none; border-radius: 12px; cursor: pointer;" onclick="addPdpToCart(true)">⚡ BUY NOW</button>
+        ${(product.stockQty || 0) === 0 || product.inStock === false ? `
+          <button class="pdp-cta-add-cart" disabled style="flex: 1; height: 46px; font-size: 14px; font-weight: 800; background: #e2e8f0; color: #94a3b8; border: 1px solid #cbd5e1; border-radius: 12px; cursor: not-allowed;">🔴 Out of Stock</button>
+        ` : `
+          <button class="pdp-cta-add-cart" style="flex: 1; height: 46px; font-size: 14px; font-weight: 800; background: linear-gradient(135deg, #0f172a 0%, #0f172a 100%); color: #fff; border: none; border-radius: 12px; cursor: pointer;" onclick="addPdpToCart(false)">🛒 Add to Cart</button>
+          <button class="pdp-cta-buy-now" style="flex: 1; height: 46px; font-size: 14px; font-weight: 900; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; border: none; border-radius: 12px; cursor: pointer;" onclick="addPdpToCart(true)">⚡ BUY NOW</button>
+        `}
       </div>
     </div>
   `;
