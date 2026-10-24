@@ -135,81 +135,9 @@ function enhanceProductSchema(products) {
    UNIQUE EXPRESSIONS - WORLD-CLASS HERO BANNER & MOBILE APP LOGIC
    ========================================================================== */
 
-let HERO_SLIDES = safeParseStorage('ue_hero_slides_v7') || [
-  {
-    id: 1,
-    img: "https://d1h96izmtdkx5o.cloudfront.net/-OPHhEadGd1W2rTwlBbq.jpg?v=5",
-    badge: "✨ UNIQUE EXPRESSIONS",
-    title: "Curated Collection of Toys, Gifts & Stationery",
-    sub: "Discover High-Quality RC Cars, Flying Drones, Educational STEM Toys, Traditional Handicrafts & Bespoke Return Gifts.",
-    ctaText: "Explore Store Catalog",
-    ctaLink: "#view=plp",
-    active: true
-  },
-  {
-    id: 2,
-    img: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=800&auto=format&fit=crop",
-    badge: "🎁 RETURN GIFT STUDIO",
-    title: "Bespoke Party & Celebration Hampers",
-    sub: "Customized gift boxes, wooden name keychains & birthday hampers tailored for kids & events.",
-    ctaText: "Explore Return Gifts",
-    ctaLink: "#view=plp&category=Return%20Gifts",
-    active: true
-  },
-  {
-    id: 3,
-    img: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop",
-    badge: "📦 WHOLESALE & BULK GST ORDERS",
-    title: "Direct Wholesale GST Billing",
-    sub: "Volume discounts & input credit invoices (GSTIN: 37BVTPG7761F1Z1) for store owners & event planners.",
-    ctaText: "Wholesale Partner Portal",
-    ctaLink: "#view=wholesale",
-    active: true
-  }
-];
+let HERO_SLIDES = safeParseStorage('ue_hero_slides_v7') || [];
 
-let FEATURED_COLLECTIONS = safeParseStorage('ue_featured_collections_v1') || [
-  {
-    id: 1,
-    tag: "POPULAR & TRENDING",
-    title: "High-Speed RC & Flying Toys",
-    category: "RC Toys",
-    img: "assets/banners/rc_toys_banner.png",
-    active: true
-  },
-  {
-    id: 2,
-    tag: "BRAIN & CREATIVITY",
-    title: "Educational & STEM Learning Kits",
-    category: "Educational Toys",
-    img: "assets/banners/educational_banner.png",
-    active: true
-  },
-  {
-    id: 3,
-    tag: "ARTISAN & BOUTIQUE",
-    title: "Handicrafts & Fancy Stationery",
-    category: "Handicrafts",
-    img: "assets/banners/handicrafts_banner.png",
-    active: true
-  },
-  {
-    id: 4,
-    tag: "BOUTIQUE IMPORTS",
-    title: "Cute Fancy Stationery",
-    category: "Stationary",
-    img: "assets/banners/stationery_banner.png",
-    active: true
-  },
-  {
-    id: 5,
-    tag: "BESTSELLER BUNDLE",
-    title: "Return Gift Studio & Hampers",
-    category: "Return Gifts",
-    img: "assets/banners/return_gifts_banner.png",
-    active: true
-  }
-];
+let FEATURED_COLLECTIONS = safeParseStorage('ue_featured_collections_v1') || [];
 
 let currentHeroIndex = 0;
 let heroTimer = null;
@@ -218,142 +146,9 @@ let CATEGORIES_DATA = (() => {
   try {
     const stored = JSON.parse(localStorage.getItem('ue_categories_data_v5'));
     if (Array.isArray(stored) && stored.length > 0) return stored;
-  } catch (e) { /* use defaults below */ }
-  return null;
-})() || [
-  {
-    "id": "-OlMg9x5rg2whiy_qnz7",
-    "name": "RC Toys",
-    "description": "RC Toys collection at UNIQUE EXPRESSIONS",
-    "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
-    "subcategories": [
-      "RC Toys"
-    ],
-    "isFeatured": true,
-    "isVisible": true,
-    "sortOrder": 1
-  },
-  {
-    "id": "-Opqx7QGM-kXaKwgkAMf",
-    "name": "RC Flying Toys",
-    "description": "RC Flying Toys collection at UNIQUE EXPRESSIONS",
-    "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
-    "subcategories": [
-      "RC Flying Toys"
-    ],
-    "isFeatured": true,
-    "isVisible": true,
-    "sortOrder": 2
-  },
-  {
-    "id": "-O_ulCIFrv0XxjtLO57Z",
-    "name": "Educational",
-    "description": "Educational & STEM collection at UNIQUE EXPRESSIONS",
-    "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
-    "subcategories": [
-      "Educational", "STEM"
-    ],
-    "isFeatured": true,
-    "isVisible": true,
-    "sortOrder": 3
-  },
-  {
-    "id": "-O_v2NV8oS3tXI0meXWL",
-    "name": "Standard Toys",
-    "description": "Trending & Standard Toys collection at UNIQUE EXPRESSIONS",
-    "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
-    "subcategories": [
-      "Standard Toys", "Trending Toys"
-    ],
-    "isFeatured": true,
-    "isVisible": true,
-    "sortOrder": 4
-  },
-  {
-    "id": "-O_VyIL9w369A00JEKUX",
-    "name": "Handicrafts",
-    "description": "Traditional Handicrafts collection at UNIQUE EXPRESSIONS",
-    "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
-    "subcategories": [
-      "Handicrafts", "Brass Idols"
-    ],
-    "isFeatured": true,
-    "isVisible": true,
-    "sortOrder": 5
-  },
-  {
-    "id": "-O_WcwUXR93XyalqJm8s",
-    "name": "Stationery",
-    "description": "Cute & Fancy Imported Stationery collection at UNIQUE EXPRESSIONS",
-    "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
-    "subcategories": [
-      "Stationery", "Cute Pens"
-    ],
-    "isFeatured": true,
-    "isVisible": true,
-    "sortOrder": 6
-  },
-  {
-    "id": "-Oh9ZXwAtB_3QNn9Ld9r",
-    "name": "Combos",
-    "description": "Combos & Gift Packs collection at UNIQUE EXPRESSIONS",
-    "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
-    "subcategories": [
-      "Combos"
-    ],
-    "isFeatured": true,
-    "isVisible": true,
-    "sortOrder": 7
-  },
-  {
-    "id": "-Oaeo4RysOAMwtXZn7m7",
-    "name": "Kids Footwear",
-    "description": "Kids Footwear collection at UNIQUE EXPRESSIONS",
-    "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
-    "subcategories": [
-      "Kids Footwear"
-    ],
-    "isFeatured": true,
-    "isVisible": true,
-    "sortOrder": 8
-  },
-  {
-    "id": "-O_v2trm86gBJJTXwLLg",
-    "name": "Gifts & Gadgets",
-    "description": "Gifts & Gadgets collection at UNIQUE EXPRESSIONS",
-    "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
-    "subcategories": [
-      "Gifts & Gadgets"
-    ],
-    "isFeatured": true,
-    "isVisible": true,
-    "sortOrder": 9
-  },
-  {
-    "id": "-O_WcsOAQRkDGH5FkmNE",
-    "name": "Return Gifts",
-    "description": "Return Gift Studio collection at UNIQUE EXPRESSIONS",
-    "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
-    "subcategories": [
-      "Return Gifts"
-    ],
-    "isFeatured": true,
-    "isVisible": true,
-    "sortOrder": 10
-  },
-  {
-    "id": "-OiCu94_rWjPcWX8nmt0",
-    "name": "New Arrivals",
-    "description": "New Arrivals collection at UNIQUE EXPRESSIONS",
-    "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=400&auto=format&fit=crop",
-    "subcategories": [
-      "New Arrivals"
-    ],
-    "isFeatured": true,
-    "isVisible": true,
-    "sortOrder": 11
-  }
-];
+  } catch (e) {}
+  return [];
+})();
 
 let CATEGORIES = CATEGORIES_DATA.map(c => c.name);
 
@@ -6835,7 +6630,9 @@ function updateNavIcons(viewName) {
 
 function startHeroCarousel() {
   if (heroTimer) clearInterval(heroTimer);
+  if (!Array.isArray(HERO_SLIDES) || HERO_SLIDES.length === 0) return;
   heroTimer = setInterval(() => {
+    if (!Array.isArray(HERO_SLIDES) || HERO_SLIDES.length === 0) return;
     currentHeroIndex = (currentHeroIndex + 1) % HERO_SLIDES.length;
     setHeroSlide(currentHeroIndex, false);
   }, 5000);
@@ -16614,21 +16411,21 @@ function renderWhatsAppFloatingWidget() {
   if (widget) widget.remove();
 }
 
-/* 4. Reset Category Seed Data */
-function resetCategoryDefaults() {
-  if (confirm("Reset categories table to initial default data seed?")) {
-    CATEGORIES_DATA = [
-      { id: "cat-1", sortOrder: 1, name: "RC Toys", description: "RC Toys collection at UNIQUE EXPRESSIONS", image: "/assets/dashboards/heroes/mobile-hero.png", subcategories: ["RC Toys"], isFeatured: true, isVisible: true, createdAt: "2026-01-10" },
-      { id: "cat-2", sortOrder: 2, name: "RC Flying Toys", description: "RC Flying Toys collection at UNIQUE EXPRESSIONS", image: "/assets/dashboards/heroes/vehicle-hero.png", subcategories: ["RC Flying Toys"], isFeatured: true, isVisible: true, createdAt: "2026-01-11" },
-      { id: "cat-3", sortOrder: 3, name: "RC Cars & Buggies", description: "High-speed remote control cars, off-road trucks & racers", image: "/assets/dashboards/heroes/furniture-hero.png", subcategories: ["RC Cars", "Trucks"], isFeatured: false, isVisible: true, createdAt: "2026-01-12" },
-      { id: "cat-4", sortOrder: 4, name: "Drones & Quadcopters", description: "Aerial photography drones, mini quads and video flyers", image: "/assets/dashboards/heroes/rental-hero.png", subcategories: ["Drones", "Quadcopters"], isFeatured: true, isVisible: true, createdAt: "2026-01-15" },
-      { id: "cat-5", sortOrder: 5, name: "Action Figures & Collectibles", description: "Anime, superhero, and sci-fi collectible figures", image: "/assets/dashboards/heroes/service-hero.png", subcategories: ["Action Figures"], isFeatured: false, isVisible: false, createdAt: "2026-01-18" },
-      { id: "cat-6", sortOrder: 6, name: "STEM & Educational Toys", description: "Robotics kits, science experiments, and puzzle blocks", image: "/assets/dashboards/heroes/mobile-hero.png", subcategories: ["STEM", "Robotics"], isFeatured: true, isVisible: true, createdAt: "2026-01-20" }
-    ];
-    CATEGORIES = CATEGORIES_DATA.map(c => c.name);
-    syncStorefrontState();
-    switchApTab('categories');
-    showApToast("Reset categories to default data seed!", "success");
+/* 4. Refresh Categories from Supabase */
+async function resetCategoryDefaults() {
+  if (confirm("Refresh categories directly from live Supabase database?")) {
+    showApToast("Fetching latest categories from database...", "info");
+    const sbCats = await sbGetCategories();
+    if (sbCats && sbCats.length > 0) {
+      CATEGORIES_DATA = sbCats;
+      CATEGORIES = CATEGORIES_DATA.map(c => c.name);
+      localStorage.setItem('ue_categories_data_v5', JSON.stringify(CATEGORIES_DATA));
+      syncStorefrontState();
+      switchApTab('categories');
+      showApToast("Categories refreshed from Supabase!", "success");
+    } else {
+      showApToast("No categories returned from database.", "info");
+    }
   }
 }
 
