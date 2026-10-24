@@ -1031,21 +1031,22 @@ async function sbGetCoupons() {
       .order('id', { ascending: true });
 
     if (error) throw error;
-    if (!data || data.length === 0) return null;
+    if (!data) return [];
 
     return data.map(c => ({
-      code: c.code,
+      code: String(c.code).trim().toUpperCase(),
       type: c.discount_type === 'percentage' ? 'percent' : c.discount_type,
       value: parseFloat(c.discount_value) || 0,
       minSpend: parseFloat(c.min_order_amount) || 0,
       maxDiscount: c.max_discount != null ? parseFloat(c.max_discount) : null,
-      expiry: c.expires_at || '31 Dec 2026',
+      expiry: c.expires_at || '',
+      usageLimit: c.usage_limit != null ? parseInt(c.usage_limit, 10) : null,
       status: c.is_active ? 'Active' : 'Disabled',
       usedCount: c.times_used || 0
     }));
   } catch (err) {
-    console.warn('[Supabase] getCoupons note (falling back to local coupons):', err.message);
-    return null;
+    console.error('[Supabase] sbGetCoupons error:', err.message);
+    throw err;
   }
 }
 
@@ -1056,6 +1057,8 @@ async function sbAdminUpsertCoupon(coupon) {
       discount_type: coupon.type === 'percent' ? 'percentage' : (coupon.type || 'percentage'),
       discount_value: parseFloat(coupon.value) || 0,
       min_order_amount: parseFloat(coupon.minSpend) || 0,
+      max_discount: coupon.maxDiscount != null ? parseFloat(coupon.maxDiscount) : null,
+      expires_at: coupon.expiry ? coupon.expiry : null,
       is_active: coupon.status === 'Active',
       times_used: parseInt(coupon.usedCount, 10) || 0,
       updated_at: new Date().toISOString()
@@ -1068,8 +1071,8 @@ async function sbAdminUpsertCoupon(coupon) {
     if (error) throw error;
     return { success: true, data };
   } catch (err) {
-    console.warn('[Supabase] adminUpsertCoupon note:', err.message);
-    return { success: false, error: err.message };
+    console.error('[Supabase] sbAdminUpsertCoupon error:', err.message);
+    return { success: false, error: err.message || 'Failed to save coupon in database' };
   }
 }
 
@@ -1083,8 +1086,8 @@ async function sbAdminDeleteCoupon(code) {
     if (error) throw error;
     return { success: true };
   } catch (err) {
-    console.warn('[Supabase] adminDeleteCoupon note:', err.message);
-    return { success: false, error: err.message };
+    console.error('[Supabase] sbAdminDeleteCoupon error:', err.message);
+    return { success: false, error: err.message || 'Failed to delete coupon from database' };
   }
 }
 

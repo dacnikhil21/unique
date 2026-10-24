@@ -11,18 +11,11 @@ try {
   FALLBACK_CATALOG = [];
 }
 
-// 2. Fallback Default Coupons
-const DEFAULT_COUPONS = [
-  { code: 'WELCOME100', type: 'fixed', value: 100, minSpend: 999, status: 'Active' },
-  { code: 'FESTIVE20', type: 'percent', value: 20, minSpend: 1499, status: 'Active' },
-  { code: 'FREESHIP', type: 'shipping', value: 0, minSpend: 499, status: 'Active' }
-];
-
 // In-Memory Caches
 let liveProductsCache = null;
 let lastProductsFetch = 0;
 
-let liveCouponsCache = [...DEFAULT_COUPONS];
+let liveCouponsCache = null;
 let lastCouponsFetch = 0;
 
 const CACHE_TTL_MS = 60 * 1000; // 60 seconds
@@ -116,60 +109,62 @@ async function getLiveServerProducts(forceRefresh = false) {
 
 /**
  * 🔒 Fetch Live Coupons from Supabase
+ * Single source of truth. Never falls back to default coupons.
  */
 async function getLiveServerCoupons(forceRefresh = false) {
   const now = Date.now();
-  if (!forceRefresh && liveCouponsCache && (now - lastCouponsFetch < CACHE_TTL_MS)) {
+  if (!forceRefresh && Array.isArray(liveCouponsCache) && (now - lastCouponsFetch < CACHE_TTL_MS)) {
     return liveCouponsCache;
   }
 
   const { sbUrl, sbKey } = getSupabaseConfig();
   if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) {
-    console.error('[Coupons Error] SUPABASE_URL or SUPABASE_KEY is missing or invalid. Falling back to default coupons.');
-    return DEFAULT_COUPONS;
+    throw new Error('Supabase configuration missing or invalid. Unable to fetch coupons.');
   }
 
-  try {
-    const urlObj = new URL(`${sbUrl}/rest/v1/coupons?select=code,discount_type,discount_value,min_order_amount,is_active`);
-    const options = {
-      hostname: urlObj.hostname,
-      path: urlObj.pathname + urlObj.search,
-      method: 'GET',
-      headers: {
-        'apikey': sbKey,
-        'Authorization': `Bearer ${sbKey}`
-      }
-    };
-
-    const data = await new Promise((resolve) => {
-      const req = https.request(options, (res) => {
-        let body = '';
-        res.on('data', chunk => body += chunk);
-        res.on('end', () => {
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            try { resolve(JSON.parse(body)); } catch (_) { resolve(null); }
-          } else {
-            resolve(null);
-          }
-        });
-      });
-      req.on('error', () => resolve(null));
-      req.end();
-    });
-
-    if (Array.isArray(data) && data.length > 0) {
-      liveCouponsCache = data.map(c => ({
-        code: String(c.code).trim().toUpperCase(),
-        type: c.discount_type === 'percentage' ? 'percent' : c.discount_type,
-        value: parseFloat(c.discount_value) || 0,
-        minSpend: parseFloat(c.min_order_amount) || 0,
-        status: c.is_active ? 'Active' : 'Disabled'
-      }));
-      lastCouponsFetch = now;
-      return liveCouponsCache;
+  const urlObj = new URL(`${sbUrl}/rest/v1/coupons?select=code,discount_type,discount_value,min_order_amount,max_discount,expires_at,is_active,usage_limit,times_used`);
+  const options = {
+    hostname: urlObj.hostname,
+    path: urlObj.pathname + urlObj.search,
+    method: 'GET',
+    headers: {
+      'apikey': sbKey,
+      'Authorization': `Bearer ${sbKey}`
     }
-  } catch (_) {}
+  };
 
+  const data = await new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          try { resolve(JSON.parse(body)); } catch (e) { reject(new Error('Invalid JSON from coupons endpoint: ' + e.message)); }
+        } else {
+          reject(new Error(`Coupons query failed with HTTP status ${res.statusCode}: ${body}`));
+        }
+      });
+    });
+    req.on('error', err => reject(new Error('Network error fetching coupons: ' + err.message)));
+    req.end();
+  });
+
+  if (!Array.isArray(data)) {
+    throw new Error('Unexpected coupons response structure from database.');
+  }
+
+  liveCouponsCache = data.map(c => ({
+    code: String(c.code).trim().toUpperCase(),
+    type: c.discount_type === 'percentage' ? 'percent' : c.discount_type,
+    value: parseFloat(c.discount_value) || 0,
+    minSpend: parseFloat(c.min_order_amount) || 0,
+    maxDiscount: c.max_discount != null ? parseFloat(c.max_discount) : null,
+    expiry: c.expires_at || null,
+    usageLimit: c.usage_limit != null ? parseInt(c.usage_limit, 10) : null,
+    usedCount: parseInt(c.times_used, 10) || 0,
+    status: c.is_active ? 'Active' : 'Disabled'
+  }));
+  lastCouponsFetch = now;
   return liveCouponsCache;
 }
 
@@ -188,7 +183,7 @@ function findLiveProduct(id, productsList = null) {
 function invalidateCatalogCache() {
   liveProductsCache = null;
   lastProductsFetch = 0;
-  liveCouponsCache = [...DEFAULT_COUPONS];
+  liveCouponsCache = null;
   lastCouponsFetch = 0;
 }
 
@@ -243,21 +238,37 @@ function calculateServerOrderTotal(items, couponCode = null, giftWrap = false, a
   let shipping = itemsTotal >= 499 ? 0 : 50;
   let appliedCoupon = null;
 
-  const couponsToUse = Array.isArray(activeCoupons) && activeCoupons.length > 0 ? activeCoupons : liveCouponsCache;
   if (couponCode) {
+    const couponsToUse = Array.isArray(activeCoupons) ? activeCoupons : liveCouponsCache;
+    if (!couponsToUse) {
+      throw new Error('Coupons could not be verified from the store database.');
+    }
     const codeUpper = String(couponCode).trim().toUpperCase();
-    const coupon = couponsToUse.find(c => c.code === codeUpper && c.status === 'Active');
-    if (coupon) {
-      if (itemsTotal >= (coupon.minSpend || 0)) {
-        appliedCoupon = coupon.code;
-        if (coupon.type === 'fixed') {
-          discount = Math.min(itemsTotal, coupon.value || 0);
-        } else if (coupon.type === 'percent') {
-          discount = Math.round((itemsTotal * (coupon.value || 0)) / 100);
-        } else if (coupon.type === 'shipping') {
-          shipping = 0;
-        }
+    const coupon = couponsToUse.find(c => c.code === codeUpper);
+    if (!coupon || coupon.status !== 'Active') {
+      throw new Error(`Coupon "${codeUpper}" is invalid or inactive.`);
+    }
+    if (coupon.expiry) {
+      const expDate = new Date(coupon.expiry);
+      if (!isNaN(expDate.getTime()) && expDate < new Date()) {
+        throw new Error(`Coupon "${codeUpper}" has expired.`);
       }
+    }
+    if (coupon.usageLimit != null && coupon.usedCount >= coupon.usageLimit) {
+      throw new Error(`Coupon "${codeUpper}" usage limit reached.`);
+    }
+    if (itemsTotal < (coupon.minSpend || 0)) {
+      throw new Error(`Coupon "${codeUpper}" requires a minimum order of ₹${coupon.minSpend}.`);
+    }
+
+    appliedCoupon = coupon.code;
+    if (coupon.type === 'fixed') {
+      discount = Math.min(itemsTotal, coupon.value || 0);
+    } else if (coupon.type === 'percent') {
+      const rawDisc = Math.round((itemsTotal * (coupon.value || 0)) / 100);
+      discount = coupon.maxDiscount ? Math.min(rawDisc, coupon.maxDiscount) : rawDisc;
+    } else if (coupon.type === 'shipping') {
+      shipping = 0;
     }
   }
 

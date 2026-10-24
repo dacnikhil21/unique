@@ -38,15 +38,10 @@ let STORE_CUSTOMERS = (() => {
 
 let STORE_COUPONS = (() => {
   try {
-    const raw = localStorage.getItem('ue_coupons_v5');
+    const raw = localStorage.getItem('ue_coupons_v6');
     if (raw) return JSON.parse(raw);
   } catch (e) {}
-  return [
-    { code: "WELCOME100", type: "fixed", value: 100, discount: "₹100 OFF", minSpend: 499, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
-    { code: "FREESHIP", type: "shipping", value: 0, discount: "FREE Shipping", minSpend: 299, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
-    { code: "FESTIVE20", type: "percent", value: 20, discount: "20% OFF", minSpend: 999, usedCount: 0, expiry: "31 Dec 2026", status: "Active" },
-    { code: "UNIQUE10", type: "percent", value: 10, discount: "10% OFF", minSpend: 399, usedCount: 0, expiry: "31 Dec 2026", status: "Active" }
-  ];
+  return [];
 })();
 
 let STORE_REVIEWS = (() => {
@@ -59,7 +54,7 @@ let STORE_REVIEWS = (() => {
 
 // ── Ensure LocalStorage Sync is Always Up to Date & Purge Corrupt Duplicates ──
 try {
-  ['ue_products_v12', 'ue_products_v10', 'ue_products_v9', 'ue_products_v8'].forEach(k => {
+  ['ue_coupons_v5', 'ue_coupons_v4', 'ue_products_v12', 'ue_products_v10', 'ue_products_v9', 'ue_products_v8'].forEach(k => {
     try { localStorage.removeItem(k); } catch (_) {}
   });
 } catch(e) {}
@@ -588,13 +583,30 @@ function normalizeStoreCoupons() {
 
 function calculateCouponDiscount(subtotal, code) {
   if (!code) return { discount: 0, shippingOverride: null, label: '', valid: true };
-  const coupon = STORE_COUPONS.find(c => c.code === code && c.status === 'Active');
-  if (!coupon) return { valid: false, error: 'Invalid coupon code.' };
+  if (!Array.isArray(STORE_COUPONS) || STORE_COUPONS.length === 0) {
+    return { valid: false, error: 'Coupons could not be loaded from store database. Please try again.' };
+  }
+  const cleanCode = String(code).trim().toUpperCase();
+  const coupon = STORE_COUPONS.find(c => String(c.code).trim().toUpperCase() === cleanCode);
+  if (!coupon || coupon.status !== 'Active') {
+    return { valid: false, error: `Coupon "${cleanCode}" is invalid or inactive.` };
+  }
+  if (coupon.expiry) {
+    const expDate = new Date(coupon.expiry);
+    if (!isNaN(expDate.getTime()) && expDate < new Date()) {
+      return { valid: false, error: `Coupon "${cleanCode}" has expired.` };
+    }
+  }
+  if (coupon.usageLimit != null && coupon.usedCount >= coupon.usageLimit) {
+    return { valid: false, error: `Coupon "${cleanCode}" usage limit reached.` };
+  }
   if (subtotal < (coupon.minSpend || 0)) {
-    return { valid: false, error: `Minimum order ₹${coupon.minSpend} required for ${coupon.code}.` };
+    return { valid: false, error: `Minimum order of ₹${coupon.minSpend} required for ${coupon.code}.` };
   }
   if (coupon.type === 'percent') {
-    return { valid: true, discount: Math.round(subtotal * coupon.value / 100), shippingOverride: null, label: `${coupon.value}% off`, coupon };
+    const rawDisc = Math.round(subtotal * coupon.value / 100);
+    const finalDisc = coupon.maxDiscount ? Math.min(rawDisc, coupon.maxDiscount) : rawDisc;
+    return { valid: true, discount: finalDisc, shippingOverride: null, label: `${coupon.value}% off`, coupon };
   }
   if (coupon.type === 'fixed') {
     return { valid: true, discount: Math.min(subtotal, coupon.value), shippingOverride: null, label: `₹${coupon.value} off`, coupon };
@@ -6532,18 +6544,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.warn('[UE] Cloud Store Settings bootstrap note:', setErr);
     }
 
-    // 9b. Load Coupons from Cloud Database
+    // 9b. Load Coupons from Cloud Database (Single Source of Truth)
     try {
       if (typeof sbGetCoupons === 'function') {
         const sbCoups = await sbGetCoupons();
-        if (sbCoups && Array.isArray(sbCoups) && sbCoups.length > 0) {
+        if (Array.isArray(sbCoups)) {
           STORE_COUPONS = sbCoups;
           normalizeStoreCoupons();
-          localStorage.setItem('ue_coupons_v5', JSON.stringify(STORE_COUPONS));
+          localStorage.setItem('ue_coupons_v6', JSON.stringify(STORE_COUPONS));
         }
       }
     } catch (coupErr) {
-      console.warn('[UE] Cloud Coupons bootstrap note:', coupErr);
+      console.error('[UE] Cloud Coupons bootstrap error:', coupErr);
     }
 
     // 10. Load returns from Supabase
@@ -12997,12 +13009,12 @@ function closeApCouponModal() {
   document.getElementById('apCouponModalOverlay')?.classList.remove('active');
 }
 
-function saveApCouponForm(editIdx = null) {
+async function saveApCouponForm(editIdx = null) {
   const code = document.getElementById('apFormCouponCode')?.value.trim().toUpperCase();
   const type = document.getElementById('apFormCouponType')?.value || 'percent';
   const value = parseInt(document.getElementById('apFormCouponValue')?.value, 10) || 0;
   const minSpend = parseInt(document.getElementById('apFormCouponMin')?.value, 10) || 0;
-  const expiry = document.getElementById('apFormCouponExpiry')?.value.trim() || '31 Dec 2026';
+  const expiry = document.getElementById('apFormCouponExpiry')?.value.trim() || '';
   const status = document.getElementById('apFormCouponStatus')?.value || 'Active';
 
   if (!code) {
@@ -13011,54 +13023,103 @@ function saveApCouponForm(editIdx = null) {
   }
 
   const discountLabel = type === 'percent' ? `${value}% OFF` : type === 'fixed' ? `₹${value} OFF` : 'FREE Shipping';
-  const payload = { code, type, value, discount: discountLabel, minSpend, expiry, status, usedCount: 0 };
+  const existing = (editIdx != null && STORE_COUPONS[editIdx]) ? STORE_COUPONS[editIdx] : null;
+  const payload = { 
+    code, 
+    type, 
+    value, 
+    discount: discountLabel, 
+    minSpend, 
+    expiry, 
+    status, 
+    usedCount: existing?.usedCount || 0 
+  };
 
-  if (editIdx != null && STORE_COUPONS[editIdx]) {
-    payload.usedCount = STORE_COUPONS[editIdx].usedCount || 0;
-    STORE_COUPONS[editIdx] = payload;
-    showApToast(`Coupon ${code} updated!`, 'success');
-  } else {
-    if (STORE_COUPONS.some(c => c.code === code)) {
-      showApToast('This coupon code already exists.', 'info');
+  showApToast('Saving coupon to database...', 'info');
+
+  if (typeof sbAdminUpsertCoupon === 'function') {
+    const res = await sbAdminUpsertCoupon(payload);
+    if (!res.success) {
+      showApToast('Failed to save coupon: ' + (res.error || 'Database error'), 'error');
       return;
     }
-    STORE_COUPONS.push(payload);
-    showApToast(`Coupon ${code} created!`, 'success');
   }
 
-  normalizeStoreCoupons();
+  // Refresh in-memory from live database
+  try {
+    if (typeof sbGetCoupons === 'function') {
+      const fresh = await sbGetCoupons();
+      STORE_COUPONS = fresh || [];
+      normalizeStoreCoupons();
+      localStorage.setItem('ue_coupons_v6', JSON.stringify(STORE_COUPONS));
+    }
+  } catch (_) {}
+
   closeApCouponModal();
   syncStorefrontState();
   switchApTab('coupons');
-  if (typeof sbAdminUpsertCoupon === 'function') {
-    sbAdminUpsertCoupon(payload).catch(e => console.warn('[Coupons Sync]', e));
-  }
+  showApToast(`Coupon ${code} saved successfully in database!`, 'success');
 }
 
-function deleteApCoupon(idx) {
+async function deleteApCoupon(idx) {
   const code = STORE_COUPONS[idx]?.code;
-  if (confirm(`Delete coupon code ${code}?`)) {
-    STORE_COUPONS.splice(idx, 1);
-    syncStorefrontState();
-    switchApTab('coupons');
-    showApToast(`Coupon deleted!`, 'error');
-    if (code && typeof sbAdminDeleteCoupon === 'function') {
-      sbAdminDeleteCoupon(code).catch(e => console.warn('[Coupons Sync]', e));
+  if (!code) return;
+  if (!confirm(`Delete coupon code ${code} permanently from database?`)) return;
+
+  showApToast(`Deleting coupon ${code}...`, 'info');
+
+  if (typeof sbAdminDeleteCoupon === 'function') {
+    const res = await sbAdminDeleteCoupon(code);
+    if (!res.success) {
+      showApToast(`Failed to delete coupon: ` + (res.error || 'Database error'), 'error');
+      return;
     }
   }
-}
 
-function toggleApCouponStatus(idx) {
-  const c = STORE_COUPONS[idx];
-  if (!c) return;
-  c.status = c.status === 'Active' ? 'Inactive' : 'Active';
-  normalizeStoreCoupons();
+  // Refresh in-memory from live database
+  try {
+    if (typeof sbGetCoupons === 'function') {
+      const fresh = await sbGetCoupons();
+      STORE_COUPONS = fresh || [];
+      normalizeStoreCoupons();
+      localStorage.setItem('ue_coupons_v6', JSON.stringify(STORE_COUPONS));
+    }
+  } catch (_) {}
+
   syncStorefrontState();
   switchApTab('coupons');
-  showApToast(`Coupon ${c.code} ${c.status === 'Active' ? 'enabled' : 'disabled'}!`, c.status === 'Active' ? 'success' : 'info');
+  showApToast(`Coupon ${code} deleted permanently from database!`, 'success');
+}
+
+async function toggleApCouponStatus(idx) {
+  const c = STORE_COUPONS[idx];
+  if (!c) return;
+  const newStatus = c.status === 'Active' ? 'Inactive' : 'Active';
+  const updated = { ...c, status: newStatus };
+
+  showApToast(`Updating status of ${c.code}...`, 'info');
+
   if (typeof sbAdminUpsertCoupon === 'function') {
-    sbAdminUpsertCoupon(c).catch(e => console.warn('[Coupons Sync]', e));
+    const res = await sbAdminUpsertCoupon(updated);
+    if (!res.success) {
+      showApToast(`Failed to update status: ` + (res.error || 'Database error'), 'error');
+      return;
+    }
   }
+
+  // Refresh in-memory from live database
+  try {
+    if (typeof sbGetCoupons === 'function') {
+      const fresh = await sbGetCoupons();
+      STORE_COUPONS = fresh || [];
+      normalizeStoreCoupons();
+      localStorage.setItem('ue_coupons_v6', JSON.stringify(STORE_COUPONS));
+    }
+  } catch (_) {}
+
+  syncStorefrontState();
+  switchApTab('coupons');
+  showApToast(`Coupon ${c.code} is now ${newStatus}!`, newStatus === 'Active' ? 'success' : 'info');
 }
 
 /* 9. Reviews Moderation Module Renderer */
@@ -15092,24 +15153,35 @@ function renderOffersView() {
   const container = document.getElementById('viewOffers');
   if (!container) return;
 
-  const coupons = [
-    { code: "UNIQUE10", title: "Flat 10% Off Everything", desc: "Applicable on all retail purchases above ₹499", badge: "POPULAR" },
-    { code: "FREESHIP", title: "Free Same-Day Delivery", desc: "Valid on all eligible orders", badge: "EXPRESS" },
-    { code: "WHOLESALE25", title: "Flat 25% Off Bulk Orders", desc: "For Wholesale & Return Gift orders above ₹10,000", badge: "WHOLESALE" },
-    { code: "WELCOME50", title: "Flat ₹50 Off First Purchase", desc: "Exclusive welcome gift for new app users", badge: "NEW USER" }
-  ];
+  const activeCoupons = (STORE_COUPONS || []).filter(c => c.status === 'Active');
 
-  let couponsHtml = coupons.map(c => `
-    <div class="coupon-promo-card">
-      <span style="position:absolute; top:14px; right:14px; background:rgba(255,255,255,0.2); color:#fff; font-size:9px; font-weight:800; padding:3px 8px; border-radius:99px;">${c.badge}</span>
-      <h3 style="font-size:16px; font-weight:800; margin:0 0 4px 0;">${c.title}</h3>
-      <p style="font-size:11px; opacity:0.85; margin:0 0 10px 0;">${c.desc}</p>
-      <div class="coupon-code-badge" onclick="copyCouponCode('${c.code}')">
-        <span>${c.code}</span>
-        <i class="ri-file-copy-line"></i>
+  let couponsHtml = '';
+  if (activeCoupons.length === 0) {
+    couponsHtml = `
+      <div class="info-content-card" style="text-align:center; padding:36px 18px; margin-top:14px;">
+        <div style="font-size:36px; margin-bottom:8px;">🎟️</div>
+        <h3 style="font-size:16px; font-weight:800; color:#0f172a; margin-bottom:4px;">No Active Promo Coupons</h3>
+        <p style="font-size:12px; color:#64748b; margin:0;">Check back soon for seasonal discounts and festive codes!</p>
       </div>
-    </div>
-  `).join('');
+    `;
+  } else {
+    couponsHtml = activeCoupons.map(c => {
+      const title = c.type === 'percent' ? `Flat ${c.value}% Off` : c.type === 'fixed' ? `Flat ₹${c.value} Off` : 'Free Same-Day Delivery';
+      const desc = c.minSpend > 0 ? `Applicable on orders above ₹${c.minSpend}` : 'Applicable on all orders';
+      const badge = c.type === 'shipping' ? 'EXPRESS' : (c.value >= 20 ? 'POPULAR' : 'SPECIAL');
+      return `
+        <div class="coupon-promo-card">
+          <span style="position:absolute; top:14px; right:14px; background:rgba(255,255,255,0.2); color:#fff; font-size:9px; font-weight:800; padding:3px 8px; border-radius:99px;">${badge}</span>
+          <h3 style="font-size:16px; font-weight:800; margin:0 0 4px 0;">${title}</h3>
+          <p style="font-size:11px; opacity:0.85; margin:0 0 10px 0;">${desc}</p>
+          <div class="coupon-code-badge" onclick="copyCouponCode('${c.code}')">
+            <span>${c.code}</span>
+            <i class="ri-file-copy-line"></i>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 
   container.innerHTML = `
     <div class="m-view-header-bar">
