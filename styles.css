@@ -7827,3 +7827,22 @@ body.checkout-active #floatingWhatsappBtn,
   .pdp-lightbox-close { top: 16px; right: 16px; }
 }
 
+/* ==========================================================================
+   Product Skeleton Loading Styles
+   ========================================================================== */
+@keyframes ueSkeletonPulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.45; }
+  100% { opacity: 1; }
+}
+
+.ue-skeleton-shimmer {
+  background: #e2e8f0;
+  animation: ueSkeletonPulse 1.4s ease-in-out infinite;
+}
+
+.ue-skeleton-card {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+

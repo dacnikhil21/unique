@@ -2,15 +2,6 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-// 1. Fallback Catalog from JSON file
-let FALLBACK_CATALOG = [];
-try {
-  const pPath = path.join(__dirname, '..', 'extracted_products.json');
-  FALLBACK_CATALOG = JSON.parse(fs.readFileSync(pPath, 'utf8'));
-} catch (_) {
-  FALLBACK_CATALOG = [];
-}
-
 // In-Memory Caches
 let liveProductsCache = null;
 let lastProductsFetch = 0;
@@ -41,9 +32,9 @@ async function getLiveServerProducts(forceRefresh = false) {
 
   const { sbUrl, sbKey } = getSupabaseConfig();
   if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) {
-    console.error('[Catalog Error] SUPABASE_URL or SUPABASE_KEY is missing or invalid. Falling back to static catalog.');
-    liveProductsCache = FALLBACK_CATALOG;
-    return liveProductsCache;
+    console.error('[Catalog Error] SUPABASE_URL or SUPABASE_KEY is missing or invalid.');
+    if (liveProductsCache) return liveProductsCache;
+    throw new Error('Supabase database configuration missing.');
   }
 
   try {
@@ -93,11 +84,7 @@ async function getLiveServerProducts(forceRefresh = false) {
         };
       });
 
-      // Merge: Live Supabase products take precedence; append fallback products if not present
-      const sbIds = new Set(sbProducts.map(p => String(p.id)));
-      const extraFallbacks = FALLBACK_CATALOG.filter(p => !sbIds.has(String(p.id)));
-
-      liveProductsCache = [...sbProducts, ...extraFallbacks];
+      liveProductsCache = sbProducts;
       lastProductsFetch = now;
       return liveProductsCache;
     }
@@ -105,9 +92,8 @@ async function getLiveServerProducts(forceRefresh = false) {
     console.warn('[Catalog Helper] Failed to fetch live Supabase products:', err.message);
   }
 
-  // Graceful fallback if Supabase is unreachable
-  liveProductsCache = FALLBACK_CATALOG;
-  return liveProductsCache;
+  if (liveProductsCache) return liveProductsCache;
+  return [];
 }
 
 /**
@@ -263,7 +249,10 @@ function calculateServerOrderTotal(items, couponCode = null, giftWrap = false, a
     throw new Error('Order items cannot be empty.');
   }
 
-  const catalog = liveProducts || liveProductsCache || FALLBACK_CATALOG;
+  const catalog = liveProducts || liveProductsCache;
+  if (!catalog || catalog.length === 0) {
+    throw new Error('Product catalog is currently unavailable from store database. Please try again.');
+  }
   const settings = liveSettings || liveSettingsCache || { freeShippingMin: 499, shippingFee: 50, giftWrapFee: 30 };
   let subtotal = 0;
   const verifiedItems = [];
