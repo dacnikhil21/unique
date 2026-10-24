@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 
 const ALLOWED_ORIGINS = [
-  'https://shop.uniqueexpressions.in',
   'https://uniqueexpressions.in',
   'https://www.uniqueexpressions.in',
   'http://localhost:5000',
@@ -15,7 +14,10 @@ const {
   getLiveServerProducts,
   getLiveServerCoupons,
   calculateServerOrderTotal,
-  atomicDecrementStock
+  atomicDecrementStock,
+  atomicRestoreStock,
+  atomicIncrementCouponUsage,
+  atomicRestoreCouponUsage
 } = require('./catalog-helper.js');
 
 const {
@@ -187,6 +189,11 @@ module.exports = async (req, res) => {
       // 🔒 DATA-03: Atomic server-side stock decrement
       await atomicDecrementStock(calcResult.verifiedItems);
 
+      // 🎟️ Atomic coupon usage increment if coupon was applied
+      if (calcResult.appliedCoupon) {
+        await atomicIncrementCouponUsage(calcResult.appliedCoupon);
+      }
+
       // Non-blocking sync to Supabase
       syncOrderToSupabase(orderRecord).catch(() => {});
 
@@ -216,16 +223,20 @@ module.exports = async (req, res) => {
   // 3. Order Status Update & Notification (EMAIL-01)
   if (req.method === 'POST' && (action === 'status' || urlObj.pathname.endsWith('/status'))) {
     try {
-      const { orderId, status, trackingInfo, customerEmail, customerName, items } = payload;
+      const { orderId, status, trackingInfo, customerEmail, customerName, items, couponCode } = payload;
       if (!orderId || !status) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         return res.end(JSON.stringify({ error: 'orderId and status are required' }));
       }
 
-      // If status is Cancelled, atomically restore stock
-      if (status.toLowerCase() === 'cancelled' && Array.isArray(items) && items.length > 0) {
-        const { atomicRestoreStock } = require('./catalog-helper.js');
-        await atomicRestoreStock(items);
+      // If status is Cancelled, atomically restore stock and coupon usage
+      if (status.toLowerCase() === 'cancelled') {
+        if (Array.isArray(items) && items.length > 0) {
+          await atomicRestoreStock(items);
+        }
+        if (couponCode) {
+          await atomicRestoreCouponUsage(couponCode);
+        }
       }
 
       // 📧 Send status change email

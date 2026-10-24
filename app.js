@@ -9378,7 +9378,16 @@ async function placeOrderFinal(grandTotal) {
         orderBtn.disabled = false;
         orderBtn.innerHTML = originalBtnText;
       }
-      showApToast(`Checkout error: ${err.message || 'Please try again'}`, 'info');
+      const errMsg = err.message || 'Please try again';
+      if (typeof appliedCouponCode !== 'undefined' && appliedCouponCode && (errMsg.toLowerCase().includes('coupon') || errMsg.toLowerCase().includes('database'))) {
+        if (confirm(`Coupon verification unavailable: ${errMsg}\n\nWould you like to remove the coupon code "${appliedCouponCode}" and continue your order without it?`)) {
+          appliedCouponCode = null;
+          renderCheckoutView();
+          setTimeout(() => placeOrderFinal(), 300);
+          return;
+        }
+      }
+      showApToast(`Checkout error: ${errMsg}`, 'info');
     }
     return;
   }
@@ -9495,7 +9504,16 @@ async function simulateDevPayment(orderId, name, phone, address, totals) {
       orderBtn.disabled = false;
       orderBtn.innerHTML = originalBtnText;
     }
-    showApToast(`Order validation error: ${err.message || 'Please try again.'}`, 'error');
+    const errMsg = err.message || 'Please try again.';
+    if (typeof appliedCouponCode !== 'undefined' && appliedCouponCode && (errMsg.toLowerCase().includes('coupon') || errMsg.toLowerCase().includes('database'))) {
+      if (confirm(`Coupon verification unavailable: ${errMsg}\n\nWould you like to remove coupon "${appliedCouponCode}" and place your order without it?`)) {
+        appliedCouponCode = null;
+        renderCheckoutView();
+        setTimeout(() => placeOrderFinal(), 300);
+        return;
+      }
+    }
+    showApToast(`Order validation error: ${errMsg}`, 'error');
   }
 }
 

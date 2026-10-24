@@ -10,7 +10,6 @@ const RAZORPAY_CONFIG = {
 };
 
 const ALLOWED_ORIGINS = [
-  'https://shop.uniqueexpressions.in',
   'https://uniqueexpressions.in',
   'https://www.uniqueexpressions.in',
   'http://localhost:5000',
@@ -21,7 +20,8 @@ const {
   getLiveServerProducts,
   getLiveServerCoupons,
   calculateServerOrderTotal,
-  atomicDecrementStock
+  atomicDecrementStock,
+  atomicIncrementCouponUsage
 } = require('./catalog-helper.js');
 
 function createRazorpayOrder(amountInPaise, receipt, notes = {}) {
@@ -234,6 +234,9 @@ module.exports = async (req, res) => {
         };
         await syncOrderToSupabase(orderRecord);
         await atomicDecrementStock(orderRecord.items);
+        if (notes.couponCode) {
+          await atomicIncrementCouponUsage(notes.couponCode);
+        }
         try {
           const { sendOrderConfirmationEmail } = require('./email-helper.js');
           sendOrderConfirmationEmail(orderRecord).catch(() => {});
@@ -285,6 +288,9 @@ module.exports = async (req, res) => {
       if (isValid) {
         if (Array.isArray(payload.items) && payload.items.length > 0) {
           await atomicDecrementStock(payload.items);
+        }
+        if (payload.couponCode) {
+          await atomicIncrementCouponUsage(payload.couponCode);
         }
         return res.status(200).json({
           success: true,

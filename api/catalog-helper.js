@@ -399,6 +399,182 @@ async function atomicRestoreStock(items) {
   return true;
 }
 
+/**
+ * 🔒 Atomic Server-Side Coupon Usage Increment
+ */
+async function atomicIncrementCouponUsage(couponCode) {
+  if (!couponCode) return true;
+  const cleanCode = String(couponCode).trim().toUpperCase();
+  const { sbUrl, sbKey } = getSupabaseConfig();
+  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) return false;
+
+  try {
+    const postData = JSON.stringify({ p_code: cleanCode });
+    const urlObj = new URL(`${sbUrl}/rest/v1/rpc/increment_coupon_usage`);
+    const options = {
+      hostname: urlObj.hostname,
+      path: urlObj.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': sbKey,
+        'Authorization': `Bearer ${sbKey}`,
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+
+    const res = await new Promise((resolve) => {
+      const req = https.request(options, (r) => {
+        let b = '';
+        r.on('data', c => b += c);
+        r.on('end', () => resolve({ statusCode: r.statusCode, data: b }));
+      });
+      req.on('error', () => resolve({ statusCode: 500 }));
+      req.write(postData);
+      req.end();
+    });
+
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      invalidateCatalogCache();
+      return true;
+    }
+
+    // Fallback: REST update if RPC not yet created
+    const getUrl = new URL(`${sbUrl}/rest/v1/coupons?code=eq.${encodeURIComponent(cleanCode)}&select=id,times_used`);
+    const getOptions = {
+      hostname: getUrl.hostname,
+      path: getUrl.pathname + getUrl.search,
+      method: 'GET',
+      headers: { 'apikey': sbKey, 'Authorization': `Bearer ${sbKey}` }
+    };
+    const cData = await new Promise((resolve) => {
+      const q = https.request(getOptions, r => {
+        let b = '';
+        r.on('data', c => b += c);
+        r.on('end', () => {
+          try { resolve(JSON.parse(b)); } catch (_) { resolve(null); }
+        });
+      });
+      q.on('error', () => resolve(null));
+      q.end();
+    });
+
+    if (Array.isArray(cData) && cData.length > 0) {
+      const currentUsed = parseInt(cData[0].times_used, 10) || 0;
+      const patchData = JSON.stringify({ times_used: currentUsed + 1, updated_at: new Date().toISOString() });
+      const patchUrl = new URL(`${sbUrl}/rest/v1/coupons?code=eq.${encodeURIComponent(cleanCode)}`);
+      const patchOptions = {
+        hostname: patchUrl.hostname,
+        path: patchUrl.pathname + patchUrl.search,
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': sbKey,
+          'Authorization': `Bearer ${sbKey}`,
+          'Content-Length': Buffer.byteLength(patchData)
+        }
+      };
+      await new Promise(resolve => {
+        const p = https.request(patchOptions, () => resolve(true));
+        p.on('error', () => resolve(false));
+        p.write(patchData);
+        p.end();
+      });
+      invalidateCatalogCache();
+    }
+    return true;
+  } catch (err) {
+    console.warn('[Coupon Increment Warning]', err.message);
+    return false;
+  }
+}
+
+/**
+ * 🔒 Atomic Server-Side Coupon Usage Restore on order cancellation
+ */
+async function atomicRestoreCouponUsage(couponCode) {
+  if (!couponCode) return true;
+  const cleanCode = String(couponCode).trim().toUpperCase();
+  const { sbUrl, sbKey } = getSupabaseConfig();
+  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) return false;
+
+  try {
+    const postData = JSON.stringify({ p_code: cleanCode });
+    const urlObj = new URL(`${sbUrl}/rest/v1/rpc/decrement_coupon_usage`);
+    const options = {
+      hostname: urlObj.hostname,
+      path: urlObj.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': sbKey,
+        'Authorization': `Bearer ${sbKey}`,
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+
+    const res = await new Promise((resolve) => {
+      const req = https.request(options, (r) => resolve({ statusCode: r.statusCode }));
+      req.on('error', () => resolve({ statusCode: 500 }));
+      req.write(postData);
+      req.end();
+    });
+
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      invalidateCatalogCache();
+      return true;
+    }
+
+    // Fallback: REST update
+    const getUrl = new URL(`${sbUrl}/rest/v1/coupons?code=eq.${encodeURIComponent(cleanCode)}&select=id,times_used`);
+    const getOptions = {
+      hostname: getUrl.hostname,
+      path: getUrl.pathname + getUrl.search,
+      method: 'GET',
+      headers: { 'apikey': sbKey, 'Authorization': `Bearer ${sbKey}` }
+    };
+    const cData = await new Promise((resolve) => {
+      const q = https.request(getOptions, r => {
+        let b = '';
+        r.on('data', c => b += c);
+        r.on('end', () => {
+          try { resolve(JSON.parse(b)); } catch (_) { resolve(null); }
+        });
+      });
+      q.on('error', () => resolve(null));
+      q.end();
+    });
+
+    if (Array.isArray(cData) && cData.length > 0) {
+      const currentUsed = parseInt(cData[0].times_used, 10) || 0;
+      const patchData = JSON.stringify({ times_used: Math.max(0, currentUsed - 1), updated_at: new Date().toISOString() });
+      const patchUrl = new URL(`${sbUrl}/rest/v1/coupons?code=eq.${encodeURIComponent(cleanCode)}`);
+      const patchOptions = {
+        hostname: patchUrl.hostname,
+        path: patchUrl.pathname + patchUrl.search,
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': sbKey,
+          'Authorization': `Bearer ${sbKey}`,
+          'Content-Length': Buffer.byteLength(patchData)
+        }
+      };
+      await new Promise(resolve => {
+        const p = https.request(patchOptions, () => resolve(true));
+        p.on('error', () => resolve(false));
+        p.write(patchData);
+        p.end();
+      });
+      invalidateCatalogCache();
+    }
+    return true;
+  } catch (err) {
+    console.warn('[Coupon Restore Warning]', err.message);
+    return false;
+  }
+}
+
 module.exports = {
   getLiveServerProducts,
   getLiveServerCoupons,
@@ -406,5 +582,7 @@ module.exports = {
   calculateServerOrderTotal,
   invalidateCatalogCache,
   atomicDecrementStock,
-  atomicRestoreStock
+  atomicRestoreStock,
+  atomicIncrementCouponUsage,
+  atomicRestoreCouponUsage
 };
