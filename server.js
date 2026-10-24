@@ -77,9 +77,12 @@ const SERVER_ORDERS = new Map();
 
 // ── 3. Helper: Supabase Order Sync from Server ────────────────────────────
 async function syncOrderToSupabase(orderRecord) {
-  const sbUrl = process.env.SUPABASE_URL;
+  const sbUrl = (process.env.SUPABASE_URL || '').trim();
   const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
-  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) return;
+  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) {
+    console.error('[Supabase Error] Cannot sync order to database: SUPABASE_URL or SUPABASE_KEY is missing or invalid.');
+    return;
+  }
 
   try {
     const row = {
@@ -156,6 +159,12 @@ const server = http.createServer((req, res) => {
   if (req.url.startsWith('/api/shiprocket')) {
     const shiprocketApi = require('./api/shiprocket.js');
     return shiprocketApi(req, res);
+  }
+
+  // ── Endpoint: Config Check Healthcheck ────────────────────────────────
+  if (req.url === '/api/config-check') {
+    const configCheckApi = require('./api/config-check.js');
+    return configCheckApi(req, res);
   }
 
   // ── Endpoint: Cloudinary Image Upload ──────────────────────────────────

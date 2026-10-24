@@ -7,6 +7,7 @@
     { "source": "/api/orders/:path*", "destination": "/api/orders" },
     { "source": "/api/orders", "destination": "/api/orders" },
     { "source": "/api/upload", "destination": "/api/upload" },
+    { "source": "/api/config-check", "destination": "/api/config-check" },
     { "source": "/((?!api/|.*\\..*).*)", "destination": "/index.html" }
   ],
   "headers": [

@@ -1,7 +1,10 @@
 const https = require('https');
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://sfcxpvvqxldhdkvfyhgj.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmY3hwdnZxeGxkaGRrdmZ5aGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NzU4MTQsImV4cCI6MjEwMTE1MTgxNH0.ZNWPL7xNiapsnOrvJ45uT6KpaFqcvzz4vv7R7WGx39c';
+function getSupabaseConfig() {
+  const url = (process.env.SUPABASE_URL || '').trim();
+  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
+  return { url, key };
+}
 
 const ALLOWED_ORIGINS = [
   'https://shop.uniqueexpressions.in',
@@ -21,12 +24,18 @@ function sendResponse(res, statusCode, data) {
 
 function sbFetch(path, options = {}) {
   return new Promise((resolve, reject) => {
-    const urlObj = new URL(SUPABASE_URL + path);
+    const { url: supabaseUrl, key: supabaseKey } = getSupabaseConfig();
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('your-supabase-project')) {
+      console.error('[Products Error] Cannot connect to Supabase: SUPABASE_URL or SUPABASE_KEY is missing or invalid.');
+      return reject(new Error('Server configuration error: SUPABASE_URL is missing or invalid.'));
+    }
+
+    const urlObj = new URL(supabaseUrl + path);
     const bodyData = options.body ? (typeof options.body === 'string' ? options.body : JSON.stringify(options.body)) : null;
 
     const headers = {
-      'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'apikey': supabaseKey,
+      'Authorization': 'Bearer ' + supabaseKey,
       'Content-Type': 'application/json',
       ...(options.headers || {})
     };

@@ -84,9 +84,12 @@ function verifyPaymentSignature(orderId, paymentId, signature) {
 }
 
 async function syncOrderToSupabase(orderRecord) {
-  const sbUrl = process.env.SUPABASE_URL || 'https://sfcxpvvqxldhdkvfyhgj.supabase.co';
-  const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmY3hwdnZxeGxkaGRrdmZ5aGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NzU4MTQsImV4cCI6MjEwMTE1MTgxNH0.ZNWPL7xNiapsnOrvJ45uT6KpaFqcvzz4vv7R7WGx39c';
-  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) return;
+  const sbUrl = (process.env.SUPABASE_URL || '').trim();
+  const sbKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
+  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) {
+    console.error('[Razorpay Error] Cannot sync order to database: SUPABASE_URL or SUPABASE_KEY is missing or invalid.');
+    return;
+  }
 
   try {
     const row = {

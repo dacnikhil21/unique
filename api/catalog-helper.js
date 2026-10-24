@@ -28,8 +28,8 @@ let lastCouponsFetch = 0;
 const CACHE_TTL_MS = 60 * 1000; // 60 seconds
 
 function getSupabaseConfig() {
-  const sbUrl = process.env.SUPABASE_URL || 'https://sfcxpvvqxldhdkvfyhgj.supabase.co';
-  const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmY3hwdnZxeGxkaGRrdmZ5aGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NzU4MTQsImV4cCI6MjEwMTE1MTgxNH0.ZNWPL7xNiapsnOrvJ45uT6KpaFqcvzz4vv7R7WGx39c';
+  const sbUrl = (process.env.SUPABASE_URL || '').trim();
+  const sbKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
   return { sbUrl, sbKey };
 }
 
@@ -45,6 +45,7 @@ async function getLiveServerProducts(forceRefresh = false) {
 
   const { sbUrl, sbKey } = getSupabaseConfig();
   if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) {
+    console.error('[Catalog Error] SUPABASE_URL or SUPABASE_KEY is missing or invalid. Falling back to static catalog.');
     liveProductsCache = FALLBACK_CATALOG;
     return liveProductsCache;
   }
@@ -124,6 +125,7 @@ async function getLiveServerCoupons(forceRefresh = false) {
 
   const { sbUrl, sbKey } = getSupabaseConfig();
   if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) {
+    console.error('[Coupons Error] SUPABASE_URL or SUPABASE_KEY is missing or invalid. Falling back to default coupons.');
     return DEFAULT_COUPONS;
   }
 
@@ -280,7 +282,10 @@ async function atomicDecrementStock(items) {
   if (!Array.isArray(items) || items.length === 0) return true;
 
   const { sbUrl, sbKey } = getSupabaseConfig();
-  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) return true;
+  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) {
+    console.error('[Inventory Error] Cannot decrement stock: SUPABASE_URL or SUPABASE_KEY is missing or invalid.');
+    return true;
+  }
 
   try {
     const payload = items.map(i => ({
@@ -344,7 +349,10 @@ async function atomicRestoreStock(items) {
   if (!Array.isArray(items) || items.length === 0) return true;
 
   const { sbUrl, sbKey } = getSupabaseConfig();
-  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) return true;
+  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) {
+    console.error('[Inventory Error] Cannot restore stock: SUPABASE_URL or SUPABASE_KEY is missing or invalid.');
+    return true;
+  }
 
   try {
     const payload = items.map(i => ({

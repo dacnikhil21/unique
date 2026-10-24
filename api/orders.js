@@ -29,9 +29,12 @@ const {
  * Sync confirmed order to Supabase
  */
 async function syncOrderToSupabase(orderRecord) {
-  const sbUrl = process.env.SUPABASE_URL || 'https://sfcxpvvqxldhdkvfyhgj.supabase.co';
-  const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
-  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) return false;
+  const sbUrl = (process.env.SUPABASE_URL || '').trim();
+  const sbKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
+  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) {
+    console.error('[Orders Error] Cannot sync order to database: SUPABASE_URL or SUPABASE_KEY is missing or invalid.');
+    return false;
+  }
 
   try {
     const row = {

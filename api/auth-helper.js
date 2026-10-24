@@ -29,19 +29,12 @@ function loadEnvIfNeeded() {
 function getSupabaseConfig() {
   loadEnvIfNeeded();
 
-  let rawUrl = (process.env.SUPABASE_URL || '').trim();
+  let url = (process.env.SUPABASE_URL || '').trim();
   let anonKey = (process.env.SUPABASE_ANON_KEY || '').trim();
 
   // If set to placeholder string 'your-supabase-project', strip it
-  if (rawUrl.includes('your-supabase-project')) {
-    rawUrl = '';
-  }
-
-  // Use the canonical production SUPABASE_URL matching the rest of the application
-  const url = rawUrl || 'https://sfcxpvvqxldhdkvfyhgj.supabase.co';
-
-  if (!anonKey || anonKey.includes('your-anon-key')) {
-    anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmY3hwdnZxeGxkaGRrdmZ5aGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NzU4MTQsImV4cCI6MjEwMTE1MTgxNH0.ZNWPL7xNiapsnOrvJ45uT6KpaFqcvzz4vv7R7WGx39c';
+  if (url.includes('your-supabase-project')) {
+    url = '';
   }
 
   return { url, anonKey };
@@ -76,7 +69,8 @@ async function verifyAdminRequest(req, payload = {}) {
 
   // Check 2: Supabase URL Validation (never call a placeholder)
   const { url: supabaseUrl, anonKey: supabaseAnonKey } = getSupabaseConfig();
-  if (!supabaseUrl || supabaseUrl.includes('your-supabase-project')) {
+  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('your-supabase-project')) {
+    console.error('[Auth Error] Cannot authenticate admin request: SUPABASE_URL or SUPABASE_ANON_KEY is missing or invalid.');
     return {
       authorized: false,
       statusCode: 500,
