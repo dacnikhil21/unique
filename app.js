@@ -28,8 +28,7 @@ let STORE_SETTINGS = (() => {
     instagram: "uniqueexpressions.in",
     youtube: "@UNIQUEEXPRESSIONS-25",
     searchPlaceholder: "Search 200+ Educational Toys, Smart Gadgets, Return Gifts, Handicrafts...",
-    storeLocationLabel: "India Store",
-    logoUrl: "logo.png"
+    storeLocationLabel: "India Store"
   };
 })();
 
@@ -966,14 +965,6 @@ function applyStoreSettingsDOM() {
       el.innerHTML = `<i class="ri-map-pin-line"></i> ${storeLocation}`;
     }
   });
-
-  // 12. Store Logo
-  const logoUrl = s.logoUrl || 'logo.png';
-  if (logoUrl) {
-    document.querySelectorAll('.dt-logo-img, .m-header-logo-link img, .m-footer-brand-logo').forEach(el => {
-      el.src = logoUrl;
-    });
-  }
 }
 
 function syncStorefrontState() {
@@ -5591,26 +5582,6 @@ async function handleAdminImageUpload(input) {
   }
 }
 
-async function handleAdminLogoUpload(input) {
-  const file = input.files[0];
-  if (!file) return;
-
-  try {
-    showToast('Uploading store logo to Cloudinary...', 'info');
-    const uploadedUrl = await uploadToCloudinary(file);
-    const logoInput = document.getElementById('apStLogoUrl');
-    if (logoInput) logoInput.value = uploadedUrl;
-    const preview = document.getElementById('apStLogoPreview');
-    if (preview) {
-      preview.src = uploadedUrl;
-      preview.style.display = 'block';
-    }
-    showToast('Logo uploaded! Click "Save Website Settings" below to apply.', 'success');
-  } catch (err) {
-    showToast('Logo upload error: ' + err, 'error');
-  }
-}
-
 /* ==========================================================================
    PRODUCTION-GRADE ADMIN PANEL ENGINE (.ap-*)
    ========================================================================== */
@@ -8303,18 +8274,6 @@ function renderApSettings() {
         </div>
       </div>
 
-      <div style="margin-bottom:16px;">
-        <label style="font-size:11px; font-weight:700; color:#475569;">Store Logo Image</label>
-        <div style="display:flex; gap:12px; align-items:center; margin-top:6px;">
-          <img id="apStLogoPreview" src="${STORE_SETTINGS.logoUrl || 'logo.png'}" alt="Logo Preview" style="max-height:40px; max-width:140px; object-fit:contain; border:1px solid #e2e8f0; border-radius:8px; padding:4px; background:#fff;" onerror="this.src='logo.png'">
-          <input type="text" id="apStLogoUrl" class="ap-search-input" style="flex:1;" placeholder="logo.png or https://..." value="${apEscHtml(STORE_SETTINGS.logoUrl || 'logo.png')}">
-          <label class="ap-btn ap-btn-outline" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; margin:0; height:38px; white-space:nowrap;">
-            <i class="ri-upload-cloud-line"></i> Upload Logo
-            <input type="file" accept="image/*" style="display:none;" onchange="handleAdminLogoUpload(this)">
-          </label>
-        </div>
-      </div>
-
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:20px;">
         <div>
           <label style="font-size:11px; font-weight:700; color:#475569;">Free Shipping Min Threshold (₹)</label>
@@ -8351,7 +8310,6 @@ async function saveApStoreSettings() {
   STORE_SETTINGS.footerText = document.getElementById('apStFooter') ? document.getElementById('apStFooter').value.trim() : (STORE_SETTINGS.footerText || '');
   STORE_SETTINGS.storeLocationLabel = document.getElementById('apStLocationLabel') ? document.getElementById('apStLocationLabel').value.trim() : (STORE_SETTINGS.storeLocationLabel || 'India Store');
   STORE_SETTINGS.searchPlaceholder = document.getElementById('apStSearchPlaceholder') ? document.getElementById('apStSearchPlaceholder').value.trim() : (STORE_SETTINGS.searchPlaceholder || 'Search 200+ Educational Toys, Smart Gadgets, Return Gifts, Handicrafts...');
-  STORE_SETTINGS.logoUrl = document.getElementById('apStLogoUrl') ? document.getElementById('apStLogoUrl').value.trim() : (STORE_SETTINGS.logoUrl || 'logo.png');
   const minFreeVal = document.getElementById('apStMinFree')?.value;
   const shipFeeVal = document.getElementById('apStShipFee')?.value;
   const wrapFeeVal = document.getElementById('apStWrapFee')?.value;
