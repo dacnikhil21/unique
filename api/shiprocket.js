@@ -6,7 +6,8 @@ const path = require('path');
 // Shiprocket Configuration
 const SHIPROCKET_CONFIG = {
   email: process.env.SHIPROCKET_EMAIL || '',
-  password: process.env.SHIPROCKET_PASSWORD || '',
+  password: process.env.SHIPROCKET_PASSWORD || process.env.SHIPROCKET_API_KEY || '',
+  token: process.env.SHIPROCKET_TOKEN || '',
   pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || 'Primary',
   pickup_pincode: process.env.SHIPROCKET_PICKUP_PINCODE || ''
 };
@@ -89,13 +90,24 @@ async function getAuthToken(forceRefresh = false) {
     return cachedToken;
   }
 
-  if (!SHIPROCKET_CONFIG.email || !SHIPROCKET_CONFIG.password) {
-    throw new Error('Shiprocket credentials (SHIPROCKET_EMAIL / SHIPROCKET_PASSWORD) are not configured.');
+  // If a direct static Bearer token was provided
+  const directToken = process.env.SHIPROCKET_TOKEN || SHIPROCKET_CONFIG.token;
+  if (directToken) {
+    cachedToken = directToken;
+    tokenExpiresAt = now + (9 * 24 * 60 * 60 * 1000);
+    return directToken;
+  }
+
+  const email = process.env.SHIPROCKET_EMAIL || SHIPROCKET_CONFIG.email;
+  const password = process.env.SHIPROCKET_PASSWORD || process.env.SHIPROCKET_API_KEY || SHIPROCKET_CONFIG.password;
+
+  if (!email || !password) {
+    throw new Error('Shiprocket credentials (SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD or SHIPROCKET_API_KEY) are not configured.');
   }
 
   const res = await makeShiprocketRequest('/v1/external/auth/login', 'POST', {
-    email: SHIPROCKET_CONFIG.email,
-    password: SHIPROCKET_CONFIG.password
+    email: email,
+    password: password
   });
 
   if (res && res.token) {

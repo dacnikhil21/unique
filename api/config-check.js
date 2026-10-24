@@ -125,7 +125,10 @@ module.exports = async function handler(req, res) {
   let allOk = true;
 
   for (const key of REQUIRED_VARIABLES) {
-    const val = process.env[key];
+    let val = process.env[key];
+    if (key === 'SHIPROCKET_PASSWORD' && (!val || !val.trim())) {
+      val = process.env.SHIPROCKET_API_KEY || process.env.SHIPROCKET_TOKEN;
+    }
     const status = evaluateVariable(key, val);
     configStatus[key] = status;
     if (status !== 'OK') {
