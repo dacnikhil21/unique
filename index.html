@@ -1174,12 +1174,12 @@
       <div style="padding:22px 20px;">
         <!-- TAB 1: LOGIN FORM -->
         <div id="authTabContentLogin" style="display:block;">
-          <form onsubmit="handleUserLogin(event)">
+          <form onsubmit="handleUserLogin(event)" autocomplete="off">
             <div class="form-group" style="margin-bottom:14px;">
               <label class="form-label" style="font-size:11.5px; font-weight:800; color:#475569;">Email Address or Mobile</label>
               <div style="position:relative;">
                 <i class="ri-mail-line" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>
-                <input type="text" id="authLoginId" class="form-input" style="padding-left:38px; height:42px; font-size:13px;" placeholder="name@domain.com or mobile" required>
+                <input type="text" id="authLoginId" class="form-input" style="padding-left:38px; height:42px; font-size:13px;" placeholder="name@domain.com or mobile" autocomplete="off" value="" required>
               </div>
             </div>
             <div class="form-group" style="margin-bottom:14px;">
@@ -1189,7 +1189,7 @@
               </div>
               <div style="position:relative;">
                 <i class="ri-lock-2-line" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>
-                <input type="password" id="authLoginPassword" class="form-input" style="padding-left:38px; padding-right:38px; height:42px; font-size:13px;" placeholder="••••••••" required>
+                <input type="password" id="authLoginPassword" class="form-input" style="padding-left:38px; padding-right:38px; height:42px; font-size:13px;" placeholder="••••••••" autocomplete="new-password" value="" required>
                 <i class="ri-eye-off-line" id="toggleAuthPassIcon" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px; cursor:pointer;" onclick="toggleAuthPasswordVisibility()"></i>
               </div>
             </div>

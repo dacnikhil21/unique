@@ -636,11 +636,16 @@ async function sbGetAuthSession() {
   }
 }
 
+let _hasOpenedRecoveryModal = false;
+
 function sbOnAuthStateChange(callback) {
   return _supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'PASSWORD_RECOVERY') {
-      if (typeof openResetPasswordModal === 'function') {
-        setTimeout(openResetPasswordModal, 200);
+    if (event === 'PASSWORD_RECOVERY' && session) {
+      if (!_hasOpenedRecoveryModal) {
+        _hasOpenedRecoveryModal = true;
+        if (typeof openResetPasswordModal === 'function') {
+          setTimeout(openResetPasswordModal, 150);
+        }
       }
     }
     if (typeof callback === 'function') {
@@ -651,36 +656,79 @@ function sbOnAuthStateChange(callback) {
 
 async function sbInitAuthFlow() {
   try {
-    // 1. Handle PKCE auth code exchange if present in URL (?code=...)
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashRaw = (window.location.hash || '').replace(/^#/, '');
+    const hashParams = new URLSearchParams(hashRaw);
+
+    // 1. Check if the recovery/auth link returned an error from Supabase
+    const errorDesc = searchParams.get('error_description') || hashParams.get('error_description');
+    const errorCode = searchParams.get('error_code') || hashParams.get('error_code');
+    const errorParam = searchParams.get('error') || hashParams.get('error');
+
+    if (errorDesc || errorCode || errorParam) {
+      if (typeof showToast === 'function') {
+        showToast('This reset link has expired. Please request a new one.', 'error');
+      }
+      try {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (_) {}
+      return { ok: false, error: 'expired' };
+    }
+
+    // 2. Handle PKCE auth code exchange if present in URL (?code=...)
+    const code = searchParams.get('code');
     if (code) {
       const { data, error } = await _supabase.auth.exchangeCodeForSession(code);
-      if (!error && data?.session) {
+      if (error) {
+        if (typeof showToast === 'function') {
+          showToast('This reset link has expired. Please request a new one.', 'error');
+        }
+        try {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (_) {}
+        return { ok: false, error: error.message };
+      }
+      if (data?.session) {
         if (typeof applyAuthSession === 'function') {
           await applyAuthSession(data.session);
         }
-        if (window.location.search.includes('type=recovery') || window.location.hash.includes('type=recovery')) {
-          if (typeof openResetPasswordModal === 'function') setTimeout(openResetPasswordModal, 300);
+        if (!_hasOpenedRecoveryModal) {
+          _hasOpenedRecoveryModal = true;
+          if (typeof openResetPasswordModal === 'function') {
+            setTimeout(openResetPasswordModal, 200);
+          }
         }
+        return { ok: true, session: data.session };
       }
     }
 
-    // 2. Handle Implicit Fragment Recovery & Tokens (#access_token=...&type=recovery)
-    const hash = window.location.hash || '';
-    if (hash.includes('access_token=') && hash.includes('type=recovery')) {
-      const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
-      const accessToken = hashParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token');
-      if (accessToken) {
-        const { data, error } = await _supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || ''
-        });
-        if (!error && data?.session) {
-          if (typeof applyAuthSession === 'function') await applyAuthSession(data.session);
-          if (typeof openResetPasswordModal === 'function') setTimeout(openResetPasswordModal, 300);
+    // 3. Handle Implicit Fragment Recovery & Tokens (#access_token=...&type=recovery)
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+    const type = hashParams.get('type');
+    if (accessToken) {
+      const { data, error } = await _supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken || ''
+      });
+      if (error) {
+        if (typeof showToast === 'function') {
+          showToast('This reset link has expired. Please request a new one.', 'error');
         }
+        try {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (_) {}
+        return { ok: false, error: error.message };
+      }
+      if (data?.session) {
+        if (typeof applyAuthSession === 'function') await applyAuthSession(data.session);
+        if (type === 'recovery' && !_hasOpenedRecoveryModal) {
+          _hasOpenedRecoveryModal = true;
+          if (typeof openResetPasswordModal === 'function') {
+            setTimeout(openResetPasswordModal, 200);
+          }
+        }
+        return { ok: true, session: data.session };
       }
     }
   } catch (e) {
@@ -735,7 +783,7 @@ async function sbResetPassword(identifier) {
 
     const origin = (window.location.origin || 'http://localhost:5000').replace(/\/+$/, '');
     const { error } = await _supabase.auth.resetPasswordForEmail(targetEmail, {
-      redirectTo: `${origin}/#type=recovery`
+      redirectTo: `${origin}`
     });
 
     if (error && error.status === 429) {

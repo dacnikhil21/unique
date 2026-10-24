@@ -6310,15 +6310,6 @@ async function bootstrapCustomerAuth() {
       if (currentView === 'checkout') renderCheckoutView();
     });
   }
-  if (
-    window.location.hash.includes('reset=1') ||
-    window.location.hash.includes('type=recovery') ||
-    window.location.search.includes('type=recovery') ||
-    window.location.href.includes('type=recovery') ||
-    window.location.href.includes('recovery')
-  ) {
-    setTimeout(openResetPasswordModal, 300);
-  }
 }
 
 
@@ -6449,9 +6440,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     switchView('home', {}, true);
   }
 
-  if (isAuthCallback && (window.location.href.includes('recovery') || window.location.href.includes('type=recovery'))) {
-    setTimeout(openResetPasswordModal, 500);
-  }
   updateBadges();
   startHeroCarousel();
   refreshCategoryImagesFromCatalog();
@@ -9788,7 +9776,7 @@ async function submitNewPassword() {
       showToast('Password updated! You are logged in.', 'success');
       document.getElementById('resetPasswordOverlay')?.classList.remove('active');
       try {
-        history.replaceState({ view: 'home', params: {} }, '', window.location.pathname);
+        window.history.replaceState({}, document.title, window.location.pathname);
       } catch (_) {}
       if (isAdminAuthenticated()) {
         history.replaceState({}, '', '#view=admin');
@@ -10775,17 +10763,18 @@ function renderAdminLoginView(container) {
             <label style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 8px;">Admin Email</label>
             <div style="position: relative;">
               <i class="ri-mail-line" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 18px;"></i>
-              <input type="email" id="adminEmailInput" style="width: 100%; height: 48px; border-radius: 12px; background: #0f172a; border: 1px solid #334155; color: #ffffff; padding: 0 16px 0 46px; font-size: 14px; outline: none; transition: border-color 0.2s;" placeholder="admin@uniqueexpressions.in" value="uestore.online@gmail.com" required>
+              <input type="email" id="adminEmailInput" style="width: 100%; height: 48px; border-radius: 12px; background: #0f172a; border: 1px solid #334155; color: #ffffff; padding: 0 16px 0 46px; font-size: 14px; outline: none; transition: border-color 0.2s;" placeholder="admin@uniqueexpressions.in" autocomplete="off" value="" required>
             </div>
           </div>
           
           <div style="text-align: left; margin-bottom: 24px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <label style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Password / Security PIN</label>
+              <a href="#" onclick="handleAdminForgotPassword(event); return false;" style="font-size: 11px; color: #f59e0b; font-weight: 700; text-decoration: none;">Forgot?</a>
             </div>
             <div style="position: relative;">
               <i class="ri-lock-2-line" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 18px;"></i>
-              <input type="password" id="adminPasswordInput" style="width: 100%; height: 48px; border-radius: 12px; background: #0f172a; border: 1px solid #334155; color: #ffffff; padding: 0 16px 0 46px; font-size: 14px; outline: none; transition: border-color 0.2s;" placeholder="••••••••••••" required autocomplete="current-password">
+              <input type="password" id="adminPasswordInput" style="width: 100%; height: 48px; border-radius: 12px; background: #0f172a; border: 1px solid #334155; color: #ffffff; padding: 0 16px 0 46px; font-size: 14px; outline: none; transition: border-color 0.2s;" placeholder="••••••••••••" required autocomplete="new-password" value="">
             </div>
           </div>
           
@@ -10811,13 +10800,18 @@ async function handleAdminLoginSubmit(e) {
   const password = document.getElementById('adminPasswordInput')?.value?.trim();
   const btn = document.getElementById('adminLoginBtn');
 
+  if (!email || !password) {
+    showToast('Please enter both admin email and password.', 'info');
+    return;
+  }
+
   // Supabase Auth Validation
   if (btn) {
     btn.disabled = true;
     btn.innerHTML = `<i class="ri-loader-4-line ri-spin"></i> Authenticating with Cloud Database...`;
   }
 
-  const loginEmail = (email || 'uestore.online@gmail.com').toLowerCase().trim();
+  const loginEmail = email.toLowerCase().trim();
   const result = await sbSignIn(loginEmail, password);
 
   if (result.error) {
@@ -10837,14 +10831,19 @@ async function handleAdminLoginSubmit(e) {
 
 async function handleAdminForgotPassword(e) {
   if (e) e.preventDefault();
-  const email = 'uestore.online@gmail.com';
+  const email = document.getElementById('adminEmailInput')?.value.trim().toLowerCase();
+  if (!email || !email.includes('@')) {
+    showToast('Please enter your admin email in the field above first.', 'info');
+    document.getElementById('adminEmailInput')?.focus();
+    return;
+  }
   
   showToast('Initiating password reset request...', 'info');
   const result = await sbResetPassword(email);
   if (result.ok) {
-    showToast('Verification email sent to uestore.online@gmail.com. Check inbox/spam.', 'success');
+    showToast('Password reset link sent to ' + email + '. Check inbox/spam.', 'success');
   } else {
-    showToast(result.error || 'Could not send verification email.', 'info');
+    showToast(result.error || 'Could not send reset link.', 'error');
   }
 }
 
@@ -15806,14 +15805,28 @@ function addFbtComboToCart(mainProdId, bundleProdIds) {
 function openUserAuthModal(defaultTab = 'login') {
   const backdrop = document.getElementById('userAuthModalBackdrop');
   if (backdrop) {
+    const loginId = document.getElementById('authLoginId');
+    const loginPass = document.getElementById('authLoginPassword');
+    if (loginId) loginId.value = '';
+    if (loginPass) loginPass.value = '';
     backdrop.classList.add('active');
     switchAuthTab(defaultTab);
+    setTimeout(() => {
+      const lid = document.getElementById('authLoginId');
+      const lpass = document.getElementById('authLoginPassword');
+      if (lid) lid.value = '';
+      if (lpass) lpass.value = '';
+    }, 50);
   }
 }
 
 function closeUserAuthModal() {
   const backdrop = document.getElementById('userAuthModalBackdrop');
   if (backdrop) backdrop.classList.remove('active');
+  const loginId = document.getElementById('authLoginId');
+  const loginPass = document.getElementById('authLoginPassword');
+  if (loginId) loginId.value = '';
+  if (loginPass) loginPass.value = '';
 }
 
 function switchAuthTab(tab) {
