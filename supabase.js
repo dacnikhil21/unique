@@ -9,6 +9,80 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 window._supabase = _supabase;
 
+/* ─────────────────────────── ADMIN WRITE GUARD ───────────────────────────
+   Single place that decides whether an admin change may be sent to the DB.
+   It asks the database itself (rpc is_admin_user) — the SAME function every
+   RLS policy uses (supabase/migrations/20261025_rls_single_source.sql) — so
+   the website and the database can never disagree about who is an admin.
+   Every admin write function below calls requireAdminSession() first and
+   reports failures through sbAdminFail(), so no admin save fails silently.
+   ─────────────────────────────────────────────────────────────────────── */
+const SB_RLS_MIGRATION_FILE = 'supabase/migrations/20261025_rls_single_source.sql';
+let _sbAdminCheck = { token: null, isAdmin: false };
+
+function sbNotify(message) {
+  console.error('[Admin DB]', message);
+  if (typeof showToast === 'function') showToast(message, 'error');
+}
+
+async function sbCheckIsAdmin() {
+  const session = await sbGetAuthSession(); // refreshes the token if it is about to expire
+  if (!session?.access_token) {
+    return { ok: false, reason: 'no-session', error: 'Your admin login has expired. Please sign in again.' };
+  }
+  if (_sbAdminCheck.token !== session.access_token) {
+    const { data, error } = await _supabase.rpc('is_admin_user');
+    if (error) {
+      return {
+        ok: false,
+        reason: 'check-failed',
+        error: `Could not verify admin permission (${error.message}). Run ${SB_RLS_MIGRATION_FILE} in the Supabase SQL Editor.`
+      };
+    }
+    _sbAdminCheck = { token: session.access_token, isAdmin: data === true };
+  }
+  if (!_sbAdminCheck.isAdmin) {
+    return {
+      ok: false,
+      reason: 'not-admin',
+      error: `You are signed in as ${session.user?.email || 'an unknown user'}, which is not in the store's admin list.`
+    };
+  }
+  return { ok: true, session };
+}
+
+async function requireAdminSession(action) {
+  const check = await sbCheckIsAdmin();
+  if (check.ok) return check;
+  const message = `Cannot ${action}: ${check.error}`;
+  sbNotify(message);
+  // Session missing or not an admin → send the user back to the admin login screen.
+  if (check.reason !== 'check-failed' && typeof promptAdminReLogin === 'function') promptAdminReLogin();
+  return { ok: false, error: message };
+}
+
+function sbAdminFail(action, err) {
+  const raw = (err && err.message) || String(err || 'Unknown database error');
+  let message;
+  if ((err && err.code === '42501') || /row-level security|permission denied/i.test(raw)) {
+    // The guard already confirmed is_admin_user() = true, so the live policies are not
+    // the ones from the single-source migration (an older SQL file is still active).
+    _sbAdminCheck = { token: null, isAdmin: false };
+    message = `Cannot ${action}: the database permission rules are out of date. Run ${SB_RLS_MIGRATION_FILE} in the Supabase SQL Editor.`;
+  } else {
+    message = `Cannot ${action}: ${raw}`;
+  }
+  sbNotify(message);
+  return message;
+}
+
+// UPDATE/DELETE blocked by RLS (or targeting a missing row) return no error, just 0 rows.
+function sbEnsureRowsChanged(data, what) {
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error(`${what} was not changed (record not found or permission denied).`);
+  }
+}
+
 /* ─────────────────────────────── PRODUCTS ─────────────────────────────── */
 
 async function sbGetProducts() {
@@ -46,6 +120,8 @@ async function sbGetProducts() {
 }
 
 async function sbSeedProducts(products) {
+  const guard = await requireAdminSession('import products');
+  if (!guard.ok) return false;
   try {
     const rows = products.map(p => ({
       id: p.id,
@@ -71,12 +147,14 @@ async function sbSeedProducts(products) {
     console.log('[Supabase] Seeded ' + rows.length + ' products');
     return true;
   } catch (err) {
-    console.warn('[Supabase] seedProducts failed:', err.message);
+    sbAdminFail('import products', err);
     return false;
   }
 }
 
 async function sbAdminInsertProduct(product) {
+  const guard = await requireAdminSession('add product');
+  if (!guard.ok) return { success: false, error: guard.error };
   try {
     const { data, error } = await _supabase
       .from('products')
@@ -105,12 +183,13 @@ async function sbAdminInsertProduct(product) {
     if (error) throw error;
     return { success: true, product: data, id: data?.id };
   } catch (err) {
-    console.error('[Supabase Insert Error]:', err.message);
-    return { success: false, error: err.message || 'Insert failed in Supabase' };
+    return { success: false, error: sbAdminFail('add product', err) };
   }
 }
 
 async function sbAdminUpdateProduct(product) {
+  const guard = await requireAdminSession('update product');
+  if (!guard.ok) return { success: false, error: guard.error };
   try {
     const row = {
       title: product.title,
@@ -136,25 +215,26 @@ async function sbAdminUpdateProduct(product) {
       .from('products')
       .update(row)
       .eq('id', product.id)
-      .select()
-      .single();
+      .select();
 
     if (error) throw error;
-    return { success: true, product: data };
+    sbEnsureRowsChanged(data, `Product #${product.id}`);
+    return { success: true, product: data[0] };
   } catch (err) {
-    console.error('[Supabase Update Error]:', err.message);
-    return { success: false, error: err.message || 'Update failed in Supabase' };
+    return { success: false, error: sbAdminFail('update product', err) };
   }
 }
 
 async function sbAdminDeleteProduct(id) {
+  const guard = await requireAdminSession('delete product');
+  if (!guard.ok) return { success: false, error: guard.error };
   try {
-    const { error } = await _supabase.from('products').delete().eq('id', id);
+    const { data, error } = await _supabase.from('products').delete().eq('id', id).select('id');
     if (error) throw error;
+    sbEnsureRowsChanged(data, `Product #${id}`);
     return { success: true };
   } catch (err) {
-    console.error('[Supabase Delete Error]:', err.message);
-    return { success: false, error: err.message || 'Delete failed in Supabase' };
+    return { success: false, error: sbAdminFail('delete product', err) };
   }
 }
 
@@ -206,6 +286,8 @@ async function sbGetCategories() {
 }
 
 async function sbUpsertCategory(category) {
+  const guard = await requireAdminSession('save category');
+  if (!guard.ok) return false;
   try {
     const { error } = await _supabase
       .from('categories')
@@ -213,12 +295,14 @@ async function sbUpsertCategory(category) {
     if (error) throw error;
     return true;
   } catch (err) {
-    console.warn('[Supabase] upsertCategory failed:', err.message);
+    sbAdminFail(`save category "${category?.name || category?.id}"`, err);
     return false;
   }
 }
 
 async function sbSeedCategories(categories) {
+  const guard = await requireAdminSession('save categories');
+  if (!guard.ok) return false;
   try {
     const rows = (categories || []).map(mapCategoryToRow);
     if (!rows.length) return true;
@@ -227,18 +311,21 @@ async function sbSeedCategories(categories) {
     console.log('[Supabase] Seeded ' + rows.length + ' categories');
     return true;
   } catch (err) {
-    console.warn('[Supabase] seedCategories failed:', err.message);
+    sbAdminFail('save categories', err);
     return false;
   }
 }
 
 async function sbDeleteCategory(id) {
+  const guard = await requireAdminSession('delete category');
+  if (!guard.ok) return false;
   try {
-    const { error } = await _supabase.from('categories').delete().eq('id', String(id));
+    const { data, error } = await _supabase.from('categories').delete().eq('id', String(id)).select('id');
     if (error) throw error;
+    sbEnsureRowsChanged(data, `Category ${id}`);
     return true;
   } catch (err) {
-    console.warn('[Supabase] deleteCategory failed:', err.message);
+    sbAdminFail('delete category', err);
     return false;
   }
 }
@@ -303,15 +390,19 @@ async function sbGetOrders() {
 }
 
 async function sbUpdateOrderStatus(orderId, status, stepIndex) {
+  const guard = await requireAdminSession('update order status');
+  if (!guard.ok) return false;
   try {
-    const { error } = await _supabase
+    const { data, error } = await _supabase
       .from('orders')
       .update({ status: status, step_index: stepIndex })
-      .eq('order_id', orderId);
+      .eq('order_id', orderId)
+      .select('order_id');
     if (error) throw error;
+    sbEnsureRowsChanged(data, `Order ${orderId}`);
     return true;
   } catch (err) {
-    console.warn('[Supabase] updateOrderStatus failed:', err.message);
+    sbAdminFail(`update order ${orderId}`, err);
     return false;
   }
 }
@@ -422,11 +513,9 @@ async function sbSeedReviews(reviews) {
 
 async function sbIncrementHelpful(reviewId) {
   try {
-    const { data: current } = await _supabase
-      .from('reviews').select('helpful_count').eq('id', reviewId).single();
-    const newCount = ((current && current.helpful_count) || 0) + 1;
-    const { error } = await _supabase
-      .from('reviews').update({ helpful_count: newCount }).eq('id', reviewId);
+    // Atomic, permission-safe counter (customers have no UPDATE rights on reviews)
+    const { data: newCount, error } = await _supabase
+      .rpc('increment_review_helpful', { p_review_id: reviewId });
     if (error) throw error;
     return newCount;
   } catch (err) {
@@ -834,12 +923,19 @@ async function sbGetProfile(userId) {
 }
 
 async function sbAdminGetAllProfiles() {
+  // Without an admin session RLS returns only the caller's own row, which would look
+  // like an (almost) empty customer list — so verify first instead of failing silently.
+  const check = await sbCheckIsAdmin();
+  if (!check.ok) {
+    console.warn('[Supabase] getAllProfiles skipped:', check.error);
+    return [];
+  }
   try {
     const { data, error } = await _supabase.from('profiles').select('*');
     if (error) throw error;
     return data || [];
   } catch (err) {
-    console.warn('[Supabase] getAllProfiles failed:', err.message);
+    sbAdminFail('load customers', err);
     return [];
   }
 }
@@ -894,6 +990,8 @@ async function sbGetFeaturedCollections() {
 }
 
 async function sbSaveFeaturedCollections(collections) {
+  const guard = await requireAdminSession('save featured collections');
+  if (!guard.ok) return { success: false, error: guard.error };
   try {
     if (!Array.isArray(collections)) return { success: false, error: 'Invalid collections array' };
     const row = {
@@ -911,8 +1009,7 @@ async function sbSaveFeaturedCollections(collections) {
     console.log('[Supabase] Featured Collections synced to cloud across all devices');
     return { success: true };
   } catch (err) {
-    console.error('[Supabase] saveFeaturedCollections failed:', err.message);
-    return { success: false, error: err.message || 'Failed to save Featured Collections to database' };
+    return { success: false, error: sbAdminFail('save featured collections', err) };
   }
 }
 
@@ -932,6 +1029,8 @@ async function sbGetHeroSlides() {
 }
 
 async function sbSaveHeroSlides(slides) {
+  const guard = await requireAdminSession('save hero slides');
+  if (!guard.ok) return { success: false, error: guard.error };
   try {
     if (!Array.isArray(slides)) return { success: false, error: 'Invalid slides array' };
     const row = {
@@ -949,8 +1048,7 @@ async function sbSaveHeroSlides(slides) {
     console.log('[Supabase] Hero Slides synced to cloud across all devices');
     return { success: true };
   } catch (err) {
-    console.error('[Supabase] saveHeroSlides failed:', err.message);
-    return { success: false, error: err.message || 'Failed to save Hero Slides to database' };
+    return { success: false, error: sbAdminFail('save hero slides', err) };
   }
 }
 
@@ -980,10 +1078,12 @@ async function sbGetStoreSettings() {
 }
 
 async function sbSaveStoreSettings(settings) {
+  if (!settings || typeof settings !== 'object') {
+    return { success: false, error: 'Invalid settings object' };
+  }
+  const guard = await requireAdminSession('save store settings');
+  if (!guard.ok) return { success: false, error: guard.error };
   try {
-    if (!settings || typeof settings !== 'object') {
-      return { success: false, error: 'Invalid settings object' };
-    }
 
     // 1. Dedicated store_settings table (Single source of truth)
     const rows = Object.entries(settings).map(([key, value]) => ({
@@ -996,10 +1096,7 @@ async function sbSaveStoreSettings(settings) {
       .from('store_settings')
       .upsert(rows, { onConflict: 'key' });
 
-    if (ssError) {
-      console.error('[Supabase] store_settings upsert error:', ssError.message);
-      return { success: false, error: ssError.message || 'Database rejected store_settings update' };
-    }
+    if (ssError) throw ssError;
 
     // 2. Also keep legacy categories row synced for backwards compatibility
     try {
@@ -1021,8 +1118,7 @@ async function sbSaveStoreSettings(settings) {
     console.log('[Supabase] Store Settings synced to cloud across all devices');
     return { success: true };
   } catch (err) {
-    console.error('[Supabase] saveStoreSettings failed:', err.message);
-    return { success: false, error: err.message || 'Failed to save Store Settings to database' };
+    return { success: false, error: sbAdminFail('save store settings', err) };
   }
 }
 
@@ -1056,6 +1152,8 @@ async function sbGetCoupons() {
 }
 
 async function sbAdminUpsertCoupon(coupon) {
+  const guard = await requireAdminSession('save coupon');
+  if (!guard.ok) return { success: false, error: guard.error };
   try {
     const row = {
       code: String(coupon.code || '').trim().toUpperCase(),
@@ -1076,23 +1174,26 @@ async function sbAdminUpsertCoupon(coupon) {
     if (error) throw error;
     return { success: true, data };
   } catch (err) {
-    console.error('[Supabase] sbAdminUpsertCoupon error:', err.message);
-    return { success: false, error: err.message || 'Failed to save coupon in database' };
+    return { success: false, error: sbAdminFail('save coupon', err) };
   }
 }
 
 async function sbAdminDeleteCoupon(code) {
+  const guard = await requireAdminSession('delete coupon');
+  if (!guard.ok) return { success: false, error: guard.error };
   try {
-    const { error } = await _supabase
+    const cleanCode = String(code).trim().toUpperCase();
+    const { data, error } = await _supabase
       .from('coupons')
       .delete()
-      .eq('code', String(code).trim().toUpperCase());
+      .eq('code', cleanCode)
+      .select('code');
 
     if (error) throw error;
+    sbEnsureRowsChanged(data, `Coupon ${cleanCode}`);
     return { success: true };
   } catch (err) {
-    console.error('[Supabase] sbAdminDeleteCoupon error:', err.message);
-    return { success: false, error: err.message || 'Failed to delete coupon from database' };
+    return { success: false, error: sbAdminFail('delete coupon', err) };
   }
 }
 

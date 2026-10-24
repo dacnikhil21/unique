@@ -5833,6 +5833,16 @@ function renderAdminView(initialTab = null) {
     return;
   }
 
+  // Verify active Supabase admin session in the background; redirect if expired
+  if (typeof sbCheckIsAdmin === 'function') {
+    sbCheckIsAdmin().then(check => {
+      if (!check.ok && (check.reason === 'no-session' || check.reason === 'not-admin')) {
+        console.warn('[Admin View] Session validation failed:', check.error);
+        promptAdminReLogin();
+      }
+    });
+  }
+
   // Trigger background customer sync
   loadCustomersAndRefresh();
 
