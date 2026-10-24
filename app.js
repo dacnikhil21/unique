@@ -10568,14 +10568,6 @@ function isSessionExpiredError(errorMsg) {
 }
 
 async function uploadToCloudinary(file) {
-  const auth = await getAdminAuth();
-  if (!auth.token) {
-    const msg = 'Admin session token missing. Please log in again.';
-    showToast(msg, 'error');
-    promptAdminReLogin();
-    throw new Error(msg);
-  }
-
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async () => {
@@ -10583,30 +10575,32 @@ async function uploadToCloudinary(file) {
         const base64Data = reader.result;
         const res = await fetch('/api/upload', {
           method: 'POST',
-          headers: auth.headers,
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ file: base64Data })
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           const msg = data.error || `Upload failed with status ${res.status}`;
-          if (res.status === 401 && isSessionExpiredError(msg)) {
-            showToast('Your admin session has expired. Please log in again.', 'error');
-            promptAdminReLogin();
-          } else {
-            showToast(msg, 'error');
-          }
+          showToast(msg, 'error');
           return reject(msg);
         }
         if (data.success && data.url) {
           resolve(data.url);
         } else {
-          reject(data.error || 'Upload failed');
+          const msg = data.error || 'Upload failed';
+          showToast(msg, 'error');
+          reject(msg);
         }
       } catch (err) {
-        reject(err.message || 'Upload error');
+        const msg = err.message || 'Upload error';
+        showToast(msg, 'error');
+        reject(msg);
       }
     };
-    reader.onerror = () => reject('File reading failed');
+    reader.onerror = () => {
+      showToast('File reading failed', 'error');
+      reject('File reading failed');
+    };
     reader.readAsDataURL(file);
   });
 }
@@ -15513,14 +15507,6 @@ async function uploadMultipleImagesToCloudinary(fileInput) {
   const files = Array.from(fileInput.files || []);
   if (files.length === 0) return;
 
-  const auth = await getAdminAuth();
-  if (!auth.token) {
-    showApToast('Admin session expired or missing. Please log in again to upload photos.', 'error');
-    if (fileInput) fileInput.value = '';
-    promptAdminReLogin();
-    return;
-  }
-
   if (!window.apModalProductImages) window.apModalProductImages = [];
 
   showApToast(`Uploading ${files.length} photo(s)...`, 'info');
@@ -15535,19 +15521,14 @@ async function uploadMultipleImagesToCloudinary(fileInput) {
 
       const res = await fetch('/api/upload', {
         method: 'POST',
-        headers: auth.headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ file: base64Data })
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const errMsg = data.error || `Upload failed for photo ${i + 1} (Status ${res.status})`;
-        if (res.status === 401 && isSessionExpiredError(errMsg)) {
-          showApToast('Your admin session has expired. Please log in again.', 'error');
-          promptAdminReLogin();
-          break;
-        } else {
-          showApToast(errMsg, 'error');
-          continue;
-        }
+        showApToast(errMsg, 'error');
+        continue;
       }
 
       if (data.success && data.url) {
@@ -15730,14 +15711,6 @@ async function uploadImageToCloudinary(fileInput, targetInputId, targetPrevId) {
   const file = fileInput.files[0];
   if (!file) return;
 
-  const auth = await getAdminAuth();
-  if (!auth.token) {
-    showApToast('Admin session expired or missing. Please log in again to upload images.', 'error');
-    if (fileInput) fileInput.value = '';
-    promptAdminReLogin();
-    return;
-  }
-
   showApToast('Optimizing & uploading image...', 'info');
 
   try {
@@ -15745,20 +15718,14 @@ async function uploadImageToCloudinary(fileInput, targetInputId, targetPrevId) {
 
     const res = await fetch('/api/upload', {
       method: 'POST',
-      headers: auth.headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ file: base64Data })
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
       const errMsg = data.error || `Upload failed with status ${res.status}`;
-      if (res.status === 401 && isSessionExpiredError(errMsg)) {
-        showApToast('Your admin session has expired. Please log in again to upload images.', 'error');
-        promptAdminReLogin();
-      } else {
-        // Any other error (500, 502, 403, Cloudinary error, network, etc.): keep admin logged in!
-        showApToast(errMsg, 'error');
-      }
+      showApToast(errMsg, 'error');
       return;
     }
 

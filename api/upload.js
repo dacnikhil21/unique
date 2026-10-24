@@ -2,8 +2,8 @@ const crypto = require('crypto');
 const https = require('https');
 
 const CLOUDINARY_CONFIG = {
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'oqj0unl4',
-  api_key: process.env.CLOUDINARY_API_KEY || '392727691414539',
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || '',
+  api_key: process.env.CLOUDINARY_API_KEY || '',
   api_secret: process.env.CLOUDINARY_API_SECRET || '',
   folder: process.env.CLOUDINARY_FOLDER || 'unique_expressions'
 };
@@ -26,8 +26,8 @@ function sendResponse(res, statusCode, data) {
 
 function uploadToCloudinary(base64File) {
   return new Promise((resolve, reject) => {
-    if (!CLOUDINARY_CONFIG.api_secret) {
-      return reject(new Error('Cloudinary credentials (CLOUDINARY_API_SECRET) are not configured on server.'));
+    if (!CLOUDINARY_CONFIG.cloud_name || !CLOUDINARY_CONFIG.api_key || !CLOUDINARY_CONFIG.api_secret) {
+      return reject(new Error('Cloudinary credentials (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) are not configured on server.'));
     }
 
     const timestamp = Math.floor(Date.now() / 1000);
@@ -111,31 +111,36 @@ module.exports = async (req, res) => {
     return sendResponse(res, 405, { error: 'Method not allowed' });
   }
 
-  // 🔒 SEC-03: Refuse execution if Cloudinary secret is unconfigured
-  if (!CLOUDINARY_CONFIG.api_secret) {
-    console.error('[Upload Security Alert] CLOUDINARY_API_SECRET is not configured on the server.');
+  if (!CLOUDINARY_CONFIG.cloud_name || !CLOUDINARY_CONFIG.api_key || !CLOUDINARY_CONFIG.api_secret) {
+    console.error('[Upload Alert] Cloudinary environment variables (CLOUD_NAME, API_KEY, API_SECRET) are not configured.');
     return sendResponse(res, 503, { error: 'Upload service unavailable: Cloudinary credentials not configured.' });
   }
 
   try {
     const payload = await parseBody(req);
-
-    // 🔒 SEC-05: Authenticate admin user via Supabase JWT or machine secret
-    const { verifyAdminRequest } = require('./auth-helper.js');
-    const authCheck = await verifyAdminRequest(req, payload);
-    if (!authCheck.authorized) {
-      const statusCode = authCheck.statusCode || 401;
-      return sendResponse(res, statusCode, { error: authCheck.error || 'Unauthorized admin access: login required to upload media.' });
-    }
-
     const file = payload?.file;
 
-    if (!file || (!file.startsWith('http') && !file.startsWith('data:'))) {
-      return sendResponse(res, 400, { error: 'Invalid image payload' });
+    if (!file || typeof file !== 'string') {
+      return sendResponse(res, 400, { error: 'Invalid or missing image payload.' });
     }
 
-    if (file.length > 12 * 1024 * 1024) {
-      return sendResponse(res, 413, { error: 'Payload too large. Maximum file size is 12MB.' });
+    // Basic Safety: Accept images only (jpg, png, webp, gif)
+    const isBase64Image = /^data:image\/(jpeg|jpg|png|webp|gif);base64,/i.test(file);
+    const isHttpImageUrl = /^https?:\/\/.*\.(jpeg|jpg|png|webp|gif)(\?.*)?$/i.test(file) ||
+                           (file.startsWith('http') && (file.includes('cloudinary.com') || file.includes('unsplash.com')));
+
+    if (!isBase64Image && !isHttpImageUrl) {
+      return sendResponse(res, 400, { error: 'Invalid file format. Only JPG, PNG, WEBP, and GIF images are allowed.' });
+    }
+
+    // Basic Safety: Reject files larger than 5 MB
+    if (file.startsWith('data:')) {
+      const approxBytes = Math.ceil((file.length - file.indexOf(',') - 1) * 3 / 4);
+      if (approxBytes > 5 * 1024 * 1024) {
+        return sendResponse(res, 413, { error: 'Payload too large. Maximum file size is 5MB.' });
+      }
+    } else if (file.length > 7.5 * 1024 * 1024) {
+      return sendResponse(res, 413, { error: 'Payload too large. Maximum file size is 5MB.' });
     }
 
     const result = await uploadToCloudinary(file);
