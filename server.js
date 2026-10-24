@@ -178,7 +178,8 @@ const server = http.createServer((req, res) => {
         const { verifyAdminRequest } = require('./api/auth-helper.js');
         verifyAdminRequest(req, payload).then(authCheck => {
           if (!authCheck.authorized) {
-            res.writeHead(401, { 'Content-Type': 'application/json' });
+            const statusCode = authCheck.statusCode || 401;
+            res.writeHead(statusCode, { 'Content-Type': 'application/json' });
             return res.end(JSON.stringify({ error: authCheck.error || 'Unauthorized admin access: login required to upload media.' }));
           }
 

@@ -10558,10 +10558,19 @@ function promptAdminReLogin() {
   }
 }
 
+function isSessionExpiredError(errorMsg) {
+  if (!errorMsg || typeof errorMsg !== 'string') return false;
+  const lower = errorMsg.toLowerCase();
+  return lower.includes('invalid or expired') ||
+         lower.includes('token expired') ||
+         lower.includes('jwt expired') ||
+         lower.includes('session expired');
+}
+
 async function uploadToCloudinary(file) {
   const auth = await getAdminAuth();
   if (!auth.token) {
-    const msg = 'Admin session expired or missing. Please log in again to upload media.';
+    const msg = 'Admin session token missing. Please log in again.';
     showToast(msg, 'error');
     promptAdminReLogin();
     throw new Error(msg);
@@ -10578,10 +10587,14 @@ async function uploadToCloudinary(file) {
           body: JSON.stringify({ file: base64Data })
         });
         const data = await res.json();
-        if (res.status === 401) {
-          const msg = data.error || 'Your admin session has expired. Please log in again.';
-          showToast(msg, 'error');
-          promptAdminReLogin();
+        if (!res.ok) {
+          const msg = data.error || `Upload failed with status ${res.status}`;
+          if (res.status === 401 && isSessionExpiredError(msg)) {
+            showToast('Your admin session has expired. Please log in again.', 'error');
+            promptAdminReLogin();
+          } else {
+            showToast(msg, 'error');
+          }
           return reject(msg);
         }
         if (data.success && data.url) {
@@ -15525,12 +15538,16 @@ async function uploadMultipleImagesToCloudinary(fileInput) {
         headers: auth.headers,
         body: JSON.stringify({ file: base64Data })
       });
-      const data = await res.json();
-
-      if (res.status === 401) {
-        showApToast(data.error || 'Admin session expired. Please log in again.', 'error');
-        promptAdminReLogin();
-        break;
+      if (!res.ok) {
+        const errMsg = data.error || `Upload failed for photo ${i + 1} (Status ${res.status})`;
+        if (res.status === 401 && isSessionExpiredError(errMsg)) {
+          showApToast('Your admin session has expired. Please log in again.', 'error');
+          promptAdminReLogin();
+          break;
+        } else {
+          showApToast(errMsg, 'error');
+          continue;
+        }
       }
 
       if (data.success && data.url) {
@@ -15733,9 +15750,15 @@ async function uploadImageToCloudinary(fileInput, targetInputId, targetPrevId) {
     });
     const data = await res.json();
 
-    if (res.status === 401) {
-      showApToast(data.error || 'Admin session expired. Please log in again to upload images.', 'error');
-      promptAdminReLogin();
+    if (!res.ok) {
+      const errMsg = data.error || `Upload failed with status ${res.status}`;
+      if (res.status === 401 && isSessionExpiredError(errMsg)) {
+        showApToast('Your admin session has expired. Please log in again to upload images.', 'error');
+        promptAdminReLogin();
+      } else {
+        // Any other error (500, 502, 403, Cloudinary error, network, etc.): keep admin logged in!
+        showApToast(errMsg, 'error');
+      }
       return;
     }
 

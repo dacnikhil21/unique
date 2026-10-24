@@ -124,7 +124,8 @@ module.exports = async (req, res) => {
     const { verifyAdminRequest } = require('./auth-helper.js');
     const authCheck = await verifyAdminRequest(req, payload);
     if (!authCheck.authorized) {
-      return sendResponse(res, 401, { error: authCheck.error || 'Unauthorized admin access: login required to upload media.' });
+      const statusCode = authCheck.statusCode || 401;
+      return sendResponse(res, statusCode, { error: authCheck.error || 'Unauthorized admin access: login required to upload media.' });
     }
 
     const file = payload?.file;
