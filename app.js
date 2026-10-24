@@ -9,7 +9,7 @@ window.addEventListener('unhandledrejection', (event) => {
 
 let STORE_SETTINGS = (() => {
   try {
-    const raw = localStorage.getItem('ue_store_settings_v5');
+    const raw = localStorage.getItem('ue_store_settings_v6');
     if (raw) return JSON.parse(raw);
   } catch (e) {}
   return {
@@ -19,10 +19,12 @@ let STORE_SETTINGS = (() => {
     whatsapp: "7799747575",
     gstin: "37BVTPG7761F1Z1",
     email: "uniqueexpressions.in@gmail.com",
-    address: " - 560001",
+    address: "Boutique Store & Design Studio, India",
     freeShippingMin: 499,
     shippingFee: 50,
     giftWrapFee: 30,
+    announcementBar: "⚡ Express Shipping Across India | International & Domestic Delivery Available",
+    footerText: "UNIQUE EXPRESSIONS is a luxury e-commerce boutique for kids toys, educational games, smart gadgets, handicrafts, and return gift hampers.",
     instagram: "uniqueexpressions.in",
     youtube: "@UNIQUEEXPRESSIONS-25"
   };
@@ -54,7 +56,7 @@ let STORE_REVIEWS = (() => {
 
 // ── Ensure LocalStorage Sync is Always Up to Date & Purge Corrupt Duplicates ──
 try {
-  ['ue_coupons_v5', 'ue_coupons_v4', 'ue_products_v12', 'ue_products_v10', 'ue_products_v9', 'ue_products_v8'].forEach(k => {
+  ['ue_store_settings_v5', 'ue_store_settings_v4', 'ue_coupons_v5', 'ue_coupons_v4', 'ue_products_v12', 'ue_products_v10', 'ue_products_v9', 'ue_products_v8'].forEach(k => {
     try { localStorage.removeItem(k); } catch (_) {}
   });
 } catch(e) {}
@@ -6146,37 +6148,85 @@ function applyStoreSettingsDOM() {
   const phone = s.phone || '7799747575';
   const storeName = s.storeName || 'UNIQUE EXPRESSIONS';
   const gstin = s.gstin || '37BVTPG7761F1Z1';
+  const email = s.email || 'uniqueexpressions.in@gmail.com';
+  const address = s.address || 'Boutique Store & Design Studio, India';
+  const announcement = s.announcementBar || '⚡ <strong>Express Shipping Across the World</strong> | International & Domestic Delivery Available';
+  const footerText = s.footerText || `${storeName} is a luxury e-commerce boutique for kids toys, educational games, smart gadgets, handicrafts, and return gift hampers.`;
 
   // 1. Floating WhatsApp Button
-  const waFloat = document.getElementById('floatingWhatsappBtn') || document.querySelector('a[href*="wa.me"]');
+  const waFloat = document.getElementById('floatingWhatsAppBtn') || document.getElementById('floatingWhatsappBtn') || document.querySelector('a.floating-whatsapp-btn');
   if (waFloat) {
     waFloat.href = `https://wa.me/91${wa10}?text=${encodeURIComponent(`Hi ${storeName}, I need help with my order!`)}`;
   }
 
-  // 2. All phone links and texts
+  // 2. Announcement bar in header
+  document.querySelectorAll('.dt-top-announce-left span:first-child, #topAnnouncementText').forEach(el => {
+    el.innerHTML = announcement;
+  });
+
+  // 3. GSTIN elements across header, footer & wholesale cards
+  document.querySelectorAll('.dt-top-announce-left code, #topGstinCode, .m-footer-gst-badge, .dt-footer-badge, code.store-gstin').forEach(el => {
+    if (el.classList.contains('m-footer-gst-badge')) {
+      el.textContent = `GSTIN: ${gstin}`;
+    } else if (el.classList.contains('dt-footer-badge')) {
+      el.textContent = `Direct Wholesale GSTIN: ${gstin}`;
+    } else {
+      el.textContent = gstin;
+    }
+  });
+
+  // 4. Wholesale descriptions with GSTIN
+  document.querySelectorAll('.m-wholesale-desc').forEach(el => {
+    el.innerHTML = `Official GST Billing (GSTIN: <strong>${gstin}</strong>). Low minimum order thresholds for schools, store owners & event planners.`;
+  });
+
+  // 5. Phone links and text
   document.querySelectorAll('a[href^="tel:"]').forEach(el => {
     el.href = `tel:+91${phone}`;
-    if (el.textContent.includes('+91') || el.textContent.includes('7799')) {
+    if (el.innerHTML.includes('ri-phone-line') || el.textContent.includes('+91') || el.textContent.includes('7799')) {
       el.innerHTML = `<i class="ri-phone-line"></i> +91 ${phone}`;
     }
   });
 
-  // 3. Footer and header WhatsApp links
+  // 6. WhatsApp links and text
   document.querySelectorAll('a[href*="wa.me"]').forEach(el => {
     if (el !== waFloat) {
       el.href = `https://wa.me/91${wa10}`;
-      if (el.textContent.toLowerCase().includes('whatsapp')) {
-        el.textContent = `WhatsApp: +91 ${wa10}`;
+      if (el.innerHTML.includes('ri-whatsapp-line') || el.textContent.toLowerCase().includes('whatsapp')) {
+        el.innerHTML = `<i class="ri-whatsapp-line" style="color:#25d366;"></i> WhatsApp: +91 ${wa10}`;
       }
     }
   });
 
-  // 4. Official GSTIN elements
-  document.querySelectorAll('.dt-top-announce-left span, .dt-footer-col, div').forEach(el => {
-    const code = el.querySelector('code');
-    if (code && el.textContent.includes('GSTIN')) {
-      code.textContent = gstin;
+  // 7. Email and contact items in footer
+  document.querySelectorAll('.dt-footer-contact-item').forEach(el => {
+    if (el.querySelector('.ri-mail-line') || el.textContent.includes('@')) {
+      el.innerHTML = `<i class="ri-mail-line"></i> <a href="mailto:${email}" style="color:inherit; text-decoration:none;">${email}</a>`;
     }
+    if (el.querySelector('.ri-map-pin-line')) {
+      el.innerHTML = `<i class="ri-map-pin-line"></i> ${address}`;
+    }
+  });
+
+  // 8. Mobile footer address & description
+  document.querySelectorAll('.m-footer-text-p').forEach(el => {
+    if (el.innerHTML.includes('Owner:')) {
+      el.innerHTML = `
+        <strong>Owner:</strong> ${s.ownerName || 'G MOUNIKA DURGA'}<br>
+        ${address}<br>
+        📞 +91 ${phone}
+      `;
+    } else if (el.textContent.includes('luxury e-commerce boutique')) {
+      el.textContent = footerText;
+    }
+  });
+
+  // 9. Desktop footer description and copyright
+  document.querySelectorAll('.dt-footer-desc').forEach(el => {
+    el.textContent = footerText;
+  });
+  document.querySelectorAll('.dt-footer-bottom span:first-child').forEach(el => {
+    el.textContent = `© ${new Date().getFullYear()} ${storeName}. All rights reserved.`;
   });
 }
 
@@ -6188,9 +6238,9 @@ function syncStorefrontState() {
   localStorage.setItem('ue_hero_slides_v7', JSON.stringify(HERO_SLIDES));
   localStorage.setItem('ue_hero_slides_v6', JSON.stringify(HERO_SLIDES));
   localStorage.setItem('ue_featured_collections_v1', JSON.stringify(FEATURED_COLLECTIONS));
-  localStorage.setItem('ue_store_settings_v5', JSON.stringify(STORE_SETTINGS));
+  localStorage.setItem('ue_store_settings_v6', JSON.stringify(STORE_SETTINGS));
   localStorage.setItem('ue_customers_v5', JSON.stringify(STORE_CUSTOMERS));
-  localStorage.setItem('ue_coupons_v5', JSON.stringify(STORE_COUPONS));
+  localStorage.setItem('ue_coupons_v6', JSON.stringify(STORE_COUPONS));
   localStorage.setItem('ue_reviews_v5', JSON.stringify(STORE_REVIEWS));
   localStorage.setItem('ue_orders_v5', JSON.stringify(userOrders));
 
@@ -6538,7 +6588,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const sbSettings = await sbGetStoreSettings();
       if (sbSettings && typeof sbSettings === 'object' && Object.keys(sbSettings).length > 0) {
         STORE_SETTINGS = { ...STORE_SETTINGS, ...sbSettings };
-        localStorage.setItem('ue_store_settings_v5', JSON.stringify(STORE_SETTINGS));
+        localStorage.setItem('ue_store_settings_v6', JSON.stringify(STORE_SETTINGS));
+        if (typeof applyStoreSettingsDOM === 'function') applyStoreSettingsDOM();
       }
     } catch (setErr) {
       console.warn('[UE] Cloud Store Settings bootstrap note:', setErr);
@@ -13258,33 +13309,43 @@ function renderApSettings() {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
         <div>
           <label style="font-size:11px; font-weight:700; color:#475569;">Business Name</label>
-          <input type="text" id="apStName" class="ap-search-input" value="${STORE_SETTINGS.storeName}">
+          <input type="text" id="apStName" class="ap-search-input" value="${apEscHtml(STORE_SETTINGS.storeName || '')}">
         </div>
         <div>
           <label style="font-size:11px; font-weight:700; color:#475569;">Owner Name</label>
-          <input type="text" id="apStOwner" class="ap-search-input" value="${STORE_SETTINGS.ownerName}">
+          <input type="text" id="apStOwner" class="ap-search-input" value="${apEscHtml(STORE_SETTINGS.ownerName || '')}">
         </div>
         <div>
           <label style="font-size:11px; font-weight:700; color:#475569;">Contact Phone</label>
-          <input type="text" id="apStPhone" class="ap-search-input" value="${STORE_SETTINGS.phone}">
+          <input type="text" id="apStPhone" class="ap-search-input" value="${apEscHtml(STORE_SETTINGS.phone || '')}">
         </div>
         <div>
           <label style="font-size:11px; font-weight:700; color:#475569;">WhatsApp Support Number</label>
-          <input type="text" id="apStWa" class="ap-search-input" value="${STORE_SETTINGS.whatsapp}">
+          <input type="text" id="apStWa" class="ap-search-input" value="${apEscHtml(STORE_SETTINGS.whatsapp || '')}">
         </div>
         <div>
           <label style="font-size:11px; font-weight:700; color:#475569;">GSTIN Tax Number</label>
-          <input type="text" id="apStGstin" class="ap-search-input" value="${STORE_SETTINGS.gstin}">
+          <input type="text" id="apStGstin" class="ap-search-input" value="${apEscHtml(STORE_SETTINGS.gstin || '')}">
         </div>
         <div>
           <label style="font-size:11px; font-weight:700; color:#475569;">Store Email</label>
-          <input type="email" id="apStEmail" class="ap-search-input" value="${STORE_SETTINGS.email}">
+          <input type="email" id="apStEmail" class="ap-search-input" value="${apEscHtml(STORE_SETTINGS.email || '')}">
         </div>
       </div>
 
       <div style="margin-bottom:16px;">
         <label style="font-size:11px; font-weight:700; color:#475569;">Physical Store Address</label>
-        <input type="text" id="apStAddress" class="ap-search-input" value="${STORE_SETTINGS.address}">
+        <input type="text" id="apStAddress" class="ap-search-input" value="${apEscHtml(STORE_SETTINGS.address || '')}">
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="font-size:11px; font-weight:700; color:#475569;">Header Announcement Bar Text</label>
+        <input type="text" id="apStAnnouncement" class="ap-search-input" value="${apEscHtml(STORE_SETTINGS.announcementBar || '⚡ Express Shipping Across the World | International & Domestic Delivery Available')}">
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="font-size:11px; font-weight:700; color:#475569;">Footer Brand Description</label>
+        <textarea id="apStFooter" class="ap-search-input" style="height:70px; resize:vertical; padding:8px;">${apEscHtml(STORE_SETTINGS.footerText || '')}</textarea>
       </div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:20px;">
@@ -13319,6 +13380,8 @@ async function saveApStoreSettings() {
   STORE_SETTINGS.gstin = document.getElementById('apStGstin').value.trim();
   STORE_SETTINGS.email = document.getElementById('apStEmail').value.trim();
   STORE_SETTINGS.address = document.getElementById('apStAddress').value.trim();
+  STORE_SETTINGS.announcementBar = document.getElementById('apStAnnouncement') ? document.getElementById('apStAnnouncement').value.trim() : (STORE_SETTINGS.announcementBar || '');
+  STORE_SETTINGS.footerText = document.getElementById('apStFooter') ? document.getElementById('apStFooter').value.trim() : (STORE_SETTINGS.footerText || '');
   const minFreeVal = document.getElementById('apStMinFree')?.value;
   const shipFeeVal = document.getElementById('apStShipFee')?.value;
   const wrapFeeVal = document.getElementById('apStWrapFee')?.value;
@@ -13335,7 +13398,8 @@ async function saveApStoreSettings() {
     return;
   }
 
-  localStorage.setItem('ue_store_settings_v5', JSON.stringify(STORE_SETTINGS));
+  localStorage.setItem('ue_store_settings_v6', JSON.stringify(STORE_SETTINGS));
+  if (typeof applyStoreSettingsDOM === 'function') applyStoreSettingsDOM();
   syncStorefrontState();
   switchApTab('settings');
   showApToast(`Store Settings saved & synced to all devices! Delivery Fee: ₹${STORE_SETTINGS.shippingFee} (Free above ₹${STORE_SETTINGS.freeShippingMin})`, 'success');
@@ -14417,14 +14481,18 @@ function renderAboutView() {
 /* 2. FREQUENTLY ASKED QUESTIONS (FAQ) PAGE */
 function renderFAQView() {
   const container = document.getElementById('viewFAQ');
+  const freeMin = (STORE_SETTINGS && STORE_SETTINGS.freeShippingMin != null) ? STORE_SETTINGS.freeShippingMin : 499;
+  const gstin = (STORE_SETTINGS && STORE_SETTINGS.gstin) ? STORE_SETTINGS.gstin : '37BVTPG7761F1Z1';
+  const wa = (STORE_SETTINGS && (STORE_SETTINGS.whatsapp || STORE_SETTINGS.phone)) ? (STORE_SETTINGS.whatsapp || STORE_SETTINGS.phone) : '7799747575';
+  const storeName = (STORE_SETTINGS && STORE_SETTINGS.storeName) ? STORE_SETTINGS.storeName : 'UNIQUE EXPRESSIONS';
   const faqs = [
     {
       q: "How fast is delivery?",
-      a: "We provide express delivery across eligible service areas, MVP Colony, and surrounding delivery zones! All orders above ₹499 unlock FREE delivery."
+      a: `We provide express delivery across eligible service areas, MVP Colony, and surrounding delivery zones! All orders above ₹${freeMin} unlock FREE delivery.`
     },
     {
       q: "Do you provide official GST Tax Invoices for business credit?",
-      a: "Yes! UNIQUE EXPRESSIONS is a registered GST entity (GSTIN: 37BVTPG7761F1Z1). Every retail and wholesale order includes an official GST Tax Invoice for claiming Input Tax Credit."
+      a: `Yes! ${storeName} is a registered GST entity (GSTIN: ${gstin}). Every retail and wholesale order includes an official GST Tax Invoice for claiming Input Tax Credit.`
     },
     {
       q: "Can I place bulk return gift orders for birthday parties?",
@@ -14436,7 +14504,7 @@ function renderFAQView() {
     },
     {
       q: "What is your replacement policy if an item arrives damaged?",
-      a: "We offer a 7-day hassle-free replacement guarantee. Simply share a photo or video on WhatsApp (+91 7799747575) for an immediate replacement."
+      a: `We offer a 7-day hassle-free replacement guarantee. Simply share a photo or video on WhatsApp (+91 ${wa}) for an immediate replacement.`
     }
   ];
 
@@ -14580,12 +14648,12 @@ function renderShippingView() {
         <p class="info-text-p">
           
           • <strong>Rest of India Shipping:</strong> Dispatched via reliable courier partners within 2-4 business days.<br>
-          • <strong>Free Delivery Threshold:</strong> Orders above ₹499 qualify for FREE shipping.
+          • <strong>Free Delivery Threshold:</strong> Orders above ₹${(STORE_SETTINGS && STORE_SETTINGS.freeShippingMin != null) ? STORE_SETTINGS.freeShippingMin : 499} qualify for FREE shipping.
         </p>
 
         <h3 class="info-section-heading">🔄 7-Day Replacement Guarantee</h3>
         <p class="info-text-p">
-          If any item arrives damaged or incomplete, contact our store customer service within 7 days of delivery. Send an unboxing photo/video to <strong>+91 7799747575</strong> for an immediate replacement.
+          If any item arrives damaged or incomplete, contact our store customer service within 7 days of delivery. Send an unboxing photo/video to <strong>+91 ${(STORE_SETTINGS && (STORE_SETTINGS.whatsapp || STORE_SETTINGS.phone)) ? (STORE_SETTINGS.whatsapp || STORE_SETTINGS.phone) : '7799747575'}</strong> for an immediate replacement.
         </p>
 
         <h3 class="info-section-heading">💳 Refund Processing</h3>
@@ -14934,11 +15002,18 @@ function renderHelpCenterView() {
   const container = document.getElementById('viewHelpCenter');
   if (!container) return;
 
+  const store = STORE_SETTINGS || {};
+  const sName = store.storeName || 'UNIQUE EXPRESSIONS';
+  const sAddress = store.address || 'Boutique Store & Design Studio, India';
+  const sGstin = store.gstin || '37BVTPG7761F1Z1';
+  const sPhone = store.phone || '7799747575';
+  const sWa = store.whatsapp || sPhone;
+
   const faqs = [
-    { q: "What are the store hours for UNIQUE EXPRESSIONS?", a: "Our store is open 7 days a week from 9:30 AM to 9:30 PM. Visit us at 2nd floor LIG 347, 2-115/9/1, near Shivalayam, Central VUDA Colony, Madhurwada, India." },
-    { q: "How fast is delivery?", a: "We offer express same-day delivery across prime delivery hubs and surrounding gajuwaka, and all Express areas for orders placed before 3:00 PM." },
-    { q: "Do you offer GST Invoicing for Wholesale & Corporate buyers?", a: "Yes! We issue official B2B GST Invoices with our GSTIN 37BVTPG7761F1Z1 for input tax credit. Enter your GST number during checkout or in our Wholesale B2B portal." },
-    { q: "Can I customize return gift hampers for birthday parties?", a: "Absolutely! We specialize in custom return gift boxes for kids birthdays, weddings, baby showers, and school events. Contact us at +91 7799747575 for personalized hampers." },
+    { q: `What are the store hours for ${sName}?`, a: `Our store is open 7 days a week from 9:30 AM to 9:30 PM. Visit us at ${sAddress}.` },
+    { q: "How fast is delivery?", a: "We offer express same-day delivery across prime delivery hubs and all Express areas for orders placed before 3:00 PM." },
+    { q: "Do you offer GST Invoicing for Wholesale & Corporate buyers?", a: `Yes! We issue official B2B GST Invoices with our GSTIN ${sGstin} for input tax credit. Enter your GST number during checkout or in our Wholesale B2B portal.` },
+    { q: "Can I customize return gift hampers for birthday parties?", a: `Absolutely! We specialize in custom return gift boxes for kids birthdays, weddings, baby showers, and school events. Contact us at +91 ${sWa} for personalized hampers.` },
     { q: "What is the return and replacement policy?", a: "We offer a 7-day hassle-free replacement guarantee. If any product is damaged or defective, we provide doorstep pickup or instant exchange at our Boutique store." }
   ];
 
@@ -14975,7 +15050,7 @@ function renderHelpCenterView() {
     <div class="checkout-container">
       <div class="info-hero-card">
         <h1 class="info-hero-title">How can we help you today?</h1>
-        <p class="info-hero-sub">Direct support from UNIQUE EXPRESSIONS boutique store.</p>
+        <p class="info-hero-sub">Direct support from ${sName} boutique store.</p>
         <div style="margin-top:12px; position:relative;">
           <input type="text" placeholder="Search FAQs, shipping, GST billing..." class="form-input" style="border-radius:99px; padding-left:36px; background:#fff; color:#0f172a;" oninput="filterFaqSearch(this.value)">
           <i class="ri-search-line" style="position:absolute; left:12px; top:10px; color:#64748b;"></i>
@@ -14987,12 +15062,12 @@ function renderHelpCenterView() {
         <div class="info-content-card" style="margin:0; text-align:center; cursor:pointer;" onclick="openWhatsAppChat()">
           <i class="ri-whatsapp-line" style="font-size:24px; color:#25D366;"></i>
           <h4 style="font-size:12px; font-weight:800; margin:4px 0 2px 0;">WhatsApp Us</h4>
-          <span style="font-size:10px; color:#64748b;">+91 7799747575</span>
+          <span style="font-size:10px; color:#64748b;">+91 ${sWa}</span>
         </div>
-        <div class="info-content-card" style="margin:0; text-align:center; cursor:pointer;" onclick="window.location.href='tel:+917799747575'">
+        <div class="info-content-card" style="margin:0; text-align:center; cursor:pointer;" onclick="window.location.href='tel:+91${sPhone}'">
           <i class="ri-phone-line" style="font-size:24px; color:var(--brand-magenta);"></i>
           <h4 style="font-size:12px; font-weight:800; margin:4px 0 2px 0;">Call Store Direct</h4>
-          <span style="font-size:10px; color:#64748b;">+91 7799747575</span>
+          <span style="font-size:10px; color:#64748b;">+91 ${sPhone}</span>
         </div>
       </div>
 
@@ -15078,7 +15153,7 @@ function renderStoreLocatorView() {
   const isDesktop = window.innerWidth >= 1024;
   const storeName = store.storeName || 'UNIQUE EXPRESSIONS';
   const ownerName = store.ownerName || 'G MOUNIKA DURGA';
-  const address = store.address || ' - 560001';
+  const address = store.address || 'Boutique Store & Design Studio, India';
   const phone = store.phone || '7799747575';
   const whatsapp = store.whatsapp || '7799747575';
   const email = store.email || 'uniqueexpressions.in@gmail.com';

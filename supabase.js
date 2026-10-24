@@ -956,63 +956,68 @@ async function sbSaveHeroSlides(slides) {
 
 async function sbGetStoreSettings() {
   try {
-    // 1. Primary: dedicated store_settings table
     const { data, error } = await _supabase
       .from('store_settings')
       .select('key, value');
 
-    if (!error && Array.isArray(data) && data.length > 0) {
+    if (error) {
+      console.error('[Supabase] sbGetStoreSettings error:', error.message);
+      throw error;
+    }
+
+    if (Array.isArray(data) && data.length > 0) {
       const settingsObj = {};
       data.forEach(row => {
         settingsObj[row.key] = row.value;
       });
       return settingsObj;
     }
-  } catch (_) {}
-
-  // 2. Fallback to categories __cms_store_settings__
-  try {
-    const { data, error } = await _supabase
-      .from('categories')
-      .select('subcategories')
-      .eq('id', '__cms_store_settings__')
-      .single();
-    if (!error && data && data.subcategories && typeof data.subcategories === 'object') {
-      return data.subcategories;
-    }
   } catch (err) {
-    console.warn('[Supabase] getStoreSettings failed:', err.message);
+    console.error('[Supabase] sbGetStoreSettings failed:', err.message);
+    throw err;
   }
   return null;
 }
 
 async function sbSaveStoreSettings(settings) {
   try {
-    if (!settings || typeof settings !== 'object') return { success: false, error: 'Invalid settings object' };
+    if (!settings || typeof settings !== 'object') {
+      return { success: false, error: 'Invalid settings object' };
+    }
 
-    // 1. Dedicated store_settings table
-    try {
-      const rows = Object.entries(settings).map(([key, value]) => ({
-        key,
-        value,
-        updated_at: new Date().toISOString()
-      }));
-      await _supabase.from('store_settings').upsert(rows, { onConflict: 'key' });
-    } catch (_) {}
+    // 1. Dedicated store_settings table (Single source of truth)
+    const rows = Object.entries(settings).map(([key, value]) => ({
+      key,
+      value,
+      updated_at: new Date().toISOString()
+    }));
+
+    const { error: ssError } = await _supabase
+      .from('store_settings')
+      .upsert(rows, { onConflict: 'key' });
+
+    if (ssError) {
+      console.error('[Supabase] store_settings upsert error:', ssError.message);
+      return { success: false, error: ssError.message || 'Database rejected store_settings update' };
+    }
 
     // 2. Also keep legacy categories row synced for backwards compatibility
-    const row = {
-      id: '__cms_store_settings__',
-      name: 'Store Settings Config',
-      description: 'Global cross-device store details and business settings',
-      subcategories: settings,
-      is_featured: false,
-      is_visible: false,
-      sort_order: 997,
-      updated_at: new Date().toISOString()
-    };
-    const { error } = await _supabase.from('categories').upsert(row, { onConflict: 'id' });
-    if (error) throw error;
+    try {
+      const row = {
+        id: '__cms_store_settings__',
+        name: 'Store Settings Config',
+        description: 'Global cross-device store details and business settings',
+        subcategories: settings,
+        is_featured: false,
+        is_visible: false,
+        sort_order: 997,
+        updated_at: new Date().toISOString()
+      };
+      await _supabase.from('categories').upsert(row, { onConflict: 'id' });
+    } catch (legErr) {
+      console.warn('[Supabase] Legacy category backup warning:', legErr.message);
+    }
+
     console.log('[Supabase] Store Settings synced to cloud across all devices');
     return { success: true };
   } catch (err) {

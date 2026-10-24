@@ -13,6 +13,7 @@ const ALLOWED_ORIGINS = [
 const {
   getLiveServerProducts,
   getLiveServerCoupons,
+  getLiveStoreSettings,
   calculateServerOrderTotal,
   atomicDecrementStock,
   atomicRestoreStock,
@@ -129,7 +130,8 @@ module.exports = async (req, res) => {
     try {
       const liveProducts = await getLiveServerProducts();
       const liveCoupons = await getLiveServerCoupons();
-      const breakdown = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, liveCoupons, liveProducts);
+      const liveSettings = await getLiveStoreSettings();
+      const breakdown = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, liveCoupons, liveProducts, liveSettings);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ success: true, breakdown }));
     } catch (err) {
@@ -165,8 +167,9 @@ module.exports = async (req, res) => {
 
       const liveProducts = await getLiveServerProducts();
       const liveCoupons = await getLiveServerCoupons();
-      // 🔒 Server-Side Price & Calculation Verification using live Supabase products
-      const calcResult = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, liveCoupons, liveProducts);
+      const liveSettings = await getLiveStoreSettings();
+      // 🔒 Server-Side Price & Calculation Verification using live Supabase products & store settings
+      const calcResult = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, liveCoupons, liveProducts, liveSettings);
 
       const orderRecord = {
         orderId: 'UE-' + Math.floor(100000 + Math.random() * 900000),

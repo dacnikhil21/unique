@@ -18,6 +18,9 @@ let lastProductsFetch = 0;
 let liveCouponsCache = null;
 let lastCouponsFetch = 0;
 
+let liveSettingsCache = null;
+let lastSettingsFetch = 0;
+
 const CACHE_TTL_MS = 60 * 1000; // 60 seconds
 
 function getSupabaseConfig() {
@@ -178,6 +181,68 @@ function findLiveProduct(id, productsList = null) {
 }
 
 /**
+ * 🔒 Fetch Live Store Settings from Supabase
+ * Single source of truth for shipping fee, free shipping min, gift wrap fee, etc.
+ */
+async function getLiveStoreSettings(forceRefresh = false) {
+  const now = Date.now();
+  if (!forceRefresh && liveSettingsCache && (now - lastSettingsFetch < CACHE_TTL_MS)) {
+    return liveSettingsCache;
+  }
+
+  const { sbUrl, sbKey } = getSupabaseConfig();
+  if (!sbUrl || !sbKey || sbUrl.includes('your-supabase-project')) {
+    return { freeShippingMin: 499, shippingFee: 50, giftWrapFee: 30 };
+  }
+
+  try {
+    const urlObj = new URL(`${sbUrl}/rest/v1/store_settings?select=key,value`);
+    const options = {
+      hostname: urlObj.hostname,
+      path: urlObj.pathname + urlObj.search,
+      method: 'GET',
+      headers: {
+        'apikey': sbKey,
+        'Authorization': `Bearer ${sbKey}`
+      }
+    };
+
+    const data = await new Promise((resolve) => {
+      const req = https.request(options, (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            try { resolve(JSON.parse(body)); } catch (_) { resolve(null); }
+          } else {
+            resolve(null);
+          }
+        });
+      });
+      req.on('error', () => resolve(null));
+      req.end();
+    });
+
+    if (Array.isArray(data) && data.length > 0) {
+      const settingsObj = {};
+      data.forEach(r => { settingsObj[r.key] = r.value; });
+      liveSettingsCache = {
+        freeShippingMin: settingsObj.freeShippingMin != null ? parseFloat(settingsObj.freeShippingMin) : 499,
+        shippingFee: settingsObj.shippingFee != null ? parseFloat(settingsObj.shippingFee) : 50,
+        giftWrapFee: settingsObj.giftWrapFee != null ? parseFloat(settingsObj.giftWrapFee) : 30,
+        ...settingsObj
+      };
+      lastSettingsFetch = now;
+      return liveSettingsCache;
+    }
+  } catch (err) {
+    console.warn('[Store Settings Fetch Warning]', err.message);
+  }
+
+  return liveSettingsCache || { freeShippingMin: 499, shippingFee: 50, giftWrapFee: 30 };
+}
+
+/**
  * Invalidate in-memory catalog cache on mutations
  */
 function invalidateCatalogCache() {
@@ -185,18 +250,21 @@ function invalidateCatalogCache() {
   lastProductsFetch = 0;
   liveCouponsCache = null;
   lastCouponsFetch = 0;
+  liveSettingsCache = null;
+  lastSettingsFetch = 0;
 }
 
 /**
  * 🔒 SEC-04 & DATA-02: Authoritative Server-Side Calculation
- * Evaluates live Supabase prices, live inventory availability, and active coupons.
+ * Evaluates live Supabase prices, live inventory availability, active coupons, and store settings.
  */
-function calculateServerOrderTotal(items, couponCode = null, giftWrap = false, activeCoupons = null, liveProducts = null) {
+function calculateServerOrderTotal(items, couponCode = null, giftWrap = false, activeCoupons = null, liveProducts = null, liveSettings = null) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error('Order items cannot be empty.');
   }
 
   const catalog = liveProducts || liveProductsCache || FALLBACK_CATALOG;
+  const settings = liveSettings || liveSettingsCache || { freeShippingMin: 499, shippingFee: 50, giftWrapFee: 30 };
   let subtotal = 0;
   const verifiedItems = [];
 
@@ -231,11 +299,14 @@ function calculateServerOrderTotal(items, couponCode = null, giftWrap = false, a
     });
   }
 
-  const wrapFee = giftWrap ? 30 * verifiedItems.length : 0;
+  const wrapUnitFee = parseFloat(settings.giftWrapFee) >= 0 ? parseFloat(settings.giftWrapFee) : 30;
+  const wrapFee = giftWrap ? wrapUnitFee * verifiedItems.length : 0;
   const itemsTotal = subtotal + wrapFee;
 
   let discount = 0;
-  let shipping = itemsTotal >= 499 ? 0 : 50;
+  const freeMin = parseFloat(settings.freeShippingMin) >= 0 ? parseFloat(settings.freeShippingMin) : 499;
+  const standardShipping = parseFloat(settings.shippingFee) >= 0 ? parseFloat(settings.shippingFee) : 50;
+  let shipping = itemsTotal >= freeMin ? 0 : standardShipping;
   let appliedCoupon = null;
 
   if (couponCode) {
@@ -578,6 +649,7 @@ async function atomicRestoreCouponUsage(couponCode) {
 module.exports = {
   getLiveServerProducts,
   getLiveServerCoupons,
+  getLiveStoreSettings,
   findLiveProduct,
   calculateServerOrderTotal,
   invalidateCatalogCache,

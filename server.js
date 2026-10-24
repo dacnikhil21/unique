@@ -66,6 +66,7 @@ const ALLOWED_ORIGINS = [
 const {
   getLiveServerProducts,
   getLiveServerCoupons,
+  getLiveStoreSettings,
   calculateServerOrderTotal,
   invalidateCatalogCache,
   atomicDecrementStock,
@@ -302,8 +303,9 @@ const server = http.createServer((req, res) => {
         try {
           const liveProducts = await getLiveServerProducts();
           const liveCoupons = await getLiveServerCoupons();
+          const liveSettings = await getLiveStoreSettings();
           if (Array.isArray(payload.items) && payload.items.length > 0) {
-            calcResult = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, liveCoupons, liveProducts);
+            calcResult = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, liveCoupons, liveProducts, liveSettings);
           } else {
             throw new Error('Missing cart items for checkout');
           }

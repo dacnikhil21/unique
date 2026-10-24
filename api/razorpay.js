@@ -19,6 +19,7 @@ const ALLOWED_ORIGINS = [
 const {
   getLiveServerProducts,
   getLiveServerCoupons,
+  getLiveStoreSettings,
   calculateServerOrderTotal,
   atomicDecrementStock,
   atomicIncrementCouponUsage
@@ -254,8 +255,9 @@ module.exports = async (req, res) => {
       try {
         const liveProducts = await getLiveServerProducts();
         const liveCoupons = await getLiveServerCoupons();
+        const liveSettings = await getLiveStoreSettings();
         if (Array.isArray(payload.items) && payload.items.length > 0) {
-          calcResult = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, liveCoupons, liveProducts);
+          calcResult = calculateServerOrderTotal(payload.items, payload.couponCode, payload.giftWrap, liveCoupons, liveProducts, liveSettings);
         } else {
           return res.status(400).json({ error: 'Cart items are required for checkout.' });
         }
