@@ -253,7 +253,7 @@ module.exports = async (req, res) => {
     if (action === 'create-order' || payload.action === 'create-order') {
       let calcResult;
       try {
-        const liveProducts = await getLiveServerProducts();
+        const liveProducts = await getLiveServerProducts(true);
         const liveCoupons = await getLiveServerCoupons();
         const liveSettings = await getLiveStoreSettings();
         if (Array.isArray(payload.items) && payload.items.length > 0) {

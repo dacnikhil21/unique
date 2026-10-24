@@ -6740,6 +6740,17 @@ function switchView(viewName, params = {}, skipHistory = false) {
   } else if (viewName === 'pdp') {
     if (params.productId) renderPDPView(params.productId);
   } else if (viewName === 'checkout') {
+    if (!cart || cart.length === 0) {
+      showToast('Your cart is empty! Please add items before checking out.', 'info');
+      switchView('home');
+      return;
+    }
+    const stockCheck = validateCartStockBeforeCheckout();
+    if (!stockCheck.ok) {
+      showToast(stockCheck.msg, 'info');
+      if (typeof openCartDrawer === 'function') openCartDrawer();
+      return;
+    }
     if (!authUserId && !userProfile) {
       showToast('🔒 Please Login or Register to Proceed to Checkout', 'info');
       openUserAuthModal('login');
@@ -8044,8 +8055,22 @@ function selectPdpVariant(el, variantName) {
 }
 
 function updatePdpQty(change) {
-  pdpSelectedQty += change;
-  if (pdpSelectedQty < 1) pdpSelectedQty = 1;
+  if (!currentPdpProduct) return;
+  const available = getAvailableStock(currentPdpProduct);
+  if (currentPdpProduct.inStock === false || available <= 0) {
+    showToast(`"${currentPdpProduct.title}" is currently out of stock.`, 'info');
+    pdpSelectedQty = 1;
+    const numEl = document.getElementById('pdpQtyDisplay');
+    if (numEl) numEl.innerText = pdpSelectedQty;
+    return;
+  }
+  const nextQty = pdpSelectedQty + change;
+  if (nextQty < 1) return;
+  if (change > 0 && nextQty > available) {
+    showToast(`Only ${available} units available in stock for "${currentPdpProduct.title}".`, 'info');
+    return;
+  }
+  pdpSelectedQty = nextQty;
   const numEl = document.getElementById('pdpQtyDisplay');
   if (numEl) numEl.innerText = pdpSelectedQty;
 }
@@ -13796,7 +13821,11 @@ function renderDrawerCartItems() {
     <div style="font-size:11px; font-weight:800; color:#475569; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Selected Items (${cart.length}):</div>
   `;
 
-  html += cart.map((item, idx) => `
+  html += cart.map((item, idx) => {
+    const prod = (ALL_PRODUCTS || []).find(p => String(p.id) === String(item.id));
+    const avail = getAvailableStock(prod);
+    const isAtMax = !prod || prod.inStock === false || cartItemQty(item) >= avail;
+    return `
     <div class="cart-item-tile-card" style="display:flex; align-items:center; gap:12px; padding:12px; background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; margin-bottom:10px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
       <img src="${item.image}" style="width:64px; height:64px; border-radius:12px; object-fit:cover; border:1px solid #e2e8f0; flex-shrink:0;">
       
@@ -13806,6 +13835,7 @@ function renderDrawerCartItems() {
           <span style="font-size:14px; font-weight:800; color:#0f172a;">₹${item.price}</span>
           ${item.originalPrice ? `<span style="font-size:10.5px; color:#94a3b8; text-decoration:line-through;">₹${item.originalPrice}</span>` : ''}
         </div>
+        ${avail <= 5 ? `<div style="font-size:10px; font-weight:700; color:${avail > 0 ? '#d97706' : '#ef4444'}; margin-top:2px;">${avail > 0 ? `Only ${avail} left in stock` : 'Out of stock'}</div>` : ''}
       </div>
 
       <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
@@ -13815,11 +13845,12 @@ function renderDrawerCartItems() {
         <div class="cart-qty-pill-box" style="display:flex; align-items:center; gap:6px; background:#f8fafc; padding:3px 8px; border-radius:99px; border:1px solid #cbd5e1;">
           <button onclick="updateCartQty(${idx}, -1)" style="width:20px; height:20px; border-radius:50%; border:none; background:#ffffff; font-weight:800; font-size:12px; cursor:pointer; color:#0f172a; box-shadow:0 1px 3px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; outline:none;">-</button>
           <span style="font-size:12px; font-weight:800; color:#0f172a; min-width:14px; text-align:center;">${cartItemQty(item)}</span>
-          <button onclick="updateCartQty(${idx}, 1)" style="width:20px; height:20px; border-radius:50%; border:none; background:#ffffff; font-weight:800; font-size:12px; cursor:pointer; color:#0f172a; box-shadow:0 1px 3px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; outline:none;">+</button>
+          <button onclick="updateCartQty(${idx}, 1)" style="width:20px; height:20px; border-radius:50%; border:none; background:#ffffff; font-weight:800; font-size:12px; cursor:${isAtMax ? 'not-allowed' : 'pointer'}; color:${isAtMax ? '#94a3b8' : '#0f172a'}; box-shadow:0 1px 3px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center; outline:none;" ${isAtMax ? 'title="Maximum available stock reached"' : ''}>+</button>
         </div>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   container.innerHTML = html;
 
@@ -13849,8 +13880,19 @@ function toggleGiftWrap(val) {
 function updateCartQty(idx, change) {
   const item = cart[idx];
   if (!item) return;
-  const newQty = cartItemQty(item) + change;
+  const currentQty = cartItemQty(item);
+  const newQty = currentQty + change;
   if (change > 0) {
+    const product = (ALL_PRODUCTS || []).find(p => String(p.id) === String(item.id));
+    if (!product || product.inStock === false) {
+      showToast(`"${item.title || 'Product'}" is currently out of stock.`, 'info');
+      return;
+    }
+    const maxStock = getAvailableStock(product);
+    if (newQty > maxStock) {
+      showToast(`Only ${maxStock} units available in stock for "${product.title}".`, 'info');
+      return;
+    }
     const check = validateStockForCart(item.id, change);
     if (!check.ok) { showToast(check.msg, 'info'); return; }
   }

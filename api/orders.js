@@ -165,7 +165,7 @@ module.exports = async (req, res) => {
         return res.end(JSON.stringify({ success: false, error: 'Order items are required' }));
       }
 
-      const liveProducts = await getLiveServerProducts();
+      const liveProducts = await getLiveServerProducts(true);
       const liveCoupons = await getLiveServerCoupons();
       const liveSettings = await getLiveStoreSettings();
       // 🔒 Server-Side Price & Calculation Verification using live Supabase products & store settings

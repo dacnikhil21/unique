@@ -77,7 +77,7 @@ async function getLiveServerProducts(forceRefresh = false) {
     if (Array.isArray(data) && data.length > 0) {
       // Map Supabase rows to normalized product objects
       const sbProducts = data.map(p => {
-        const qty = p.stock_qty != null ? parseInt(p.stock_qty, 10) : 10;
+        const qty = p.stock_qty != null ? parseInt(p.stock_qty, 10) : 0;
         const outOfStockFlag = p.is_out_of_stock === true || p.in_stock === false || qty <= 0;
         return {
           id: String(p.id),
@@ -279,9 +279,9 @@ function calculateServerOrderTotal(items, couponCode = null, giftWrap = false, a
     }
 
     const qty = Math.max(1, parseInt(clientItem.qty || clientItem.quantity, 10) || 1);
-    const available = product.stockQty != null ? product.stockQty : 999;
+    const available = product.stockQty != null ? product.stockQty : 0;
     if (qty > available) {
-      throw new Error(`Only ${available} units available for "${product.title}" (requested ${qty}).`);
+      throw new Error(`Only ${available} units available in stock for "${product.title}" (requested ${qty}).`);
     }
 
     const price = parseFloat(product.price) || 0;
