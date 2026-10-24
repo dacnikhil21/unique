@@ -6491,10 +6491,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href.includes('type=recovery') ||
     window.location.href.includes('recovery');
 
+  // 1. Restore auth session from Supabase BEFORE deciding routes or showing admin login
+  try {
+    await bootstrapCustomerAuth();
+  } catch (authErr) {
+    console.warn('[UE] Auth bootstrap note:', authErr);
+  }
+
+  // 2. Resolve initial route
   const restoredNav = parseNavHash();
   if (restoredNav) {
-    history.replaceState({ view: 'home', params: {} }, '', '#view=home');
-    switchView(restoredNav.view, restoredNav.params || {});
+    switchView(restoredNav.view, restoredNav.params || {}, true);
   } else {
     if (!isAuthCallback) {
       history.replaceState({ view: 'home', params: {} }, '', '#view=home');
@@ -6510,12 +6517,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (typeof renderDynamicNavCategories === 'function') renderDynamicNavCategories();
   if (window.feather) feather.replace();
   if (window.lucide) lucide.createIcons();
-
-  try {
-    await bootstrapCustomerAuth();
-  } catch (authErr) {
-    console.warn('[UE] Customer auth bootstrap note:', authErr);
-  }
 
 
   // Bootstrap from Supabase in background
@@ -6781,7 +6782,7 @@ function switchView(viewName, params = {}, skipHistory = false) {
     renderB2BView();
   } else if (viewName === 'admin') {
     try {
-      renderAdminView();
+      renderAdminView(params.tab || null);
     } catch (err) {
       console.error('[UE] Admin render failed:', err);
       showToast('Admin panel failed to load. Please refresh and try again.', 'info');
@@ -10767,13 +10768,18 @@ function closeApMobileSidebar() {
   if (backdrop) backdrop.classList.remove('active');
 }
 
-function switchApTab(tabId) {
+function switchApTab(tabId, skipUrlUpdate = false) {
   closeApMobileSidebar();
   if (AP_HIDDEN_TABS.includes(tabId)) {
     showApToast('This section is coming soon.', 'info');
     return;
   }
   apActiveTab = tabId;
+  if (!skipUrlUpdate) {
+    try {
+      history.replaceState({ view: 'admin', params: { tab: tabId } }, '', `#view=admin&tab=${encodeURIComponent(tabId)}`);
+    } catch (_) {}
+  }
   document.querySelectorAll('.ap-nav-item').forEach(el => el.classList.remove('active'));
   const activeNav = document.getElementById(`apNav-${tabId}`);
   if (activeNav) activeNav.classList.add('active');
@@ -10962,7 +10968,7 @@ async function handleAdminLogout() {
   switchView('home');
 }
 
-function renderAdminView() {
+function renderAdminView(initialTab = null) {
   const container = document.getElementById('viewAdmin');
   if (!container) return;
 
@@ -10973,6 +10979,10 @@ function renderAdminView() {
 
   // Trigger background customer sync
   loadCustomersAndRefresh();
+
+  const navInfo = parseNavHash();
+  const targetTab = initialTab || navInfo?.params?.tab || apActiveTab || 'dashboard';
+  apActiveTab = targetTab;
 
   const lowStockCount = ALL_PRODUCTS.filter(p => getAvailableStock(p) > 0 && getAvailableStock(p) < 5).length;
   const pendingReviewsCount = STORE_REVIEWS.filter(r => r.status === 'Pending').length;
@@ -11020,50 +11030,50 @@ function renderAdminView() {
 
         <nav class="ap-sidebar-nav">
           <div class="ap-nav-section-title">Main Menu</div>
-          <a class="ap-nav-item ${apActiveTab === 'dashboard' ? 'active' : ''}" id="apNav-dashboard" onclick="switchApTab('dashboard')">
+          <a class="ap-nav-item ${targetTab === 'dashboard' ? 'active' : ''}" id="apNav-dashboard" onclick="switchApTab('dashboard')">
             <div class="ap-nav-item-left"><i class="ri-dashboard-3-line"></i><span>Dashboard</span></div>
           </a>
-          <a class="ap-nav-item ${apActiveTab === 'orders' ? 'active' : ''}" id="apNav-orders" onclick="switchApTab('orders')">
+          <a class="ap-nav-item ${targetTab === 'orders' ? 'active' : ''}" id="apNav-orders" onclick="switchApTab('orders')">
             <div class="ap-nav-item-left"><i class="ri-shopping-bag-3-line"></i><span>Orders</span></div>
             <span class="ap-nav-count-badge">${userOrders.length}</span>
           </a>
-          <a class="ap-nav-item ${apActiveTab === 'products' ? 'active' : ''}" id="apNav-products" onclick="switchApTab('products')">
+          <a class="ap-nav-item ${targetTab === 'products' ? 'active' : ''}" id="apNav-products" onclick="switchApTab('products')">
             <div class="ap-nav-item-left"><i class="ri-box-3-line"></i><span>Products</span></div>
             <span class="ap-nav-count-badge">${ALL_PRODUCTS.length}</span>
           </a>
-          <a class="ap-nav-item ${apActiveTab === 'categories' ? 'active' : ''}" id="apNav-categories" onclick="switchApTab('categories')">
+          <a class="ap-nav-item ${targetTab === 'categories' ? 'active' : ''}" id="apNav-categories" onclick="switchApTab('categories')">
             <div class="ap-nav-item-left"><i class="ri-price-tag-3-line"></i><span>Categories</span></div>
             <span class="ap-nav-count-badge">${CATEGORIES.length}</span>
           </a>
-          <a class="ap-nav-item ${apActiveTab === 'inventory' ? 'active' : ''}" id="apNav-inventory" onclick="switchApTab('inventory')">
+          <a class="ap-nav-item ${targetTab === 'inventory' ? 'active' : ''}" id="apNav-inventory" onclick="switchApTab('inventory')">
             <div class="ap-nav-item-left"><i class="ri-stack-line"></i><span>Inventory</span></div>
             ${lowStockCount > 0 ? `<span class="ap-nav-count-badge alert">${lowStockCount} Alert</span>` : ''}
           </a>
-          <a class="ap-nav-item ${apActiveTab === 'customers' ? 'active' : ''}" id="apNav-customers" onclick="switchApTab('customers')">
+          <a class="ap-nav-item ${targetTab === 'customers' ? 'active' : ''}" id="apNav-customers" onclick="switchApTab('customers')">
             <div class="ap-nav-item-left"><i class="ri-group-line"></i><span>Customers</span></div>
             <span class="ap-nav-count-badge">${STORE_CUSTOMERS.length}</span>
           </a>
 
           <div class="ap-nav-section-title">Marketing & Content</div>
-          <a class="ap-nav-item ${apActiveTab === 'coupons' ? 'active' : ''}" id="apNav-coupons" onclick="switchApTab('coupons')">
+          <a class="ap-nav-item ${targetTab === 'coupons' ? 'active' : ''}" id="apNav-coupons" onclick="switchApTab('coupons')">
             <div class="ap-nav-item-left"><i class="ri-ticket-2-line"></i><span>Coupons</span></div>
             <span class="ap-nav-count-badge">${STORE_COUPONS.length}</span>
           </a>
-          <a class="ap-nav-item ${apActiveTab === 'banners' ? 'active' : ''}" id="apNav-banners" onclick="switchApTab('banners')">
+          <a class="ap-nav-item ${targetTab === 'banners' ? 'active' : ''}" id="apNav-banners" onclick="switchApTab('banners')">
             <div class="ap-nav-item-left"><i class="ri-image-line"></i><span>Hero Carousel</span></div>
             <span class="ap-nav-count-badge">${HERO_SLIDES.length}</span>
           </a>
-          <a class="ap-nav-item ${apActiveTab === 'featured' ? 'active' : ''}" id="apNav-featured" onclick="switchApTab('featured')">
+          <a class="ap-nav-item ${targetTab === 'featured' ? 'active' : ''}" id="apNav-featured" onclick="switchApTab('featured')">
             <div class="ap-nav-item-left"><i class="ri-layout-grid-line"></i><span>Featured Collections</span></div>
             <span class="ap-nav-count-badge">${FEATURED_COLLECTIONS.length}</span>
           </a>
-          <a class="ap-nav-item ${apActiveTab === 'reviews' ? 'active' : ''}" id="apNav-reviews" onclick="switchApTab('reviews')">
+          <a class="ap-nav-item ${targetTab === 'reviews' ? 'active' : ''}" id="apNav-reviews" onclick="switchApTab('reviews')">
             <div class="ap-nav-item-left"><i class="ri-star-line"></i><span>Reviews</span></div>
             ${pendingReviewsCount > 0 ? `<span class="ap-nav-count-badge alert">${pendingReviewsCount}</span>` : ''}
           </a>
 
           <div class="ap-nav-section-title">System & Settings</div>
-          <a class="ap-nav-item ${apActiveTab === 'settings' ? 'active' : ''}" id="apNav-settings" onclick="switchApTab('settings')">
+          <a class="ap-nav-item ${targetTab === 'settings' ? 'active' : ''}" id="apNav-settings" onclick="switchApTab('settings')">
             <div class="ap-nav-item-left"><i class="ri-settings-4-line"></i><span>Store Settings</span></div>
           </a>
         </nav>
@@ -11122,12 +11132,14 @@ function renderAdminView() {
           </div>
 
           <div id="apMainContentArea">
-            ${renderApDashboard()}
+            <!-- Rendered by switchApTab -->
           </div>
         </div>
       </main>
     </div>
   `;
+
+  switchApTab(targetTab, false);
 }
 
 /* 1. Dashboard View Renderer */
