@@ -176,7 +176,8 @@ const CATEGORY_RENAME_MAP = {
   'Gifts & Gadgets': 'Gadgets',
   'Kids Footwear': 'Footwear',
   'Combos': 'Combos',
-  'RC Toys': 'RC Toys'
+  'RC Toys': 'RC Toys',
+  'RC T': 'RC Toys'
 };
 
 const AP_HIDDEN_TABS = ['wholesale', 'analytics', 'users'];
@@ -784,7 +785,12 @@ function getCategoryEmoji(name) {
 
 function resolveCategoryImage(c, index = 0) {
   const name = typeof c === 'string' ? c : c.name;
-  const catObj = typeof c === 'object' && c !== null ? c : { name };
+  let catObj = typeof c === 'object' && c !== null ? c : null;
+  if ((!catObj || !catObj.image) && name && typeof CATEGORIES_DATA !== 'undefined' && Array.isArray(CATEGORIES_DATA)) {
+    const found = CATEGORIES_DATA.find(item => item && (item.name === name || (typeof normalizeCatName === 'function' && normalizeCatName(item.name) === normalizeCatName(name))));
+    if (found && found.image) catObj = found;
+  }
+  if (!catObj) catObj = { name };
 
   // 1. Highest priority: Custom cover image set on the category itself
   // (from Admin upload, Supabase categories table, or custom URL)
@@ -5531,41 +5537,40 @@ function isSessionExpiredError(errorMsg) {
 }
 
 async function uploadToCloudinary(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        const base64Data = reader.result;
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ file: base64Data })
+  try {
+    const base64Data = (typeof compressImageForUpload === 'function')
+      ? await compressImageForUpload(file, 1600, 0.88)
+      : await new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.onerror = rej;
+          r.readAsDataURL(file);
         });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          const msg = data.error || `Upload failed with status ${res.status}`;
-          showToast(msg, 'error');
-          return reject(msg);
-        }
-        if (data.success && data.url) {
-          resolve(data.url);
-        } else {
-          const msg = data.error || 'Upload failed';
-          showToast(msg, 'error');
-          reject(msg);
-        }
-      } catch (err) {
-        const msg = err.message || 'Upload error';
-        showToast(msg, 'error');
-        reject(msg);
-      }
-    };
-    reader.onerror = () => {
-      showToast('File reading failed', 'error');
-      reject('File reading failed');
-    };
-    reader.readAsDataURL(file);
-  });
+
+    const formData = new FormData();
+    formData.append('file', base64Data);
+    formData.append('upload_preset', 'unique_store');
+
+    const res = await fetch('https://api.cloudinary.com/v1_1/oqj0unl4/image/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      const msg = data.error?.message || `Upload failed with status ${res.status}`;
+      showToast(msg, 'error');
+      throw new Error(msg);
+    }
+
+    const uploadedUrl = data.secure_url || data.url;
+    if (uploadedUrl) return uploadedUrl;
+    throw new Error('Upload failed: missing url');
+  } catch (err) {
+    const msg = err.message || 'Upload error';
+    showToast(msg, 'error');
+    throw err;
+  }
 }
 
 async function handleAdminImageUpload(input) {
@@ -7166,9 +7171,11 @@ async function saveApCategoryForm(catId = null) {
   }
 
   const subcategories = subStr ? subStr.split(',').map(s => s.trim()).filter(Boolean) : [name];
-  const finalImage = image || getCategoryDisplayImage(name);
 
   let c = catId != null ? CATEGORIES_DATA.find(item => String(item.id) === String(catId)) : null;
+  // Preserve existing custom cover image if untouched or keep user's uploaded URL
+  const finalImage = image || (c && c.image ? c.image : getCategoryDisplayImage(name));
+
   let savedCategory;
 
   if (c) {
@@ -7205,17 +7212,36 @@ async function saveApCategoryForm(catId = null) {
     apCategoryFeaturedFilter = 'All';
   }
 
-  CATEGORIES = CATEGORIES_DATA.map(item => item.name);
-  syncStorefrontState();
-  closeApCategoryModal();
-
-  if (typeof sbUpsertCategory === 'function') {
-    const ok = await sbUpsertCategory(savedCategory);
-    if (!ok) showApToast('Saved locally; cloud sync failed — check Supabase categories table.', 'info');
+  const saveBtn = document.querySelector('#apCategoryModalOverlay .ap-modal-footer button.ap-btn-primary');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Saving to Cloud...';
   }
 
-  switchApTab('categories');
-  showApToast(`Category "${name}" saved successfully!`, 'success');
+  try {
+    if (typeof sbUpsertCategory === 'function') {
+      const ok = await sbUpsertCategory(savedCategory);
+      if (!ok) {
+        showApToast('Failed to sync category with Supabase database. Please verify your admin session and try again.', 'error');
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i class="ri-check-line"></i> Save Category';
+        }
+        return;
+      }
+    }
+
+    CATEGORIES = CATEGORIES_DATA.map(item => item.name);
+    syncStorefrontState();
+    closeApCategoryModal();
+    switchApTab('categories');
+    showApToast(`Category "${name}" saved successfully to database!`, 'success');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<i class="ri-check-line"></i> Save Category';
+    }
+  }
 }
 
 /* 5. Inventory Matrix Module Renderer */
@@ -10628,25 +10654,28 @@ async function uploadMultipleImagesToCloudinary(fileInput) {
       // Auto-compress large phone photos to crisp web resolution (under 600KB)
       const base64Data = await compressImageForUpload(file, 1600, 0.88);
 
-      const res = await fetch('/api/upload', {
+      const formData = new FormData();
+      formData.append('file', base64Data);
+      formData.append('upload_preset', 'unique_store');
+
+      const res = await fetch('https://api.cloudinary.com/v1_1/oqj0unl4/image/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file: base64Data })
+        body: formData
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const errMsg = data.error || `Upload failed for photo ${i + 1} (Status ${res.status})`;
+        const errMsg = data.error?.message || `Upload failed for photo ${i + 1} (Status ${res.status})`;
         showApToast(errMsg, 'error');
         continue;
       }
 
-      if (data.success && data.url) {
-        window.apModalProductImages.push(data.url);
+      const uploadedUrl = data.secure_url || data.url;
+      if (uploadedUrl) {
+        window.apModalProductImages.push(uploadedUrl);
         successCount++;
         renderApProductImagesGallery();
       } else {
-        console.warn('[Upload Error]', data.error);
-        showApToast(`Upload failed for photo ${i + 1}: ${data.error || 'Server error'}`, 'error');
+        showApToast(`Upload failed for photo ${i + 1}: ${data.error?.message || 'Server error'}`, 'error');
       }
     } catch (err) {
       console.error('[Upload Exception]', err);
@@ -10820,35 +10849,59 @@ async function uploadImageToCloudinary(fileInput, targetInputId, targetPrevId) {
   const file = fileInput.files[0];
   if (!file) return;
 
+  const saveBtn = document.querySelector('#apCategoryModalOverlay .ap-modal-footer button.ap-btn-primary') ||
+                  document.querySelector('#apBannerModalOverlay .ap-modal-footer button.ap-btn-primary') ||
+                  document.querySelector('#apProductModalOverlay .ap-modal-footer button.ap-btn-primary');
+  let originalBtnHtml = '';
+  if (saveBtn) {
+    originalBtnHtml = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Uploading Image...';
+  }
+
   showApToast('Optimizing & uploading image...', 'info');
 
   try {
     const base64Data = await compressImageForUpload(file, 1600, 0.88);
 
-    const res = await fetch('/api/upload', {
+    // DIRECT TO CLOUDINARY — 100% Free, Bypasses Vercel/Server completely
+    const formData = new FormData();
+    formData.append('file', base64Data);
+    formData.append('upload_preset', 'unique_store');
+
+    const res = await fetch('https://api.cloudinary.com/v1_1/oqj0unl4/image/upload', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ file: base64Data })
+      body: formData
     });
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      const errMsg = data.error || `Upload failed with status ${res.status}`;
+      const errMsg = data.error?.message || `Upload failed with status ${res.status}`;
       showApToast(errMsg, 'error');
       return;
     }
 
-    if (data.success && data.url) {
+    const uploadedUrl = data.secure_url || data.url;
+    if (uploadedUrl) {
       const targetInput = document.getElementById(targetInputId);
       const targetPrev = document.getElementById(targetPrevId);
-      if (targetInput) targetInput.value = data.url;
-      if (targetPrev) targetPrev.src = data.url;
+      if (targetInput) {
+        targetInput.value = uploadedUrl;
+        targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      if (targetPrev) targetPrev.src = uploadedUrl;
       showApToast('Image uploaded successfully!', 'success');
     } else {
-      showApToast(data.error || 'Upload failed. Paste an image URL instead.', 'error');
+      showApToast(data.error?.message || 'Upload failed. Paste an image URL instead.', 'error');
     }
   } catch (err) {
     showApToast('Could not process image file: ' + (err.message || 'Network error'), 'error');
+  } finally {
+    if (saveBtn && originalBtnHtml) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = originalBtnHtml;
+    }
+    fileInput.value = ''; // Always clear file input so selecting the same file fires onchange
   }
 }
 
