@@ -2975,7 +2975,7 @@ function openAddReviewModal(productId) {
         </div>
       </div>
 
-      <button class="ap-btn ap-btn-primary" style="width:100%; height:44px; font-size:14px; font-weight:800; justify-content:center; background:#0f172a; color:#fff; border-radius:12px;" onclick="submitCustomerReview('${p.id}')">
+      <button class="ap-btn ap-btn-primary" style="width:100%; height:44px; font-size:14px; font-weight:800; justify-content:center; background:#0f172a; color:#fff; border-radius:12px;" onclick="submitPdpCustomerReview('${p.id}')">
         Submit Verified Review
       </button>
     </div>
@@ -2984,7 +2984,7 @@ function openAddReviewModal(productId) {
   setTimeout(() => document.getElementById('revAuthorName')?.focus(), 200);
 }
 
-async function submitCustomerReview(productId) {
+async function submitPdpCustomerReview(productId) {
   const p = ALL_PRODUCTS.find(x => String(x.id) === String(productId));
   if (!p) return;
   const name = document.getElementById('revAuthorName')?.value.trim() || 'Verified Customer';
@@ -5547,23 +5547,20 @@ async function uploadToCloudinary(file) {
           r.readAsDataURL(file);
         });
 
-    const formData = new FormData();
-    formData.append('file', base64Data);
-    formData.append('upload_preset', 'unique_store');
-
-    const res = await fetch('https://api.cloudinary.com/v1_1/oqj0unl4/image/upload', {
+    const res = await fetch('/api/upload', {
       method: 'POST',
-      body: formData
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: base64Data })
     });
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      const msg = data.error?.message || `Upload failed with status ${res.status}`;
+      const msg = data.error || `Upload failed with status ${res.status}`;
       showToast(msg, 'error');
       throw new Error(msg);
     }
 
-    const uploadedUrl = data.secure_url || data.url;
+    const uploadedUrl = data.url || data.secure_url;
     if (uploadedUrl) return uploadedUrl;
     throw new Error('Upload failed: missing url');
   } catch (err) {
@@ -10654,17 +10651,14 @@ async function uploadMultipleImagesToCloudinary(fileInput) {
       // Auto-compress large phone photos to crisp web resolution (under 600KB)
       const base64Data = await compressImageForUpload(file, 1600, 0.88);
 
-      const formData = new FormData();
-      formData.append('file', base64Data);
-      formData.append('upload_preset', 'unique_store');
-
-      const res = await fetch('https://api.cloudinary.com/v1_1/oqj0unl4/image/upload', {
+      const res = await fetch('/api/upload', {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: base64Data })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const errMsg = data.error?.message || `Upload failed for photo ${i + 1} (Status ${res.status})`;
+        const errMsg = data.error || `Upload failed for photo ${i + 1} (Status ${res.status})`;
         showApToast(errMsg, 'error');
         continue;
       }
@@ -10864,19 +10858,15 @@ async function uploadImageToCloudinary(fileInput, targetInputId, targetPrevId) {
   try {
     const base64Data = await compressImageForUpload(file, 1600, 0.88);
 
-    // DIRECT TO CLOUDINARY — 100% Free, Bypasses Vercel/Server completely
-    const formData = new FormData();
-    formData.append('file', base64Data);
-    formData.append('upload_preset', 'unique_store');
-
-    const res = await fetch('https://api.cloudinary.com/v1_1/oqj0unl4/image/upload', {
+    const res = await fetch('/api/upload', {
       method: 'POST',
-      body: formData
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: base64Data })
     });
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      const errMsg = data.error?.message || `Upload failed with status ${res.status}`;
+      const errMsg = data.error || `Upload failed with status ${res.status}`;
       showApToast(errMsg, 'error');
       return;
     }
@@ -10947,20 +10937,7 @@ function initImageZoom(imgId, resultId) {
   }
 }
 
-// 5. Frequently Bought Together (FBT) Cart Handler
-function addFbtComboToCart(mainProdId, bundleProdIds) {
-  const allIds = [mainProdId, ...bundleProdIds];
-  allIds.forEach(id => {
-    const prod = ALL_PRODUCTS.find(p => String(p.id) === String(id));
-    if (prod) {
-      const existing = cart.find(i => String(i.id) === String(id));
-      if (existing) existing.quantity = (existing.quantity || 1) + 1;
-      else cart.push({ ...prod, price: getEffectivePrice(prod.price), quantity: 1 });
-    }
-  });
-  saveCart();
-  openCartDrawer();
-}
+// Note: Frequently Bought Together (FBT) handler defined in module below
 
 /* ==========================================================================
    CUSTOMER AUTHENTICATION & LOGIN MODAL HANDLERS
