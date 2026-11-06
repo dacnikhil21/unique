@@ -866,6 +866,7 @@ let ALL_PRODUCTS = (() => {
   return [];
 })();
 let isProductsLoading = ALL_PRODUCTS.length === 0;
+let isProductsFetching = false;
 let productsLoadError = false;
 function applyStoreSettingsDOM() {
   if (!STORE_SETTINGS) return;
@@ -1257,7 +1258,8 @@ function getProductErrorHTML() {
 }
 
 async function loadProductsFromCloud(force = false) {
-  if (isProductsLoading && !force) return;
+  if (isProductsFetching && !force) return;
+  isProductsFetching = true;
   isProductsLoading = true;
   productsLoadError = false;
 
@@ -1292,6 +1294,7 @@ async function loadProductsFromCloud(force = false) {
       productsLoadError = true;
     }
   } finally {
+    isProductsFetching = false;
     isProductsLoading = false;
     if (typeof renderMobileGrid === 'function') renderMobileGrid();
     if (typeof renderDesktopGrid === 'function') renderDesktopGrid();
@@ -1351,7 +1354,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Bootstrap from Supabase in background
   try {
     // 1. Load products from Supabase — Single Source of Truth
-    await loadProductsFromCloud(false);
+    await loadProductsFromCloud(true);
 
     // 2. Load orders from Supabase
     const sbOrds = await sbGetOrders();
